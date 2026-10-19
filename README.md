@@ -1,2 +1,3 @@
 # CJWiebe-Portfolio.github.io
-This is a website for a class project that is in the works.
+
+This is the project for the Web-Design Course
