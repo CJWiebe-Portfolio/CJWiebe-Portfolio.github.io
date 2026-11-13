@@ -1,0 +1,1612 @@
+/*
+=========================================================
+FILE: style.css
+PROJECT: Another Tally - A zombie survival game
+AUTHOR: Cygnus J. Wiebe
+DATE: December 2026
+COURSE: INFS 634 - McGill University
+=========================================================
+DESCRIPTION:
+Display settings from the Options page arrive as data-attributes on <html>
+(set by js/common.js): data-text-size, data-contrast, data-motion. */
+
+/* ---------- Global styles ---------- */
+:root {
+  --bg: #f1ece0;
+  --surface: #fffdf8;
+  --surface-2: #e8e1d0;
+  --ink: #23211c;
+  --muted: #5f5a4e;
+  --line: #d3cab5;
+  --healing: #0ab1e0; /* green */
+  --accent: #5e7a48; /* green */
+  --accent-ink: #ffffff;
+  --accent-2: #c98a2b; /* mustard */
+  --danger: #9a3a2b; /* rust */
+  --focus: #c98a2b;
+  --hatch: rgba(35, 33, 28, 0.07);
+  --radius: 10px;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --font-display: "Special Elite", "Courier New", monospace;
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 16px;
+}
+
+/*
+=============================================================== 
+---------- Customizable styles that the user can set ----------
+=============================================================== 
+*/
+
+/* ---------- Customizable text sizes ---------- */
+html[data-text-size="small"] {
+  font-size: 14px;
+}
+html[data-text-size="large"] {
+  font-size: 19px;
+}
+/* ---------- Ability to set contrast high for accessibility ---------- */
+html[data-contrast="high"] {
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #e6e6e6;
+  --ink: #000000;
+  --muted: #1f1f1f;
+  --line: #000000;
+  --accent: #1f4510;
+  --accent-2: #7a4a00;
+  --danger: #7a1608;
+  --focus: #0047ff;
+  --hatch: rgba(0, 0, 0, 0.12);
+}
+
+/* ---------- Ability to reduce motion for accessibility ---------- */
+html[data-motion="reduce"] *,
+html[data-motion="reduce"] *::before,
+html[data-motion="reduce"] *::after {
+  transition: none !important;
+  animation: none !important;
+  scroll-behavior: auto !important;
+}
+
+/* ---------- Changes to the box sizes ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/*
+=============================================================== 
+---------- CSS rules for the body of the pages ----------
+=============================================================== 
+*/
+
+/* ---------- Body ---------- */
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  line-height: 1.45;
+}
+
+/* ---------- Headers ---------- */
+h1,
+h2,
+h3 {
+  line-height: 1.15;
+  margin: 0;
+}
+h1 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 2rem;
+}
+h2 {
+  font-size: 1.35rem;
+}
+h3 {
+  font-size: 1.05rem;
+}
+/* ---------- Paragraphs ---------- */
+p {
+  margin: 0;
+}
+a {
+  color: inherit;
+}
+
+/* ---------- Adjusts the focus styles ---------- */
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -3rem;
+  z-index: 100;
+  background: var(--ink);
+  color: var(--surface);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+}
+.skip-link:focus {
+  top: 1rem;
+}
+
+.muted {
+  color: var(--muted);
+}
+.small {
+  font-size: 0.875rem;
+}
+.eyebrow {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.notice {
+  background: var(--surface-2);
+  border-left: 4px solid var(--accent-2);
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-bottom: 1.25rem;
+}
+
+/*
+=============================================================== 
+---------- Buttons ----------
+=============================================================== 
+*/
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.75rem;
+  padding: 0.55rem 1.1rem;
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    transform 0.1s;
+}
+.btn:hover {
+  background: var(--surface-2);
+}
+.btn:active {
+  transform: translateY(1px);
+}
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+.btn-primary:hover {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+.btn-quiet {
+  border-color: var(--line);
+  color: var(--muted);
+}
+.btn-block {
+  width: 100%;
+}
+.btn-sm {
+  min-height: 2.25rem;
+  padding: 0.35rem 0.8rem;
+  font-size: 0.9rem;
+}
+.btn[disabled],
+.btn[aria-disabled="true"] {
+  border-color: var(--line);
+  color: var(--muted);
+  background: transparent;
+  cursor: not-allowed;
+}
+
+.chip {
+  display: inline-block;
+  padding: 0.15rem 0.65rem;
+  border: 1px solid var(--ink);
+  border-radius: 999px;
+  font-size: 0.8rem;
+  background: var(--surface);
+}
+
+/*
+=============================================================== 
+---------- Cards ----------
+=============================================================== 
+*/
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.1rem;
+  box-shadow: var(--shadow);
+}
+
+.page {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+.page-head {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.page-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+}
+
+.grid-3 {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+/*
+=============================================================== 
+---------- Title Screen ----------
+=============================================================== 
+*/
+
+.title-screen {
+  background: url("../assets/images/png/title_screen.png") center / cover
+    no-repeat;
+  display: grid;
+  grid-template-columns: minmax(300px, 30%) 1fr;
+  min-height: 100vh;
+}
+.title-menu {
+  padding: 4rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: rgb(255 253 248 / 0.92);
+}
+.title-menu .logo {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  margin-bottom: 1rem;
+}
+.title-menu h1 {
+  font-size: 3.5rem;
+}
+.title-menu .tagline {
+  color: var(--muted);
+  font-size: 1.15rem;
+  margin-bottom: 1.5rem;
+}
+.title-menu nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 280px;
+}
+.title-menu .footnote {
+  margin-top: 2rem;
+  max-width: 260px;
+}
+
+@media (max-width: 760px) {
+  .title-screen {
+    grid-template-columns: 1fr;
+  }
+  .title-menu {
+    padding: 2.5rem 1.25rem;
+  }
+  .title-menu nav {
+    max-width: none;
+  }
+  .key-art {
+    min-height: 200px;
+    order: -1;
+    border-left: 0;
+    border-bottom: 1px solid var(--line);
+  }
+}
+
+/*
+=============================================================== 
+---------- Forms for user input ----------
+=============================================================== 
+*/
+
+fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0 0 1.25rem;
+}
+legend,
+.field-label {
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  padding: 0;
+}
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1rem;
+  border: 1px solid var(--ink);
+  border-radius: 8px;
+  background: var(--surface);
+  cursor: pointer;
+}
+.choice:has(input:checked) {
+  background: var(--ink);
+  color: var(--surface);
+  font-weight: 700;
+}
+.choice:has(input:focus-visible) {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.choice input {
+  accent-color: var(--accent-2);
+  margin: 0;
+}
+
+.choice-card {
+  display: block;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  cursor: pointer;
+}
+.choice-card:has(input:checked) {
+  border: 2px solid var(--ink);
+}
+.choice-card:has(input:focus-visible) {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.choice-card .title {
+  font-weight: 700;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.choice-card p {
+  margin-top: 0.4rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+  cursor: pointer;
+}
+.check input {
+  width: 1.2rem;
+  height: 1.2rem;
+  accent-color: var(--accent);
+}
+
+input[type="text"] {
+  width: 100%;
+  max-width: 28rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--ink);
+  border-radius: 8px;
+  font: inherit;
+  background: var(--surface);
+  color: var(--ink);
+}
+input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+select {
+  width: 100%;
+  min-height: 2.5rem;
+  padding: 0.4rem 0.6rem;
+  font: inherit;
+  border: 1px solid var(--ink);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.options-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  align-items: start;
+}
+.panel-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 1rem;
+}
+
+/*
+=============================================================== 
+---------- How to Play Page ----------
+=============================================================== 
+*/
+
+.htp {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+.htp-nav {
+  position: sticky;
+  top: 1rem;
+  padding: 0.5rem;
+}
+.htp-nav a {
+  display: block;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  text-decoration: none;
+}
+.htp-nav a:hover,
+.htp-nav a[aria-current="true"] {
+  background: var(--surface-2);
+  font-weight: 700;
+}
+.htp section {
+  margin-bottom: 2.25rem;
+  scroll-margin-top: 1rem;
+}
+.htp section > h2 {
+  margin-bottom: 0.75rem;
+}
+.htp section > p + p {
+  margin-top: 0.6rem;
+}
+.steps {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+.steps .num {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.resource-list {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.resource-list li {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+}
+.resource-list .ph {
+  width: 28px;
+  height: 28px;
+  flex: none;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th,
+td {
+  text-align: left;
+  padding: 0.65rem 0.5rem;
+  border-bottom: 1px solid var(--line);
+}
+thead th {
+  border-bottom: 2px solid var(--ink);
+}
+
+@media (max-width: 760px) {
+  .htp {
+    grid-template-columns: 1fr;
+  }
+  .htp-nav {
+    position: static;
+    display: flex;
+    flex-wrap: wrap;
+  }
+}
+
+/*
+=============================================================== 
+---------- New Game Page ----------
+=============================================================== 
+*/
+
+.survivor-card {
+  display: flex;
+  gap: 0.9rem;
+  align-items: center;
+}
+.avatar {
+  width: 56px;
+  height: 56px;
+  flex: none;
+}
+.tags {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  margin-top: 0.35rem;
+}
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin: 1.5rem 0 0.75rem;
+  flex-wrap: wrap;
+}
+
+/*
+=============================================================== 
+---------- Top Bar: In-Game ----------
+=============================================================== 
+*/
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  padding: 0.75rem 1rem;
+  background: var(--surface);
+  border-bottom: 2px solid var(--ink);
+}
+.topbar .brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+}
+.topbar .brand .ph {
+  width: 34px;
+  height: 34px;
+}
+.day-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+}
+.phase-pill {
+  border: 1px solid var(--ink);
+  border-radius: 999px;
+  padding: 0.1rem 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+.phase-pill[data-phase="night"] {
+  background: var(--ink);
+  color: var(--surface);
+}
+.resources {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.resources li {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.resources .ph {
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+}
+.resources strong {
+  font-variant-numeric: tabular-nums;
+}
+.topbar .btn {
+  margin-left: auto;
+}
+
+/*
+=============================================================== 
+---------- Tabs: In-Game ----------
+=============================================================== 
+*/
+
+.tabs {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0 1rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+}
+.tab {
+  padding: 0.9rem 1rem;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: none;
+  font: inherit;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tab[aria-selected="true"] {
+  color: var(--ink);
+  border-bottom-color: var(--ink);
+}
+.tab:hover {
+  color: var(--ink);
+}
+
+.game-layout {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 1.5rem;
+  padding: 1.5rem 1rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  align-items: start;
+}
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+@media (max-width: 960px) {
+  .game-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/*
+=============================================================== 
+---------- Side Panel: In-Game ----------
+=============================================================== 
+*/
+
+.side {
+  position: sticky;
+  top: 1rem;
+}
+.side dl {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.6rem 0.5rem;
+  margin: 0.75rem 0 0;
+}
+.side dd {
+  margin: 0;
+  color: var(--muted);
+  text-align: right;
+}
+.side .tonight dd {
+  color: var(--ink);
+  font-weight: 700;
+}
+.side hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 1rem 0;
+}
+.side .btn {
+  margin-top: 1rem;
+}
+
+/*
+=============================================================== 
+---------- Facility Panel: In-Game ----------
+=============================================================== 
+*/
+
+.facility {
+  display: flex;
+  flex-direction: column;
+}
+.facility .ph {
+  height: 96px;
+  margin-bottom: 0.75rem;
+}
+.facility .fac-art {
+  display: block;
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-bottom: 0.75rem;
+}
+.facility .row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+.facility .row span {
+  white-space: nowrap;
+}
+.facility p {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin: 0.5rem 0 0.9rem;
+}
+.facility .foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  margin-top: auto;
+}
+.level-bar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin-top: 0.5rem;
+}
+.level-bar span {
+  height: 5px;
+  border-radius: 3px;
+  background: var(--surface-2);
+}
+.level-bar span.on {
+  background: var(--ink);
+}
+
+/*
+=============================================================== 
+---------- Survival Card: In-Game ----------
+=============================================================== 
+*/
+
+.survivor .top {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+.survivor .top .status {
+  margin-left: auto;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.survivor .status.injured {
+  color: var(--danger);
+  font-weight: 700;
+}
+.stats {
+  display: grid;
+  grid-template-columns: 4.5rem 1fr 2rem;
+  gap: 0.35rem 0.5rem;
+  align-items: center;
+  font-size: 0.85rem;
+  margin-bottom: 0.75rem;
+}
+.meter {
+  height: 6px;
+  background: var(--surface-2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.meter span {
+  display: block;
+  height: 100%;
+  background: var(--ink);
+}
+.stats output {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.free-bed {
+  display: grid;
+  place-items: center;
+  text-align: center;
+  gap: 0.5rem;
+  border-style: dashed;
+  min-height: 220px;
+}
+
+/*
+=============================================================== 
+---------- Map: In-Game ----------
+=============================================================== 
+*/
+
+.map-wrap {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  gap: 1rem;
+  align-items: start;
+}
+.map-area {
+  position: relative;
+  aspect-ratio: 5 / 4;
+  min-height: 360px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: url("../assets/images/png/map.png") center / cover no-repeat;
+}
+.map-area .label {
+  position: absolute;
+  left: 0.75rem;
+  bottom: 0.5rem;
+}
+.loc {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--ink);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.loc[aria-pressed="true"] {
+  border-width: 3px;
+}
+.loc.home {
+  background: var(--ink);
+  color: var(--surface);
+  cursor: default;
+}
+.loc.locked {
+  border-style: dashed;
+}
+.loc .seen {
+  color: var(--accent);
+}
+.loc-detail .ph {
+  height: 100px;
+  margin: 0.75rem 0;
+}
+.loc-detail dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.45rem 0.75rem;
+  margin: 0 0 1rem;
+}
+.loc-detail dd {
+  margin: 0;
+  text-align: right;
+  font-weight: 700;
+}
+.loc-art {
+  display: block;
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin: 0.75rem 0;
+}
+.danger {
+  display: inline-flex;
+  gap: 3px;
+}
+.danger span {
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+}
+.danger span.on {
+  background: var(--ink);
+}
+@media (max-width: 760px) {
+  .map-wrap {
+    grid-template-columns: 1fr;
+  }
+  .loc {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.6rem;
+  }
+}
+
+/*
+=============================================================== 
+---------- Trade: In-Game ----------
+=============================================================== 
+*/
+
+.trader {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.trade-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.trade-row {
+  display: grid;
+  grid-template-columns: 1fr 2.5rem auto 2rem auto;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.trade-row .have {
+  color: var(--muted);
+  text-align: right;
+}
+.trade-row output {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.stepper {
+  width: 2.4rem;
+  height: 2.4rem;
+  border: 1px solid var(--ink);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.stepper:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.trade-bar {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1rem;
+  align-items: center;
+  margin-top: 1rem;
+}
+.balance {
+  position: relative;
+  height: 10px;
+  background: var(--surface-2);
+  border-radius: 5px;
+  margin: 0.5rem 0;
+}
+.balance span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--ink);
+  border-radius: 5px;
+  transition: width 0.2s;
+}
+.balance::after {
+  content: "";
+  position: absolute;
+  left: var(--accept, 50%);
+  top: -5px;
+  bottom: -5px;
+  width: 2px;
+  background: var(--danger);
+}
+.trade-bar .labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+}
+@media (max-width: 760px) {
+  .trade-cols,
+  .trade-bar {
+    grid-template-columns: 1fr;
+  }
+}
+
+/*
+=============================================================== 
+---------- Log: In-Game ----------
+=============================================================== 
+*/
+
+.filters {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+.filter {
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--ink);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+.filter[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--surface);
+}
+.log-day {
+  margin-bottom: 1.25rem;
+}
+.log-day ol {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+}
+.log-day li {
+  display: grid;
+  grid-template-columns: 7.5rem 1fr;
+  gap: 1rem;
+  align-items: start;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.log-day .chip {
+  text-align: center;
+}
+.empty {
+  padding: 2rem;
+  text-align: center;
+  color: var(--muted);
+}
+
+/*
+=============================================================== 
+---------- Event Cards: In-Game ----------
+=============================================================== 
+*/
+
+dialog {
+  border: 0;
+  border-radius: 14px;
+  padding: 1.5rem;
+  width: min(560px, calc(100vw - 2rem));
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+dialog.wide {
+  width: min(880px, calc(100vw - 2rem));
+}
+dialog::backdrop {
+  background: rgba(20, 18, 14, 0.6);
+}
+dialog .ph.art {
+  height: 160px;
+  margin: 0.75rem 0 1rem;
+}
+dialog h2 {
+  margin-bottom: 0.5rem;
+}
+.event-text {
+  color: var(--muted);
+  margin-bottom: 1rem;
+}
+.event-choices {
+  display: grid;
+  gap: 0.6rem;
+}
+.event-choice {
+  text-align: left;
+  padding: 0.8rem 1rem;
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+.event-choice:hover {
+  background: var(--surface-2);
+}
+.event-choice strong {
+  display: block;
+}
+.event-choice span {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.event-choice:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.mg-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.mg-canvas {
+  position: relative;
+  height: 300px;
+  margin: 1rem 0;
+  font-size: 1rem;
+  text-align: center;
+  padding: 1rem;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  user-select: none;
+}
+.mg-msg {
+  margin-top: 1rem;
+  color: var(--muted);
+  min-height: 1.5em;
+}
+.mg-banner {
+  position: absolute;
+  left: 50%;
+  bottom: 0.6rem;
+  transform: translateX(-50%);
+  width: min(460px, 92%);
+  padding: 0.6rem 1rem;
+  background: var(--surface);
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  z-index: 5;
+}
+.mg-banner strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  margin-bottom: 0.15rem;
+}
+.mg-banner.won strong {
+  color: var(--accent);
+}
+.mg-banner.lost strong {
+  color: var(--danger);
+}
+
+/*
+=============================================================== 
+---------- Defense: Mini-Game ----------
+=============================================================== 
+*/
+
+.mg-defense {
+  padding: 0;
+}
+.mg-defense.hit {
+  animation: mg-shake 0.25s;
+}
+@keyframes mg-shake {
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
+}
+.mg-wall-strip {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6%;
+  background: repeating-linear-gradient(
+    0deg,
+    var(--muted) 0 14px,
+    var(--line) 14px 16px
+  );
+  border-right: 3px solid var(--ink);
+  z-index: 2;
+}
+.mg-lane {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-bottom: 1px dashed var(--line);
+}
+.mg-lane-key {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.8rem;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0 0.35rem;
+  background: var(--surface);
+}
+.mg-hint {
+  position: absolute;
+  left: 8%;
+  right: 3rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  transition: opacity 0.4s;
+}
+.mg-hint.faded {
+  opacity: 0;
+}
+.mg-zombie {
+  position: absolute;
+  left: 100%;
+  transform: translate(-50%, -50%);
+  width: 48px;
+  height: 48px;
+  border: 2px solid var(--danger);
+  border-radius: 50%;
+  background: var(--surface);
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: crosshair;
+  z-index: 3;
+  touch-action: manipulation;
+}
+.mg-zombie:hover {
+  background: var(--surface-2);
+}
+.mg-zombie.down {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.4) rotate(-40deg);
+  transition:
+    opacity 0.25s,
+    transform 0.25s;
+}
+
+/*
+=============================================================== 
+---------- Lockpick: Mini-Game ----------
+=============================================================== 
+*/
+
+.mg-lockpick {
+  display: grid;
+  place-content: center;
+}
+.mg-lock {
+  padding: 1.25rem 1.5rem 1rem;
+  border: 3px solid var(--ink);
+  border-radius: 12px 12px 40px 40px;
+  background: var(--surface-2);
+}
+.mg-pins {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+}
+.mg-pin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  width: 52px;
+  height: 140px;
+  padding: 0.5rem 0;
+  justify-content: flex-end;
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+.mg-pin:disabled {
+  cursor: default;
+}
+.mg-pin-body {
+  width: 14px;
+  height: 60px;
+  background: var(--muted);
+  border-radius: 4px;
+  transition: transform 0.15s;
+}
+.mg-pin.set {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+.mg-pin.set .mg-pin-body {
+  background: var(--accent-ink);
+  transform: translateY(-40px);
+}
+.mg-pin.wrong {
+  animation: mg-wrong 0.4s;
+}
+@keyframes mg-wrong {
+  0%,
+  100% {
+    border-color: var(--ink);
+  }
+  30% {
+    border-color: var(--danger);
+    background: var(--danger);
+    color: #fff;
+  }
+}
+.mg-pin-num {
+  font-weight: 700;
+}
+.mg-lockpick .mg-msg {
+  max-width: 36ch;
+  margin-inline: auto;
+}
+
+/*
+=============================================================== 
+---------- Search: Mini-Game ----------
+=============================================================== 
+*/
+
+.mg-search {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.mg-grid {
+  display: grid;
+  gap: 0.4rem;
+  width: min(330px, 100%);
+}
+.mg-tile {
+  aspect-ratio: 1.6;
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+.mg-tile:hover:not(:disabled) {
+  background: var(--surface);
+}
+.mg-tile:disabled {
+  cursor: default;
+}
+.mg-tile.open {
+  background: var(--surface);
+  border-color: var(--line);
+  color: var(--ink);
+}
+.mg-tile[data-near="0"] {
+  color: var(--muted);
+}
+.mg-tile.loot {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 15%, var(--surface));
+}
+.mg-tile.missed {
+  opacity: 0.45;
+  border-style: dashed;
+}
+.mg-search .mg-msg {
+  margin-top: 0.6rem;
+}
+.mg-stats {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--line);
+}
+.mg-stats .meter {
+  width: 140px;
+}
+.mg-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding-top: 1rem;
+  flex-wrap: wrap;
+}
+.mg-foot .btns {
+  display: flex;
+  gap: 0.5rem;
+}
+.pause {
+  text-align: center;
+  width: min(400px, calc(100vw - 2rem));
+}
+.pause h2 {
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+}
+.pause .btn {
+  margin-bottom: 0.6rem;
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 1.5rem;
+  transform: translateX(-50%);
+  background: var(--ink);
+  color: var(--surface);
+  padding: 0.7rem 1.1rem;
+  border-radius: 8px;
+  max-width: calc(100vw - 2rem);
+  box-shadow: var(--shadow);
+  z-index: 50;
+}
+
+/*
+=============================================================== 
+---------- End: In-Game ----------
+=============================================================== 
+*/
+
+.end {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2rem 1rem 3rem;
+  text-align: center;
+}
+.end > .ph {
+  height: 130px;
+  margin-bottom: 1.5rem;
+}
+.end h1 {
+  font-size: 2.6rem;
+  margin: 0.4rem 0;
+}
+.stat-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  margin: 1.5rem 0;
+  text-align: left;
+}
+.stat-grid .value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.group {
+  text-align: left;
+}
+.group ul {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+}
+.group li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.group li:last-child {
+  border-bottom: 0;
+}
+.group .avatar {
+  width: 32px;
+  height: 32px;
+}
+.group .fate {
+  margin-left: auto;
+  color: var(--muted);
+}
+.end .page-actions {
+  justify-content: center;
+}
+
+.res-name {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.resource-list img {
+  flex: none;
+  object-fit: contain;
+}
+
+/*
+=============================================================== 
+---------- Skills and Traits: In-Game ----------
+=============================================================== 
+*/
+
+.perk-list {
+  list-style: none;
+  margin: 0.6rem 0 0;
+  padding: 0;
+}
+.perk-list li + li {
+  margin-top: 0.25rem;
+}
+.perk-table td:first-child {
+  font-weight: 700;
+  white-space: nowrap;
+  width: 9rem;
+}
+
+/*
+=============================================================== 
+---------- Character Portraits: In-Game ----------
+=============================================================== 
+*/
+.portrait {
+  display: block;
+  object-fit: cover;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+
+/*
+=============================================================== 
+---------- Outline Art: In-Game ----------
+=============================================================== 
+*/
+dialog img.art,
+.end-art,
+.howto-art,
+.mg-card-art {
+  display: block;
+  width: 100%;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+dialog img.art {
+  height: 160px;
+  margin: 0.75rem 0 1rem;
+}
+.end-art {
+  height: 130px;
+  margin-bottom: 1.5rem;
+}
+.howto-art {
+  height: auto;
+  margin-top: 1rem;
+}
+.mg-card-art {
+  height: 80px;
+  margin-bottom: 0.75rem;
+}

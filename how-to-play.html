@@ -1,0 +1,355 @@
+<!--
+=========================================================
+FILE: how-to-play.html
+PROJECT: Another Tally - A zombie survival game
+AUTHOR: Cygnus J. Wiebe
+DATE: December 2026
+COURSE: INFS 634 - McGill University
+=========================================================
+DESCRIPTION:
+This is the how-to-play page for Another Tally. 
+It explains the rules and mechanics of the game.
+=========================================================
+-->
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>How to play — Another Tally</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+    <link
+      rel="icon"
+      type="image/png"
+      href="assets/icons/anothertally_icon.png"
+    />
+    <script src="js/common.js"></script>
+  </head>
+  <!-- Link to the common JavaScript files, css, fonts and other resources, site Icon, etc...-->
+
+  <body>
+    <main class="page">
+      <header class="page-head">
+        <a class="btn btn-sm" href="index.html" data-back>← Back</a>
+        <h1>How to play</h1>
+      </header>
+      <!-- Header for the page that displays the title and back button -->
+
+      <div class="htp">
+        <nav class="card htp-nav" aria-label="On this page">
+          <a href="#goal">Goal</a>
+          <a href="#day-night">Day and night</a>
+          <a href="#resources">Resources</a>
+          <a href="#survivors">Survivors and base</a>
+          <a href="#skills">Skills and traits</a>
+          <a href="#mini-games">Mini-games</a>
+          <a href="#controls">Controls</a>
+        </nav>
+        <!-- Sidebar navigation for the page that sticks the the left of the page, even on scroll -->
+
+        <div>
+          <section id="goal" aria-labelledby="goal-h">
+            <!-- Explain the goal of the game -->
+            <h2 id="goal-h">What is the goal of Another Tally?</h2>
+            <p>
+              The goal of Another Tally is to lead a group of survivors through
+              a zombie apocalypse. You must manage resources, make strategic
+              decisions, and keep your survivors alive as long as possible.
+              Survive until the end to win the game, but can you make it that
+              far?
+            </p>
+            <p>
+              Please note that Another Tally is a turn-based game, and each turn
+              represents a day in the life of your survivors. You will need to
+              be carefully plan your actions and make the most of each day to
+              ensure the survival of your group.
+            </p>
+            <p>
+              Additionally,
+              <u>the game only exists in the current browser tab's memory.</u>
+              If you refresh the page, close the tab, or open the game in a new
+              tab, your current run will be lost. Make sure to finish your run
+              before doing any of these actions!
+            </p>
+          </section>
+
+          <section id="day-night" aria-labelledby="day-night-h">
+            <!-- Explain the day and night cycles in the game -->
+            <h2 id="day-night-h">Turns in the game.</h2>
+            <ol class="steps" style="list-style: none; padding: 0; margin: 0">
+              <li class="card">
+                <h3>The Dawn Report</h3>
+                <p class="small muted" style="margin-top: 0.4rem">
+                  In this window, you'll see the results of the previous night's
+                  events.
+                </p>
+              </li>
+              <li class="card">
+                <h3>Day</h3>
+                <p class="small muted" style="margin-top: 0.4rem">
+                  During the day, you can assign survivors to tasks, manage
+                  resources, and make strategic decisions to keep your group
+                  alive.
+                </p>
+              </li>
+              <li class="card">
+                <h3>Dusk</h3>
+                <p class="small muted" style="margin-top: 0.4rem">
+                  At dusk, the group eats and prepares for the night.
+                </p>
+              </li>
+              <li class="card">
+                <h3>Night</h3>
+                <p class="small muted" style="margin-top: 0.4rem">
+                  During the night, survivors rest and may face dangers or
+                  events.
+                </p>
+              </li>
+            </ol>
+          </section>
+
+          <section id="resources" aria-labelledby="resources-h">
+            <!-- Explain the resources in the game -->
+            <h2 id="resources-h">Resources</h2>
+            <ul class="resource-list">
+              <li class="card">
+                <img
+                  src="assets/icons/ingame/food.png"
+                  alt=""
+                  width="28"
+                  height="28"
+                /><span
+                  ><strong>Food</strong><br /><span
+                    class="small muted"
+                    style="margin-top: 0.4rem"
+                  >
+                    All survivors need food to survive, be sure to have a steady
+                    supply.</span
+                  ></span
+                >
+              </li>
+              <li class="card">
+                <img
+                  src="assets/icons/ingame/water.png"
+                  alt=""
+                  width="28"
+                  height="28"
+                /><span
+                  ><strong>Water</strong><br /><span
+                    class="small muted"
+                    style="margin-top: 0.4rem"
+                  >
+                    Water is probably the most important resource for survival,
+                    you need a steady supply.</span
+                  ></span
+                >
+              </li>
+              <li class="card">
+                <img
+                  src="assets/icons/ingame/materials.png"
+                  alt=""
+                  width="28"
+                  height="28"
+                /><span
+                  ><strong>Materials</strong><br /><span
+                    class="small muted"
+                    style="margin-top: 0.4rem"
+                  >
+                    In order to build and upgrade facilities, you will need to
+                    supply materials.</span
+                  ></span
+                >
+              </li>
+              <li class="card">
+                <img
+                  src="assets/icons/ingame/medicine.png"
+                  alt=""
+                  width="28"
+                  height="28"
+                /><span
+                  ><strong>Medicine</strong><br /><span
+                    class="small muted"
+                    style="margin-top: 0.4rem"
+                  >
+                    Medicine can heal injured survivors.</span
+                  ></span
+                >
+              </li>
+              <li class="card">
+                <img
+                  src="assets/icons/ingame/ammo.png"
+                  alt=""
+                  width="28"
+                  height="28"
+                /><span
+                  ><strong>Ammo</strong><br /><span
+                    class="small muted"
+                    style="margin-top: 0.4rem"
+                  >
+                    Ammo is needed to hold off night raids.</span
+                  ></span
+                >
+              </li>
+            </ul>
+          </section>
+
+          <section id="survivors" aria-labelledby="survivors-h">
+            <!-- The Survivors and Base Section -->
+            <h2 id="survivors-h">Survivors and base</h2>
+            <p>
+              Each survivor has health, hunger, fatigue and morale, plus one
+              skill and one trait. A hungry, tired or unhappy survivor works
+              badly and can fall ill or leave.
+            </p>
+            <p>
+              Facilities at the base cover those needs: beds set how many people
+              you can house, the kitchen and water collector feed them, the
+              infirmary heals them, and the walls raise your night defense.
+              Upgrades cost materials and take days to finish.
+            </p>
+            <img
+              class="howto-art"
+              src="assets/images/howto_needs.svg"
+              alt="Survivor needs and the facilities that meet them: hunger, the kitchen; thirst, the water collector; fatigue, the beds; health, the infirmary; safety, the walls."
+            />
+          </section>
+
+          <section id="skills" aria-labelledby="skills-h">
+            <!-- Explains the skills and traits -->
+            <h2 id="skills-h">Skills and traits</h2>
+            <p>
+              Every survivor has one skill and one trait. Skills help with a
+              task or unlock event choices; traits can help or hurt.
+            </p>
+            <h3 style="margin: 1rem 0 0.25rem">Skills</h3>
+            <table class="perk-table">
+              <tbody id="skill-rows"></tbody>
+            </table>
+            <h3 style="margin: 1.5rem 0 0.25rem">Traits</h3>
+            <table class="perk-table">
+              <tbody id="trait-rows"></tbody>
+            </table>
+            <script>
+              (function () {
+                function rows(list) {
+                  return Object.keys(list)
+                    .map(function (name) {
+                      return (
+                        "<tr><td>" +
+                        name +
+                        "</td><td>" +
+                        list[name] +
+                        "</td></tr>"
+                      );
+                    })
+                    .join("");
+                }
+                document.getElementById("skill-rows").innerHTML = rows(
+                  AT.SKILLS,
+                );
+                document.getElementById("trait-rows").innerHTML = rows(
+                  AT.TRAITS,
+                );
+              })();
+            </script>
+          </section>
+
+          <section id="mini-games" aria-labelledby="mini-games-h">
+            <h2 id="mini-games-h">Mini-games</h2>
+            <!-- Explanation of the mini-game mechanics -->
+            <p style="margin-bottom: 1rem">
+              Some event within Another Tally can only be completed by playing a
+              short mini-game. These mini-games can be turned off in Options to
+              auto-resolve them instead.
+            </p>
+            <div class="grid-3">
+              <div class="card">
+                <img
+                  class="mg-card-art"
+                  src="assets/images/png/lockpick.png"
+                  alt=""
+                />
+                <h3>Lockpick</h3>
+                <p class="small muted">
+                  Some loot is locked and requires a lockpick to open. This
+                  mini-game tests your dexterity and timing to open the lock.
+                </p>
+              </div>
+              <div class="card">
+                <img
+                  class="mg-card-art"
+                  src="assets/images/png/defense.png"
+                  alt=""
+                />
+                <h3>Defense</h3>
+                <p class="small muted">
+                  Ammo is needed to hold off night raids. Improvements to the
+                  base can help, but you will still need to defend it.
+                </p>
+              </div>
+              <div class="card">
+                <img
+                  class="mg-card-art"
+                  src="assets/images/png/search.png"
+                  alt=""
+                />
+                <h3>Search</h3>
+                <p class="small muted">
+                  An important part of scavenging is finding supplies. This
+                  mini-game tests your ability to search effectively.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <section id="controls" aria-labelledby="controls-h">
+            <h2 id="controls-h">Controls</h2>
+            <!-- Explanation of the controls for both mouse and keyboard -->
+            <p class="small muted">
+              The game can be played with either a mouse or keyboard. The
+              following table shows the controls for each input method.
+            </p>
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Action</th>
+                  <th scope="col">Mouse</th>
+                  <th scope="col">Keyboard</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Move between controls</td>
+                  <td>—</td>
+                  <td>Tab</td>
+                </tr>
+                <tr>
+                  <td>Switch game tabs</td>
+                  <td>Click a tab</td>
+                  <td>Left and Right arrows</td>
+                </tr>
+                <tr>
+                  <td>Select</td>
+                  <td>Click</td>
+                  <td>Enter or Space</td>
+                </tr>
+                <tr>
+                  <td>Pause</td>
+                  <td>Pause button</td>
+                  <td>Esc</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

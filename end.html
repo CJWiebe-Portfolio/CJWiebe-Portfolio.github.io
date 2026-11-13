@@ -1,0 +1,64 @@
+<!--
+=========================================================
+FILE: end.html
+PROJECT: Another Tally - A zombie survival game
+AUTHOR: Cygnus J. Wiebe
+DATE: December 14th, 2026
+COURSE: INFS 634 - McGill University
+=========================================================
+DESCRIPTION:
+This is the end page for Another Tally. 
+It displays the results of the game.
+=========================================================
+-->
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Run summary — Another Tally</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+    <link
+      rel="icon"
+      type="image/png"
+      href="assets/icons/anothertally_icon.png"
+    />
+    <script src="js/common.js"></script>
+    <script src="js/end.js" defer></script>
+  </head>
+  <!-- Contains the information for the end page -->
+
+  <body>
+    <!-- The body contains the a summary of the game run and allows the user to play again or go back to the title screen. -->
+    <main class="end">
+      <img
+        class="end-art"
+        id="end-art"
+        src="assets/images/png/end_win.png"
+        alt=""
+      />
+      <p class="eyebrow">Run summary</p>
+      <h1 id="end-title">No run to show</h1>
+      <p class="muted" id="end-sub">Finish a run to see its summary here.</p>
+
+      <div class="stat-grid" id="stats"></div>
+
+      <section class="card group" id="group" aria-labelledby="group-h" hidden>
+        <h2 id="group-h" class="eyebrow">Your group</h2>
+        <ul id="group-list"></ul>
+      </section>
+
+      <div class="page-actions">
+        <a class="btn btn-primary" href="new-game.html">Play again</a>
+        <a class="btn" href="index.html">Back to title</a>
+      </div>
+    </main>
+  </body>
+</html>

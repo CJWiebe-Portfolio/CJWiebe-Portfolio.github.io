@@ -1,0 +1,143 @@
+<!--
+=========================================================
+FILE: new-game.html
+PROJECT: Another Tally - A zombie survival game
+AUTHOR: Cygnus J. Wiebe
+DATE: December 2026
+COURSE: INFS 634 - McGill University
+=========================================================
+DESCRIPTION:
+This is the new game setup page for Another Tally. 
+It allows the player to choose a shelter name, difficulty, game length, 
+and starting survivors.
+=========================================================
+-->
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>New game — Another Tally</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+    <link
+      rel="icon"
+      type="image/png"
+      href="assets/icons/anothertally_icon.png"
+    />
+    <script src="js/common.js"></script>
+    <script src="js/new-game.js" defer></script>
+  </head>
+  <!-- Link to the common JavaScript files, css, fonts and other resources, site Icon, etc...-->
+
+  <body>
+    <main class="page">
+      <header class="page-head">
+        <!-- Header for the page that displays the title and back button -->
+        <a class="btn btn-sm" href="index.html" data-back>← Back</a>
+        <h1>New game</h1>
+      </header>
+      <form id="new-game-form" novalidate>
+        <!-- Form for setting up a new game, records the name of the Shelter that the player will use, uses a random name if none is provided -->
+        <label class="field-label" for="shelter" style="display: block"
+          >Shelter name</label
+        >
+        <input
+          type="text"
+          id="shelter"
+          name="shelter"
+          maxlength="40"
+          placeholder="The Old Library"
+          autocomplete="off"
+          aria-describedby="shelter-hint"
+        /><!-- Input field for the shelter name, with restrictions on the naming conventions -->
+        <p
+          id="shelter-hint"
+          class="small muted"
+          style="margin: 0.4rem 0 1.5rem"
+        >
+          Leave blank to use the suggested name.
+        </p>
+
+        <fieldset>
+          <legend>Difficulty</legend>
+          <!-- Allows the player to select the difficulty level, this affects the game's challenge -->
+          <div class="grid-3">
+            <label class="choice-card">
+              <span class="title"
+                ><input type="radio" name="difficulty" value="easy" />
+                Easy</span
+              >
+              <p>
+                In this mode, you start with more supplies and face fewer night
+                raids. Making it easier to survive the zombie apocalypse.
+              </p>
+            </label>
+            <label class="choice-card">
+              <span class="title"
+                ><input type="radio" name="difficulty" value="normal" />
+                Normal</span
+              >
+              <p>
+                In this mode, you have a balanced experience with a reasonable
+                number of supplies and night raids.
+              </p>
+            </label>
+            <label class="choice-card">
+              <span class="title"
+                ><input type="radio" name="difficulty" value="hard" />
+                Hard</span
+              >
+              <p>
+                In this mode, you face scarce supplies and stronger raids every
+                night.
+              </p>
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Game length</legend>
+          <!-- Allows the player to select the game length -->
+          <div class="choices">
+            <label class="choice"
+              ><input type="radio" name="length" value="15" /> 15 days</label
+            >
+            <label class="choice"
+              ><input type="radio" name="length" value="30" /> 30 days</label
+            >
+            <label class="choice"
+              ><input type="radio" name="length" value="45" /> 45 days</label
+            >
+          </div>
+        </fieldset>
+
+        <div class="section-head">
+          <h2>Starting survivors</h2>
+          <!-- Allows the player to select the starting survivors, and reroll them if they don't like the initial selection -->
+          <button class="btn" type="button" id="reroll">
+            Reroll survivors
+          </button>
+        </div>
+        <ul
+          id="survivor-list"
+          class="grid-3"
+          style="list-style: none; padding: 0; margin: 0"
+          aria-live="polite"
+        ></ul>
+
+        <div class="page-actions">
+          <!-- Allows players to cancel or start the game -->
+          <a class="btn btn-quiet" href="index.html">Cancel</a>
+          <button class="btn btn-primary" type="submit">Start game</button>
+        </div>
+      </form>
+    </main>
+  </body>
+</html>

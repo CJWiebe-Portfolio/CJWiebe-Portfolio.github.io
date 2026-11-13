@@ -1,4 +1,84 @@
-"Hello, World! Welcome to my portfolio website. Here you can find information
-about my projects, skills, and experience in web development. Feel free to
-explore and reach out if you have any questions or opportunities for
-collaboration."
+<!--
+=========================================================
+FILE: index.html
+PROJECT: Another Tally - A zombie survival game
+AUTHOR: Cygnus J. Wiebe
+DATE: December 2026
+COURSE: INFS 634 - McGill University
+=========================================================
+DESCRIPTION:
+This is the title screen fort the game Another Tally. 
+It is a turn-based zombie survival game played in the browser.
+=========================================================
+-->
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Set the viewport for responsive design -->
+    <link
+      rel="icon"
+      type="image/png"
+      href="assets/icons/anothertally_icon.png"
+    />
+    <!-- Site icon -->
+    <title>Another Tally: A zombie survival game</title>
+    <!-- Site title -->
+    <meta
+      name="description"
+      content="Another Tally is a turn-based zombie survival game played in the browser."
+    />
+    <!-- Meta of the page -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+    <script src="js/common.js"></script>
+    <!-- Link to the common JavaScript file, css, fonts and other resources -->
+  </head>
+
+  <!-- Body of the Page -->
+  <body>
+    <main class="title-screen">
+      <!-- Left column panel of the title screen -->
+      <section class="title-menu" aria-labelledby="game-title">
+        <img
+          class="logo"
+          src="assets/icons/anothertally_icon.png"
+          alt="Another Tally logo"
+        />
+        <!-- Site logo -->
+        <h1 id="game-title">Another Tally</h1>
+        <!-- Site title -->
+        <p class="tagline">
+          This is a turn-based zombie survival game played in the browser. See
+          how far you can make it! Will the zombies overwhelm you?
+        </p>
+        <!-- Sub-title -->
+
+        <nav id="menu" aria-label="Main menu">
+          <a class="btn btn-primary" href="new-game.html"
+            >Begin the Next Zombie Outbreak!</a
+          >
+          <a class="btn" href="options.html" title="Options">Options</a>
+          <a class="btn" href="how-to-play.html" title="How to play"
+            >How to play</a
+          >
+          <a class="btn" href="credits.html" title="Credits">Credits</a>
+        </nav>
+        <!-- Navigation menu -->
+
+        <p class="footnote small muted">
+          <strong>WARNING!!!</strong> This game exists only in your current
+          browser and will reset when the page is refreshed or closed.
+        </p>
+        <!-- Alert message of the game existing only in the browser -->
+      </section>
+    </main>
+  </body>
+</html>

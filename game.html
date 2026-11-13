@@ -1,0 +1,320 @@
+<!--
+=========================================================
+FILE: game.html
+PROJECT: Another Tally - A zombie survival game
+AUTHOR: Cygnus J. Wiebe
+DATE: December 14th, 2026
+COURSE: INFS 634 - McGill University
+=========================================================
+DESCRIPTION:
+This is the main game page for Another Tally. 
+It provides the interface for playing the game.
+=========================================================
+-->
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Game — Another Tally</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+    <link
+      rel="icon"
+      type="image/png"
+      href="assets/icons/anothertally_icon.png"
+    />
+    <script src="js/common.js"></script>
+    <script src="js/minigames.js" defer></script>
+    <script src="js/game.js" defer></script>
+  </head>
+  <!-- Contains the information for the game page -->
+
+  <!--
+=============================================================== 
+---------- In-Progress Game ----------
+=============================================================== 
+-->
+
+  <body>
+    <main id="no-run" class="page" hidden>
+      <div
+        class="card"
+        style="max-width: 520px; margin: 4rem auto; text-align: center"
+      >
+        <h1 style="margin-bottom: 0.75rem">Error - No Run in Progress</h1>
+        <p class="muted">
+          Sorry for the inconvenience. But the game runs only live only within
+          the tab's memory, therefore refreshing or reopening the game page
+          causes the game to end. Your progress is not saved. You can start a
+          new game or go back to the title screen.
+        </p>
+        <div class="page-actions" style="justify-content: center">
+          <a class="btn btn-primary" href="new-game.html">New game</a>
+          <a class="btn" href="index.html">Back to title</a>
+        </div>
+      </div>
+    </main>
+
+    <!--
+=============================================================== 
+---------- In-Progress Game ----------
+=============================================================== 
+-->
+
+    <!-- 
+      ---------- Consistent Header ----------
+      -->
+
+    <div id="game" hidden>
+      <header class="topbar">
+        <div class="brand">
+          <img
+            src="assets/icons/anothertally_icon.png"
+            alt=""
+            width="34"
+            height="34"
+          /><span>Another Tally</span
+          ><!-- Game icon -->
+        </div>
+        <p class="day-info">
+          <span id="day-label">Day 01 of 15</span
+          ><!-- Lists the day number -->
+          <span id="phase-pill" class="phase-pill" data-phase="day"
+            >Day phase</span
+          >
+        </p>
+        <ul id="resources" class="resources" aria-label="Resources"></ul>
+        <button
+          class="btn"
+          type="button"
+          id="pause-btn"
+          aria-keyshortcuts="Escape"
+        >
+          Pause
+        </button>
+      </header>
+
+      <!-- 
+      ---------- Tabs that allow navigation between sections ----------
+      -->
+
+      <nav class="tabs" role="tablist" aria-label="Game sections">
+        <button
+          class="tab"
+          role="tab"
+          id="tab-base"
+          aria-controls="panel-base"
+          aria-selected="true"
+        >
+          Base</button
+        ><!-- Brings players to the base section -->
+        <button
+          class="tab"
+          role="tab"
+          id="tab-survivors"
+          aria-controls="panel-survivors"
+          aria-selected="false"
+          tabindex="-1"
+        >
+          Survivors</button
+        ><!-- Brings players to the Survivors section -->
+        <button
+          class="tab"
+          role="tab"
+          id="tab-map"
+          aria-controls="panel-map"
+          aria-selected="false"
+          tabindex="-1"
+        >
+          Map</button
+        ><!-- Brings players to the Map section -->
+        <button
+          class="tab"
+          role="tab"
+          id="tab-trade"
+          aria-controls="panel-trade"
+          aria-selected="false"
+          tabindex="-1"
+        >
+          Trade
+        </button>
+        <button
+          class="tab"
+          role="tab"
+          id="tab-log"
+          aria-controls="panel-log"
+          aria-selected="false"
+          tabindex="-1"
+        >
+          Log</button
+        ><!-- Brings players to the Log section -->
+      </nav>
+
+      <!-- 
+      ---------- Various Tabs that allow navigation between sections ----------
+      -->
+
+      <div class="game-layout">
+        <main>
+          <section
+            id="panel-base"
+            role="tabpanel"
+            aria-labelledby="tab-base"
+            tabindex="0"
+          ></section>
+          <section
+            id="panel-survivors"
+            role="tabpanel"
+            aria-labelledby="tab-survivors"
+            tabindex="0"
+            hidden
+          ></section>
+          <section
+            id="panel-map"
+            role="tabpanel"
+            aria-labelledby="tab-map"
+            tabindex="0"
+            hidden
+          ></section>
+          <section
+            id="panel-trade"
+            role="tabpanel"
+            aria-labelledby="tab-trade"
+            tabindex="0"
+            hidden
+          ></section>
+          <section
+            id="panel-log"
+            role="tabpanel"
+            aria-labelledby="tab-log"
+            tabindex="0"
+            hidden
+          ></section>
+        </main>
+
+        <!-- 
+      ---------- Consistent block that appears on all sections and allows for the end of the game day ----------
+      -->
+
+        <aside class="card side" aria-label="Today and tonight">
+          <h2 class="eyebrow">Today</h2>
+          <dl id="today-list"></dl>
+          <hr />
+          <!-- Lists all current survivors and their actions -->
+          <h2 class="eyebrow">Tonight</h2>
+          <!-- Lists all the night information -->
+          <dl class="tonight">
+            <dt>Guards</dt>
+            <dd id="guards">0</dd>
+            <dt>Night defense</dt>
+            <dd id="defense">00</dd>
+          </dl>
+          <button class="btn btn-primary btn-block" type="button" id="end-day">
+            End day</button
+          ><!-- Ends the day -->
+        </aside>
+      </div>
+
+      <!-- 
+      ---------- Overlay for the day and night events ----------
+      -->
+      <dialog id="event-dialog" aria-labelledby="event-title">
+        <p class="eyebrow" id="event-kicker">Night 01 · Event</p>
+        <img
+          class="art"
+          id="event-art"
+          src="assets/images/png/event_generic.png"
+          alt=""
+        />
+        <h2 id="event-title">[Event title]</h2>
+        <p class="event-text" id="event-text"></p>
+        <div class="event-choices" id="event-choices"></div>
+      </dialog>
+
+      <!-- 
+      ---------- Overlay for the mini-games ----------
+      -->
+      <dialog id="minigame-dialog" class="wide" aria-labelledby="mg-title">
+        <div class="mg-head">
+          <div>
+            <p class="eyebrow">Mini-game</p>
+            <h2 id="mg-title">Defense</h2>
+          </div>
+          <span class="chip" id="mg-timer">Time 0:30</span>
+        </div>
+        <p class="muted" id="mg-instructions">
+          Click zombies before they reach the wall.
+        </p>
+        <div class="mg-canvas" id="mg-canvas"></div>
+        <div class="mg-stats">
+          <span
+            ><span id="mg-a-label">Zombies left</span>
+            <strong id="mg-left">00</strong></span
+          >
+          <span style="display: flex; align-items: center; gap: 0.5rem"
+            ><span id="mg-b-label">Wall</span>
+            <span class="meter"
+              ><span id="mg-wall" style="width: 70%"></span
+            ></span>
+            <strong id="mg-wall-num">70</strong></span
+          >
+        </div>
+        <div class="mg-foot">
+          <p class="small muted">
+            Auto-resolve skips the mini-game and rolls the result.
+          </p>
+          <div class="btns">
+            <button class="btn btn-quiet" type="button" id="mg-auto">
+              Auto-resolve
+            </button>
+            <button class="btn btn-primary" type="button" id="mg-start">
+              Start
+            </button>
+          </div>
+        </div>
+      </dialog>
+
+      <!-- 
+      ---------- Overlay for the pause menu ----------
+      -->
+      <dialog id="pause-dialog" class="pause" aria-labelledby="pause-title">
+        <h2 id="pause-title">Paused</h2>
+        <button class="btn btn-primary btn-block" type="button" id="resume">
+          Resume
+        </button>
+        <button class="btn btn-block" type="button" data-open="options.html">
+          Options
+        </button>
+        <button
+          class="btn btn-block"
+          type="button"
+          data-open="how-to-play.html"
+        >
+          How to play
+        </button>
+        <button class="btn btn-block" type="button" id="quit">
+          Quit to title
+        </button>
+        <p class="small muted">
+          Options and How to play open in a new tab so this run keeps going.
+          Quitting ends this run. Progress isn't saved.
+        </p>
+      </dialog>
+
+      <div
+        id="toast"
+        class="toast"
+        role="status"
+        aria-live="polite"
+        hidden
+      ></div>
+    </div>
+  </body>
+</html>
