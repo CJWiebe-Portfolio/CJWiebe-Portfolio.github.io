@@ -1691,6 +1691,36 @@ fieldset.setup-step > legend.step-title + * {
   cursor: not-allowed;
 }
 
+/* ---------- 9j-2. Report pop-up (dusk and dawn results) ---------- */
+/* The report pop-up only shows a picture for wins and losses. */
+dialog img.art[hidden] {
+  display: none;
+}
+.report-list {
+  list-style: none;
+  margin: 0 0 1.25rem;
+  padding: 0;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+.report-list li {
+  display: flex;
+  gap: 0.6rem;
+  align-items: baseline;
+  padding: 0.45rem 0 0.45rem 0.6rem;
+  border-left: 3px solid transparent;
+  border-bottom: 1px solid var(--line);
+}
+.report-list li.bad {
+  border-left-color: var(--danger);
+}
+.report-list li.good {
+  border-left-color: var(--accent);
+}
+.report-list .chip {
+  flex: none;
+}
+
 /* ---------- 9k. Skills and traits ---------- */
 .perk-list {
   list-style: none;

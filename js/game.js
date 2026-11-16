@@ -63,6 +63,23 @@ are marked TODO.
     normal: { food: 10, water: 10, materials: 8, medicine: 2, ammo: 5 },
     hard: { food: 6, water: 6, materials: 5, medicine: 1, ammo: 3 },
   };
+  // Defines how hard each difficulty is beyond the starting resources. [TUNE THESE]
+  // yield:       share of scavenged supplies you actually bring home
+  // threatBase:  size of the horde on night 1
+  // threatPeak:  how much the horde grows by the last night (scales with run length)
+  // starveDmg:   health lost per dusk without enough water, or while starving
+  // scavRisk:    chance per danger level that a scavenger gets hurt
+  // autoWin:     chance an auto-resolved mini-game is won
+  // moraleLoss:  morale lost by everyone when a survivor dies
+  var DIFFICULTY = {
+    easy: { yield: 0.95, threatBase: 9, threatPeak: 18, starveDmg: 10, scavRisk: 0.1, autoWin: 0.7, moraleLoss: 10 },
+    normal: { yield: 0.85, threatBase: 8, threatPeak: 22, starveDmg: 15, scavRisk: 0.15, autoWin: 0.55, moraleLoss: 15 },
+    hard: { yield: 0.8, threatBase: 7, threatPeak: 23, starveDmg: 20, scavRisk: 0.2, autoWin: 0.4, moraleLoss: 20 },
+  };
+  var D = DIFFICULTY[setup.difficulty] || DIFFICULTY.normal;
+  // Fatigue at or above this keeps a survivor from scavenging or guarding.
+  var TIRED = 80;
+
   // Defines trade values for each resource
   var TRADE_VALUE = { food: 2, water: 2, materials: 1, medicine: 4, ammo: 3 };
   // Defines tasks that survivors can be assigned to each day
@@ -141,6 +158,7 @@ are marked TODO.
       danger: 1,
       travel: 1,
       finds: "Materials, fuel",
+      loot: ["materials"],
     },
     {
       id: "hospital",
@@ -150,6 +168,7 @@ are marked TODO.
       danger: 2,
       travel: 1,
       finds: "Medicine, food",
+      loot: ["medicine", "food"],
     },
     {
       id: "police",
@@ -160,6 +179,7 @@ are marked TODO.
       danger: 3,
       travel: 1,
       finds: "Ammo, medicine",
+      loot: ["ammo", "medicine"],
     },
     {
       id: "farm",
@@ -169,6 +189,7 @@ are marked TODO.
       danger: 1,
       travel: 2,
       finds: "Food, water",
+      loot: ["food", "water"],
     },
     {
       id: "supermarket",
@@ -178,6 +199,7 @@ are marked TODO.
       danger: 2,
       travel: 1,
       finds: "Food, water",
+      loot: ["food", "water"],
     },
     {
       id: "suburb",
@@ -187,6 +209,7 @@ are marked TODO.
       danger: 1,
       travel: 1,
       finds: "Materials, food",
+      loot: ["materials", "food"],
     },
     {
       id: "school",
@@ -196,6 +219,7 @@ are marked TODO.
       danger: 1,
       travel: 1,
       finds: "Materials",
+      loot: ["materials"]
     },
     {
       id: "military",
@@ -206,6 +230,7 @@ are marked TODO.
       danger: 3,
       travel: 2,
       finds: "Ammo, medicine",
+      loot: ["ammo", "medicine"],
       locked: true,
     },
   ];
@@ -214,6 +239,8 @@ are marked TODO.
   /* 
 ---------- Events [WORK IN PROGRESS NEEDS TUNING] ----------
 */
+  // Any choice can also have: cost (resources), fatigue (added to the survivor with the skill),
+  // injure (health the skill survivor loses) and morale (added to everyone, can be negative).
   // All event choices have a three options types: 'skills' (require a survivor with a specific skill), the 'minigame' is a challenge of the player, or 'cost' which requires a resource cost. [WORK IN PROGRESS NEEDS TUNING]
   var EVENTS = [
     {
@@ -225,6 +252,7 @@ are marked TODO.
           label: "Talk them through it",
           kind: "skill",
           skill: "Medic",
+          cost: { medicine: 1 },
           outcome:
             "You checked the stranger for bites and let them sleep in the yard.",
         },
@@ -232,7 +260,7 @@ are marked TODO.
         {
           label: "Pay them to move on",
           kind: "cost",
-          cost: { food: 2 },
+          cost: { food: 3 },
           outcome: "You passed food through the gate. They left.",
         },
       ],
@@ -246,6 +274,7 @@ are marked TODO.
           label: "Pry it open",
           kind: "skill",
           skill: "Builder",
+          fatigue: 20,
           outcome: "The crate gave way. (Loot is a placeholder.)",
         },
         { label: "Pick the lock", kind: "minigame", game: "Lockpick" },
@@ -253,6 +282,7 @@ are marked TODO.
           label: "Leave it",
           kind: "cost",
           cost: {},
+          morale: -5,
           outcome: "You left the crate where it was.",
         },
       ],
@@ -266,6 +296,8 @@ are marked TODO.
           label: "Hold the line",
           kind: "skill",
           skill: "Fighter",
+          fatigue: 30,
+          injure: 10,
           outcome: "Your fighter held the wall until dawn.",
         },
         { label: "Defend the wall", kind: "minigame", game: "Defense" },
@@ -288,6 +320,7 @@ are marked TODO.
           label: "Let the expert pick the spots",
           kind: "skill",
           skill: "Scavenger",
+          fatigue: 20,
           outcome:
             "Your scavenger went straight for the pantry and slipped out quietly.",
         },
@@ -402,7 +435,7 @@ are marked TODO.
   // ---------- Checks the night defense value ----------
   // How much night defense one survivor adds. Skills/traits are defined in common.js.
   function guardPower(s) {
-    if (s.task !== "Guard" || s.trait === "Coward") return 0;
+    if (s.task !== "Guard" || s.trait === "Coward" || s.fatigue >= TIRED) return 0;
     var power = s.skill === "Fighter" ? 10 : 5;
     if (s.trait === "Night owl") power += 5;
     return power;
@@ -417,6 +450,13 @@ are marked TODO.
     }, 0);
     return facility("walls").level * 10 + guardTotal + ammo;
   } // [WORK IN PROGRESS NEEDS TUNING]
+
+  // Survivors on Build who are rested enough to work.
+  function builders() {
+    return alive().filter(function (s) {
+      return s.task === "Build" && s.fatigue < TIRED;
+    });
+  }
 
   // Checks if a survivor is on a specific task with a specific skill.
   function onTask(task, skill) {
@@ -434,6 +474,42 @@ are marked TODO.
     s.health = Math.min(100, s.health + amount);
     if (s.health >= 60) s.status = "Healthy";
   }
+  // Hurts a survivor. At 0 health they die, and everyone else loses morale.
+  function hurt(s, amount, cat, why) {
+    if (!s || !s.alive) return;
+    if (s.trait === "Tough") amount = Math.ceil(amount / 2);
+    s.health = Math.max(0, s.health - amount);
+    if (s.health > 0) {
+      if (s.health < 60) s.status = "Injured";
+      addLog(cat, s.name + " " + why + " (-" + amount + " health).");
+      return;
+    }
+    s.alive = false;
+    s.lostOn = state.day;
+    s.status = "Dead";
+    addLog(cat, s.name + " " + why + " and did not survive.");
+    alive().forEach(function (o) {
+      changeMorale(o, -D.moraleLoss);
+    });
+  }
+
+  // Changes morale. A survivor whose morale hits 0 walks out on the group.
+  function changeMorale(s, amount) {
+    if (!s.alive) return;
+    s.morale = Math.max(0, Math.min(100, s.morale + amount));
+    if (s.morale === 0) {
+      s.alive = false;
+      s.lostOn = state.day;
+      s.status = "Left";
+      addLog("base", s.name + " lost all hope and left the group.");
+    }
+  }
+
+  // Changes fatigue, keeping it between 0 and 100.
+  function tire(s, amount) {
+    s.fatigue = Math.max(0, Math.min(100, s.fatigue + amount));
+  }
+
   // Adds an entry to the game log with the current day, category, and text.
   function addLog(cat, text) {
     state.log.push({ day: state.day, cat: cat, text: text });
@@ -443,6 +519,17 @@ are marked TODO.
     return alive().some(function (s) {
       return s.skill === skill;
     });
+  }
+
+  // The least tired living survivor with a skill (or undefined if none can act).
+  function skilled(skill) {
+    return alive()
+      .filter(function (s) {
+        return s.skill === skill && s.fatigue < TIRED;
+      })
+      .sort(function (a, b) {
+        return a.fatigue - b.fatigue;
+      })[0];
   }
 
   // Displays a toast notification with the specified text.
@@ -535,13 +622,21 @@ are marked TODO.
       bedCount() +
       " · Night defense " +
       pad(nightDefense()) +
+      " · Horde tonight about " +
+      pad(threatTonight()) +
       "</p></div>" +
       '<div class="grid-3">' +
       state.facilities
         .map(function (f) {
           var built = f.level > 0,
             maxed = f.level >= 3;
-          var action = !built ? "Build" : maxed ? "Max level" : "Upgrade";
+          var action = f.building
+            ? "Building · " + f.building + " day" + (f.building > 1 ? "s" : "")
+            : !built
+              ? "Build"
+              : maxed
+                ? "Max level"
+                : "Upgrade";
           return (
             '<article class="card facility">' +
             '<img class="fac-art" src="assets/images/png/' +
@@ -566,7 +661,7 @@ are marked TODO.
             '<button class="btn btn-sm" type="button" data-upgrade="' +
             f.id +
             '"' +
-            (maxed ? " disabled" : "") +
+            (maxed || f.building ? " disabled" : "") +
             ' aria-label="' +
             action +
             " " +
@@ -590,17 +685,19 @@ are marked TODO.
       toast("Not enough materials for " + f.name + ".");
       return;
     }
-    // [WORK IN PROGRESS] the upgrades should take f.days days and need a survivor on Build.
-    // For now they finish at once.
+    if (f.building) {
+      toast(f.name + " is already being worked on.");
+      return;
+    }
+    if (!builders().length) {
+      toast("Put a rested survivor on Build first.");
+      return;
+    }
+    // Materials are paid now; the work finishes after f.days days with someone on Build.
     state.resources.materials -= cost;
-    f.level += 1;
-    f.cost += 3;
-    addLog(
-      "base",
-      f.name +
-        (f.level === 1 ? " built." : " upgraded to level " + f.level + "."),
-    );
-    toast(f.name + (f.level === 1 ? " built." : " upgraded."));
+    f.building = f.days;
+    addLog("base", "Work started on " + f.name + " (" + f.days + " day" + (f.days > 1 ? "s" : "") + ").");
+    toast("Work started on " + f.name + ".");
     renderAll();
   });
 
@@ -1125,36 +1222,91 @@ are marked TODO.
       return s.task === "Scavenge" && s.target;
     });
     scavengers.forEach(function (s) {
-      scavenged = true;
       var loc = LOCATIONS.find(function (l) {
         return l.id === s.target;
       });
-      var found = randInt(1, 4);
-      if (s.trait === "Lucky") found = Math.max(found, randInt(1, 4));
+      if (s.fatigue >= TIRED) {
+        addLog("exploring", s.name + " was too tired to scavenge and stayed home.");
+        return;
+      }
+      scavenged = true;
+      // Riskier places hold more, but every trip wears survivors out.
+      var found = randInt(1, 4) + (loc.danger - 1);
+      if (s.trait === "Lucky") found = Math.max(found, randInt(1, 4) + (loc.danger - 1));
       if (s.skill === "Scavenger") found += 2;
       if (s.trait === "Loner" && scavengers.length === 1) found += 1;
       if (s.trait === "Clumsy") found = Math.max(0, found - 1);
-      var extraFood = s.skill === "Hunter" ? 2 : 0;
-      var extraMaterials = s.trait === "Hoarder" ? 1 : 0;
-      state.resources.food += found + extraFood;
-      state.resources.materials += extraMaterials;
-      state.suppliesGathered += found + extraFood + extraMaterials;
+      found = Math.round(found * D.yield);
+      // Each visit to the same place leaves less behind (down to half).
+      var visits = state.explored.filter(function (id) {
+        return id === loc.id;
+      }).length;
+      found = Math.round(found * Math.max(0.5, 1 - visits * 0.1));
+      var haul = {};
+      for (var i = 0; i < found; i++) {
+        var kind = loc.loot[Math.floor(rng() * loc.loot.length)];
+        haul[kind] = (haul[kind] || 0) + 1;
+      }
+      if (s.skill === "Hunter") haul.food = (haul.food || 0) + 2;
+      if (s.trait === "Hoarder") haul.materials = (haul.materials || 0) + 1;
+      var total = 0;
+      Object.keys(haul).forEach(function (k) {
+        state.resources[k] += haul[k];
+        total += haul[k];
+      });
+      state.suppliesGathered += total;
       state.explored.push(loc.id);
       addLog(
         "exploring",
         s.name +
           " scavenged the " +
           loc.name +
-          " and brought back " +
-          (found + extraFood) +
-          " food" +
-          (extraMaterials ? " and " + extraMaterials + " material" : "") +
+          (total ? " and brought back " + AT.minigames.describe(haul) + "." : " but found nothing."),
+      );
+      tire(s, 20 * loc.travel);
+      if (rng() < D.scavRisk * loc.danger) {
+        hurt(s, 10 * loc.danger, "exploring", "was attacked at the " + loc.name);
+      }
+    });
+
+    // Facilities that produce something every day.
+    var waterMade = facility("water").level * 2;
+    var foodMade = facility("kitchen").level;
+    state.resources.water += waterMade;
+    state.resources.food += foodMade;
+    if (waterMade || foodMade) {
+      addLog(
+        "base",
+        "The base produced " +
+          [waterMade ? waterMade + " water" : "", foodMade ? foodMade + " food" : ""]
+            .filter(Boolean)
+            .join(" and ") +
           ".",
       );
+    }
+
+    // Construction moves forward one day if someone rested is on Build.
+    var working = builders().length > 0;
+    state.facilities.forEach(function (f) {
+      if (!f.building) return;
+      if (!working) {
+        addLog("base", "No one worked on " + f.name + " today.");
+        return;
+      }
+      f.building -= 1;
+      if (f.building === 0) {
+        f.building = null;
+        f.level += 1;
+        f.cost += 3;
+        addLog(
+          "base",
+          f.name + (f.level === 1 ? " built." : " upgraded to level " + f.level + "."),
+        );
+      }
     });
 
     alive().forEach(function (s) {
-      if (s.task === "Build" && s.skill === "Mechanic") {
+      if (s.task === "Build" && s.skill === "Mechanic" && s.fatigue < TIRED) {
         state.resources.materials += 2;
         addLog("base", s.name + " salvaged 2 materials.");
       }
@@ -1168,14 +1320,28 @@ are marked TODO.
           .sort(function (a, b) {
             return a.health - b.health;
           })[0];
-        var amount = s.skill === "Medic" ? 30 : 10;
-        if (patient.health < 100) {
-          heal(patient, amount);
-          addLog(
-            "base",
-            s.name + " treated " + patient.name + " (+" + amount + " health).",
-          );
+        if (patient.health >= 100) return;
+        // Treatment uses 1 medicine. Without it, only a Medic can do anything.
+        var amount;
+        if (state.resources.medicine > 0) {
+          state.resources.medicine -= 1;
+          amount = s.skill === "Medic" ? 30 : 10;
+        } else {
+          amount = s.skill === "Medic" ? 10 : 0;
         }
+        if (amount) {
+          heal(patient, amount);
+          addLog("base", s.name + " treated " + patient.name + " (+" + amount + " health).");
+        } else {
+          addLog("base", s.name + " had no medicine to treat " + patient.name + ".");
+        }
+      }
+      // Rest lowers fatigue; every other task raises it (scavenging was counted above).
+      if (s.task === "Rest") {
+        tire(s, -35);
+        changeMorale(s, 5);
+      } else if (s.task !== "Scavenge") {
+        tire(s, 10);
       }
     });
 
@@ -1191,6 +1357,23 @@ are marked TODO.
       "base",
       "The group ate " + eaten + " food and drank " + drunk + " water at dusk.",
     );
+
+    // Going short on food builds hunger; going short on water hurts right away.
+    var shortFood = needFood - eaten;
+    var shortWater = alive().length - drunk;
+    if (shortFood > 0) addLog("base", "There was not enough food for everyone.");
+    if (shortWater > 0) addLog("base", "There was not enough water for everyone.");
+    alive().forEach(function (s) {
+      s.hunger = Math.max(0, Math.min(100, s.hunger + (shortFood > 0 ? 25 : -15)));
+      if (shortFood > 0) changeMorale(s, -5);
+      if (shortWater > 0) hurt(s, D.starveDmg, "base", "is dehydrated");
+      if (s.alive && s.hunger >= 80) hurt(s, D.starveDmg, "base", "is starving");
+    });
+
+    if (!alive().length) {
+      endRun(false);
+      return;
+    }
 
     // Show Dusk briefly, then fall into Night and open the night event.
     state.phase = "dusk";
@@ -1221,19 +1404,25 @@ are marked TODO.
       .map(function (c, i) {
         var note,
           ok = true;
+        var cost = c.cost || {};
+        var costParts = Object.keys(cost).map(function (k) {
+          return cost[k] + " " + k;
+        });
+        var affordable = Object.keys(cost).every(function (k) {
+          return state.resources[k] >= cost[k];
+        });
         if (c.kind === "skill") {
           note = "Requires: " + c.skill;
-          ok = hasSkill(c.skill);
+          if (costParts.length) note += " · Costs: " + costParts.join(", ");
+          if (c.fatigue) note += " · Tiring";
+          if (c.injure) note += " · Risky";
+          ok = !!skilled(c.skill) && affordable;
         } else if (c.kind === "minigame") {
           note = "Starts a mini-game";
         } else {
-          var parts = Object.keys(c.cost).map(function (k) {
-            return c.cost[k] + " " + k;
-          });
-          note = parts.length ? "Costs: " + parts.join(", ") : "No cost";
-          ok = Object.keys(c.cost).every(function (k) {
-            return state.resources[k] >= c.cost[k];
-          });
+          note = costParts.length ? "Costs: " + costParts.join(", ") : "No cost";
+          if (c.morale) note += " · Hurts morale";
+          ok = affordable;
         }
         return (
           '<button class="event-choice" type="button" data-choice="' +
@@ -1264,11 +1453,19 @@ are marked TODO.
       else openMinigame(c.game);
       return;
     }
-    if (c.kind === "cost")
-      Object.keys(c.cost).forEach(function (k) {
-        state.resources[k] -= c.cost[k];
-      });
+    Object.keys(c.cost || {}).forEach(function (k) {
+      state.resources[k] -= c.cost[k];
+    });
     addLog("event", ev.title + ": " + c.outcome);
+    var who = c.kind === "skill" ? skilled(c.skill) : null;
+    if (who && c.fatigue) tire(who, c.fatigue);
+    if (who && c.injure) hurt(who, c.injure, "event", "was hurt");
+    if (c.morale) {
+      alive().forEach(function (s) {
+        changeMorale(s, c.morale);
+      });
+      addLog("event", "Morale dropped (" + c.morale + ").");
+    }
     finishNight();
   });
 
@@ -1343,9 +1540,9 @@ are marked TODO.
     autoResolve($("minigame-dialog").dataset.game);
   });
 
-  // Auto-resolve a mini-game with a 60% chance of winning, and a reward based on the game.
+  // Auto-resolve a mini-game with a D.autoWin chance of winning (depends on difficulty), and a reward based on the game.
   function autoResolve(name) {
-    var r = AT.minigames.autoResult(name, rng() < 0.6, rng);
+    var r = AT.minigames.autoResult(name, rng() < D.autoWin, rng);
     resolveMinigame(name, r.won, true, r.reward);
   }
 
@@ -1367,26 +1564,63 @@ are marked TODO.
       addLog(cat, "Brought back " + AT.minigames.describe(reward) + ".");
     }
     if (!won) {
-      // [WORK IN PROGRESS] this section needs real consequences.
-      // For now a loss injures one survivor.
+      // A loss injures one survivor (Cowards are spared if anyone else is around).
+      // Tough survivors take half damage inside hurt().
       var pool = alive().filter(function (s) {
         return s.trait !== "Coward";
       });
       if (!pool.length) pool = alive();
       var victim = pool[Math.floor(rng() * pool.length)];
-      if (victim) {
-        var damage = victim.trait === "Tough" ? 15 : 30;
-        victim.health = Math.max(5, victim.health - damage);
-        victim.status = "Injured";
-        addLog(cat, victim.name + " was injured (-" + damage + " health).");
-      }
+      hurt(victim, 30, cat, "was injured");
     }
     toast(name + " " + (won ? "won" : "lost") + how + ".");
     finishNight();
   }
 
+  // The horde grows over the run. It starts at threatBase and reaches
+  // threatBase + threatPeak on the last night, whatever the run length.
+  function threatTonight() {
+    return Math.round(D.threatBase + D.threatPeak * (state.day / state.length));
+  }
+
+  // Every night the horde tests your defense. Guards use up ammo, and a breach
+  // injures survivors and can knock the walls down a level.
+  function nightRaid() {
+    if (!alive().length) return;
+    var threat = threatTonight() + randInt(-3, 3);
+    var def = nightDefense();
+    var shots = Math.min(state.resources.ammo, guards());
+    state.resources.ammo -= shots;
+    alive().forEach(function (s) {
+      if (s.task === "Guard") tire(s, 15);
+    });
+    if (def >= threat) {
+      addLog("night", "The horde hit the walls and broke (defense " + def + " vs " + threat + ").");
+      return;
+    }
+    var breach = threat - def;
+    addLog("night", "The horde broke through (defense " + def + " vs " + threat + ").");
+    // Bigger breaches catch more people.
+    var hits = breach >= 15 ? 2 : 1;
+    for (var i = 0; i < hits && alive().length; i++) {
+      var list = alive();
+      var v = list[Math.floor(rng() * list.length)];
+      hurt(v, Math.min(50, 5 + breach * 2), "night", "was caught in the breach");
+    }
+    var walls = facility("walls");
+    if (breach >= 15 && walls.level > 1) {
+      walls.level -= 1;
+      addLog("night", "The walls were damaged and dropped to level " + walls.level + ".");
+    }
+  }
+
   function finishNight() {
     state.currentEvent = null;
+    nightRaid();
+    if (!alive().length) {
+      endRun(false);
+      return;
+    }
     if (state.day >= state.length) {
       endRun(true);
       return;
@@ -1404,7 +1638,14 @@ are marked TODO.
     alive().forEach(function (s) {
       if (s.trait === "Optimist" && s.health < 100) heal(s, 5);
     });
-    addLog("base", "Dawn report: the group made it through the night.");
+    addLog(
+      "base",
+      "Dawn report: " +
+        alive().length +
+        " survivor" +
+        (alive().length === 1 ? "" : "s") +
+        " made it through the night.",
+    );
     toast("Day " + state.day + " begins.");
     renderAll();
   }

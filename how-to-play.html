@@ -48,6 +48,9 @@ It explains the rules and mechanics of the game.
           <a href="#day-night">Day and night</a>
           <a href="#resources">Resources</a>
           <a href="#survivors">Survivors and base</a>
+          <a href="#scavenging">Scavenging</a>
+          <a href="#night-raids">Night raids</a>
+          <a href="#difficulty">Difficulty</a>
           <a href="#skills">Skills and traits</a>
           <a href="#mini-games">Mini-games</a>
           <a href="#controls">Controls</a>
@@ -64,6 +67,12 @@ It explains the rules and mechanics of the game.
               decisions, and keep your survivors alive as long as possible.
               Survive until the end to win the game, but can you make it that
               far?
+            </p>
+            <p>
+              You lose when no one is left. Survivors die when their health
+              reaches 0, from hunger, thirst, injuries on scavenging trips, or
+              the horde breaking through at night. A survivor whose morale drops
+              to 0 gives up and leaves the group.
             </p>
             <p>
               Please note that Another Tally is a turn-based game, and each turn
@@ -102,14 +111,17 @@ It explains the rules and mechanics of the game.
               <li class="card" data-phase="dusk">
                 <h3>Dusk</h3>
                 <p class="small muted" style="margin-top: 0.4rem">
-                  At dusk, the group eats and prepares for the night.
+                  At dusk, scavengers come home with what they found, the base
+                  produces food and water, construction moves forward, and the
+                  group eats and drinks. Going without food or water hurts.
                 </p>
               </li>
               <li class="card" data-phase="night">
                 <h3>Night</h3>
                 <p class="small muted" style="margin-top: 0.4rem">
-                  During the night, survivors rest and may face dangers or
-                  events.
+                  Every night brings an event you must answer. Then the horde
+                  attacks the walls, and your night defense decides whether
+                  they hold.
                 </p>
               </li>
             </ol>
@@ -130,8 +142,10 @@ It explains the rules and mechanics of the game.
                     class="small muted"
                     style="margin-top: 0.4rem"
                   >
-                    All survivors need food to survive, be sure to have a steady
-                    supply.</span
+                    Each survivor eats 1 food at dusk. A day without enough food
+                    raises everyone's hunger and lowers morale. At 80 hunger,
+                    survivors start losing health every day. The kitchen grows
+                    1 food per level each day.</span
                   ></span
                 >
               </li>
@@ -146,8 +160,10 @@ It explains the rules and mechanics of the game.
                     class="small muted"
                     style="margin-top: 0.4rem"
                   >
-                    Water is probably the most important resource for survival,
-                    you need a steady supply.</span
+                    Each survivor drinks 1 water at dusk. Running short costs
+                    everyone health right away, so water is the most urgent
+                    resource. The water collector gathers 2 water per level each
+                    day.</span
                   ></span
                 >
               </li>
@@ -162,8 +178,8 @@ It explains the rules and mechanics of the game.
                     class="small muted"
                     style="margin-top: 0.4rem"
                   >
-                    In order to build and upgrade facilities, you will need to
-                    supply materials.</span
+                    Building and upgrading facilities costs materials. Each
+                    upgrade costs 3 more than the one before.</span
                   ></span
                 >
               </li>
@@ -178,7 +194,9 @@ It explains the rules and mechanics of the game.
                     class="small muted"
                     style="margin-top: 0.4rem"
                   >
-                    Medicine can heal injured survivors.</span
+                    A survivor on Heal uses 1 medicine to treat the most injured
+                    person. Without medicine, only a Medic can help, and only a
+                    little.</span
                   ></span
                 >
               </li>
@@ -193,7 +211,8 @@ It explains the rules and mechanics of the game.
                     class="small muted"
                     style="margin-top: 0.4rem"
                   >
-                    Ammo is needed to hold off night raids.</span
+                    Ammo adds to your night defense (up to 10 counts). Each guard
+                    uses 1 ammo every night, so keep restocking.</span
                   ></span
                 >
               </li>
@@ -205,20 +224,185 @@ It explains the rules and mechanics of the game.
             <h2 id="survivors-h">Survivors and base</h2>
             <p>
               Each survivor has health, hunger, fatigue and morale, plus one
-              skill and one trait. A hungry, tired or unhappy survivor works
-              badly and can fall ill or leave.
+              skill and one trait. Every day, give each survivor one task on the
+              Survivors tab.
+            </p>
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Task</th>
+                  <th scope="col">What it does</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Rest</td>
+                  <td>Lowers fatigue by 35 and raises morale by 5.</td>
+                </tr>
+                <tr>
+                  <td>Scavenge</td>
+                  <td>
+                    Brings back supplies from a location picked on the Map tab.
+                    Tiring and sometimes dangerous.
+                  </td>
+                </tr>
+                <tr>
+                  <td>Build</td>
+                  <td>
+                    Needed to start and finish upgrades. Each upgrade takes the
+                    number of days shown on its card.
+                  </td>
+                </tr>
+                <tr>
+                  <td>Guard</td>
+                  <td>Adds 5 night defense (10 for a Fighter) and uses ammo.</td>
+                </tr>
+                <tr>
+                  <td>Cook</td>
+                  <td>A Cook on this task saves 1 food at dusk.</td>
+                </tr>
+                <tr>
+                  <td>Heal</td>
+                  <td>
+                    Treats the most injured survivor using 1 medicine: +30
+                    health for a Medic, +10 for anyone else.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <p>
+              Every task except Rest adds fatigue. A survivor at 80 fatigue or
+              more is too tired to scavenge, guard or build, so plan rest days.
+              Morale drops when food runs short and when someone dies.
             </p>
             <p>
               Facilities at the base cover those needs: beds set how many people
-              you can house, the kitchen and water collector feed them, the
-              infirmary heals them, and the walls raise your night defense.
-              Upgrades cost materials and take days to finish.
+              you can house, the kitchen and water collector make food and
+              water every day, and the walls raise your night defense.
+              Upgrades are paid for up front and only progress on days when a
+              rested survivor is on Build.
             </p>
             <img
               class="howto-art"
-              src="assets/images/howto_needs.svg"
+              src="assets/images/png/howto_needs.png"
               alt="Survivor needs and the facilities that meet them: hunger, the kitchen; thirst, the water collector; fatigue, the beds; health, the infirmary; safety, the walls."
             />
+          </section>
+
+          <section id="scavenging" aria-labelledby="scavenging-h">
+            <!-- Explains how scavenging trips work -->
+            <h2 id="scavenging-h">Scavenging</h2>
+            <p>
+              Pick a location on the Map tab and send a survivor. They come
+              back at dusk with the kinds of supplies listed for that place:
+              the farm and supermarket have food and water, the police station
+              has ammo and medicine, and the gas station and school have
+              materials.
+            </p>
+            <ul>
+              <li>
+                <strong>Danger pays, and hurts.</strong> Each danger level adds
+                to the haul, but also raises the chance your scavenger is
+                attacked and how badly.
+              </li>
+              <li>
+                <strong>Places run dry.</strong> Each trip to the same place
+                finds a little less, down to half of a fresh haul.
+              </li>
+              <li>
+                <strong>Trips are tiring.</strong> Every day of travel adds 20
+                fatigue.
+              </li>
+            </ul>
+          </section>
+
+          <section id="night-raids" aria-labelledby="night-raids-h">
+            <!-- Explains how night defense and the horde work -->
+            <h2 id="night-raids-h">Night raids</h2>
+            <p>
+              Every night the horde tests your walls, and it grows a little
+              bigger each night until the last one. The Base tab shows your
+              night defense and roughly how big tonight's horde will be.
+            </p>
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Night defense comes from</th>
+                  <th scope="col">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Walls and watchtower</td>
+                  <td>10 per level</td>
+                </tr>
+                <tr>
+                  <td>Each rested survivor on Guard</td>
+                  <td>5 (Fighter 10, Night owl +5, Coward 0)</td>
+                </tr>
+                <tr>
+                  <td>Ammo in stock</td>
+                  <td>1 per ammo, up to 10 (double with a Sharpshooter on Guard)</td>
+                </tr>
+              </tbody>
+            </table>
+            <p>
+              If your defense is lower than the horde, it breaks through and
+              injures a survivor. A big breach injures two, and can knock your
+              walls down a level.
+            </p>
+          </section>
+
+          <section id="difficulty" aria-labelledby="difficulty-h">
+            <!-- Explains what changes between difficulty levels -->
+            <h2 id="difficulty-h">Difficulty</h2>
+            <p>
+              Pick a difficulty and run length when you start a new game. Longer
+              runs give the horde more nights to grow, and give you more nights
+              to run out of supplies.
+            </p>
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col"></th>
+                  <th scope="col">Easy</th>
+                  <th scope="col">Normal</th>
+                  <th scope="col">Hard</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Starting supplies</td>
+                  <td>Plenty</td>
+                  <td>Some</td>
+                  <td>Very few</td>
+                </tr>
+                <tr>
+                  <td>Scavenging hauls</td>
+                  <td>Full</td>
+                  <td>Smaller</td>
+                  <td>Smallest</td>
+                </tr>
+                <tr>
+                  <td>Danger while scavenging</td>
+                  <td>Low</td>
+                  <td>Medium</td>
+                  <td>High</td>
+                </tr>
+                <tr>
+                  <td>Hunger and thirst damage</td>
+                  <td>10 a day</td>
+                  <td>15 a day</td>
+                  <td>20 a day</td>
+                </tr>
+                <tr>
+                  <td>Auto-resolved mini-games won</td>
+                  <td>70%</td>
+                  <td>55%</td>
+                  <td>40%</td>
+                </tr>
+              </tbody>
+            </table>
           </section>
 
           <section id="skills" aria-labelledby="skills-h">
