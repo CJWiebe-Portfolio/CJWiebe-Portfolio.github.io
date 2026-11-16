@@ -73,6 +73,8 @@ It provides the interface for playing the game.
       -->
 
     <div id="game" hidden>
+      <!-- Sticky wrapper: keeps the top bar and tabs on screen while scrolling -->
+      <div class="game-header">
       <header class="topbar">
         <div class="brand">
           <img
@@ -156,6 +158,8 @@ It provides the interface for playing the game.
           Log</button
         ><!-- Brings players to the Log section -->
       </nav>
+      </div>
+      <!-- End of sticky wrapper -->
 
       <!-- 
       ---------- Various Tabs that allow navigation between sections ----------
@@ -219,6 +223,9 @@ It provides the interface for playing the game.
           <button class="btn btn-primary btn-block" type="button" id="end-day">
             End day</button
           ><!-- Ends the day -->
+          <p class="small muted end-hint">
+            Tasks resolve at dusk, then the night begins.
+          </p>
         </aside>
       </div>
 

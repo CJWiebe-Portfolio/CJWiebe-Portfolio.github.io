@@ -461,20 +461,29 @@ are marked TODO.
 ---------- Header ----------
 =============================================================== 
 */
+  // Display names for each phase. Their colours live in css/style.css (02. Phase themes).
+  var PHASE_LABELS = { dawn: "Dawn", day: "Day", dusk: "Dusk", night: "Night" };
+  // How long the short Dusk and Dawn phases stay on screen (ms).
+  var DUSK_MS = 1500;
+  var DAWN_MS = 3500;
+
   function renderHeader() {
     var night = state.phase === "night";
     $("day-label").textContent =
       (night ? "Night " : "Day ") + pad(state.day) + " of " + state.length;
     var pill = $("phase-pill");
-    pill.textContent = night ? "Night phase" : "Day phase";
+    pill.textContent = PHASE_LABELS[state.phase] + " phase";
     pill.dataset.phase = state.phase;
+    // Re-colours the whole page for the current phase.
+    document.documentElement.dataset.phase = state.phase;
     $("resources").innerHTML = RESOURCES.map(function (r) {
       return (
         '<li><img src="assets/icons/ingame/' +
         r.id +
         '.png" alt="" width="20" height="20">' +
+        '<span class="res-label">' +
         r.label +
-        " <strong>" +
+        "</span><strong>" +
         pad(state.resources[r.id]) +
         "</strong></li>"
       );
@@ -1183,12 +1192,19 @@ are marked TODO.
       "The group ate " + eaten + " food and drank " + drunk + " water at dusk.",
     );
 
-    state.phase = "night";
+    // Show Dusk briefly, then fall into Night and open the night event.
+    state.phase = "dusk";
+    $("end-day").disabled = true;
     renderAll();
     var pool = EVENTS.filter(function (ev) {
       return !ev.needsScavenging || scavenged;
     });
-    openEvent(pool[Math.floor(rng() * pool.length)]);
+    setTimeout(function () {
+      state.phase = "night";
+      $("end-day").disabled = false;
+      renderAll();
+      openEvent(pool[Math.floor(rng() * pool.length)]);
+    }, DUSK_MS);
   });
 
   // ---------- Event overlay ----------
@@ -1376,7 +1392,13 @@ are marked TODO.
       return;
     }
     state.day += 1;
-    state.phase = "day";
+    // The new day opens on Dawn (the dawn report), then settles into Day.
+    state.phase = "dawn";
+    setTimeout(function () {
+      if (state.phase !== "dawn") return; // the player already ended the day
+      state.phase = "day";
+      renderHeader();
+    }, DAWN_MS);
     state.trader.leaves = Math.max(0, state.trader.leaves - 1);
     // [WORK IN PROGRESS] implement trader behavior
     alive().forEach(function (s) {
@@ -1465,6 +1487,18 @@ are marked TODO.
     renderMap();
     renderTrade();
     renderLog();
+  }
+
+  // Tells the CSS how tall the sticky header is, so the side panel and
+  // map details can stick just below it (see --header-h in style.css).
+  var gameHeader = document.querySelector(".game-header");
+  if (gameHeader && window.ResizeObserver) {
+    new ResizeObserver(function () {
+      document.documentElement.style.setProperty(
+        "--header-h",
+        gameHeader.offsetHeight + "px",
+      );
+    }).observe(gameHeader);
   }
 
   addLog("base", "The group settled into " + state.shelter + ".");

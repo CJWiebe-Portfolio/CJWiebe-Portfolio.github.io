@@ -7,52 +7,251 @@ DATE: December 2026
 COURSE: INFS 634 - McGill University
 =========================================================
 DESCRIPTION:
-Display settings from the Options page arrive as data-attributes on <html>
-(set by js/common.js): data-text-size, data-contrast, data-motion. */
+One stylesheet for every page of the game.
 
-/* ---------- Global styles ---------- */
+Display settings from the Options page arrive as data-attributes on <html>
+(set by js/common.js): data-text-size, data-contrast, data-motion.
+
+The time of day arrives as data-phase="dawn | day | dusk | night" on <html>
+(set by js/game.js). Any other element can carry data-phase too (the phase
+pill, the How to Play cards) and it will take on that phase's colours.
+
+=========================================================
+TABLE OF CONTENTS
+=========================================================
+  01. Design tokens ............ every colour, font and size lives here
+        1a. Shared colours (all phases)
+        1b. Dawn palette
+        1c. Day palette
+        1d. Dusk palette
+        1e. Night palette
+        1f. Single-use colours
+        1g. Typography and shape
+        1h. Active palette (defaults to Day)
+  02. Phase themes ............. swaps the active palette per phase
+  03. Accessibility settings ... text size, high contrast, reduced motion
+  04. Base elements ............ reset, body, headings, links, focus
+  05. Utilities ................ small helper classes
+  06. Layout ................... page wrappers and grids
+  07. Components
+        7a. Buttons
+        7b. Chips
+        7c. Cards
+        7d. Forms
+        7e. Tables
+        7f. Dialogs
+        7g. Toast
+        7h. Portraits and art
+  08. Pages
+        8a. Title screen
+        8b. How to Play
+        8c. New Game
+        8d. Options
+        8e. End screen
+  09. In-game
+        9a. Top bar
+        9b. Phase pill
+        9c. Tabs and game layout
+        9d. Side panel
+        9e. Facilities
+        9f. Survivors
+        9g. Map
+        9h. Trade
+        9i. Log
+        9j. Event cards
+        9k. Skills and traits
+  10. Mini-games
+        10a. Shared mini-game frame
+        10b. Defense
+        10c. Lockpick
+        10d. Search
+*/
+
+/*
+===============================================================
+01. DESIGN TOKENS
+===============================================================
+Change colours here, not in the rules further down. Each phase has the
+same six roles so they can be swapped one-for-one:
+  --bg         page background (also the mini-game canvas)
+  --surface    cards, bars and anything sitting on the background
+  --surface-2  hover states, meters, secondary fills
+  --ink        main text, outlines and "on" states
+  --muted      secondary text
+  --line       borders and dividers
+  --phase      the signature colour of the phase (phase pill, card stripes)
+  --phase-ink  text that sits on top of --phase
+*/
+
 :root {
-  --bg: #f1ece0;
-  --surface: #fffdf8;
-  --surface-2: #e8e1d0;
-  --ink: #23211c;
-  --muted: #5f5a4e;
-  --line: #d3cab5;
-  --healing: #0ab1e0; /* green */
-  --accent: #5e7a48; /* green */
-  --accent-ink: #ffffff;
-  --accent-2: #c98a2b; /* mustard */
-  --danger: #9a3a2b; /* rust */
-  --focus: #c98a2b;
+  /* ---------- 1a. Shared colours (all phases) ---------- */
+  --healing: #0ab1e0; /* Healing effects (CURRENTLY NOT USED) */
+  --accent: #5e7a48; /* Primary action colour, good states */
+  --accent-ink: #ffffff; /* Text on top of --accent (.btn-primary, set lockpick pins) */
+  --accent-2: #c98a2b; /* Secondary highlight (.notice, .choice) */
+  --danger: #9a3a2b; /* Bad outcomes */
+  --focus: #c98a2b; /* Keyboard focus ring */
+
+  /* ---------- 1b. Dawn palette: rose and peach, the sun coming up ---------- */
+  --bg-dawn: #f4d9cf;
+  --surface-dawn: #fff3ee;
+  --surface-2-dawn: #f0b49c;
+  --ink-dawn: #2b1f24;
+  --muted-dawn: #6e5258;
+  --line-dawn: #e2bfb3;
+  --phase-dawn: #e07a5f;
+  --phase-ink-dawn: #2b1f24;
+
+  /* ---------- 1c. Day palette: warm cream and mustard ---------- */
+  --bg-day: #f7e8c7;
+  --surface-day: #fff8e7;
+  --surface-2-day: #eac338;
+  --ink-day: #23211c;
+  --muted-day: #5f5a4e;
+  --line-day: #d3cab5;
+  --phase-day: #eac338;
+  --phase-ink-day: #23211c;
+
+  /* ---------- 1d. Dusk palette: plum with a burnt-orange sunset ---------- */
+  --bg-dusk: #3b2436;
+  --surface-dusk: #4d2f45;
+  --surface-2-dusk: #9c4a2a;
+  --ink-dusk: #fbe8da;
+  --muted-dusk: #dcbcb0;
+  --line-dusk: #7a5068;
+  --phase-dusk: #e07f3c;
+  --phase-ink-dusk: #1f1218;
+  --danger-dusk: #f08a72; /* Lighter red so warnings stay readable on dark */
+
+  /* ---------- 1e. Night palette: deep navy with moonlit violet ---------- */
+  --bg-night: #121525;
+  --surface-night: #1c1c23;
+  --surface-2-night: #403a84;
+  --ink-night: #f1ece0;
+  --muted-night: #a8a090;
+  --line-night: #5f5a4e;
+  --phase-night: #8a93e8;
+  --phase-ink-night: #121525;
+  --danger-night: #f08a72;
+
+  /* ---------- 1f. Single-use colours ---------- */
+  --title_screen: #f7e8c7c7; /* Translucent panel over the title art */
+  --dialog: #f7e8c7c7; /* Reserved for dialogs (CURRENTLY NOT USED) */
+  --white_text: #f7e8c7c7; /* Resting border of a wrong lockpick pin */
   --hatch: rgba(35, 33, 28, 0.07);
+
+  /* ---------- 1g. Typography and shape ---------- */
+  --font-display: "Special Elite", "Courier New", monospace;
+  --font-body: system-ui, -apple-system, "Caveat", Roboto, sans-serif;
   --radius: 10px;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
-  --font-display: "Special Elite", "Courier New", monospace;
-  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --shadow-lift: 0 10px 30px
+    color-mix(in srgb, var(--bg-night) 30%, transparent);
+  --shadow-hover: 0 6px 18px rgba(0, 0, 0, 0.1); /* Lift for cards on hover */
+  --phase-fade: 0.6s; /* How long the colours take to change between phases */
+  --content-max: 1400px; /* Widest the in-game content gets */
+  --header-h: 0px; /* Height of the sticky game header, set by js/game.js */
   font-size: 16px;
+
+  /* ---------- 1h. Active palette (Day by default) ----------
+     Every rule below reads these. Section 02 re-points them per phase. */
+  --bg: var(--bg-day);
+  --surface: var(--surface-day);
+  --surface-2: var(--surface-2-day);
+  --ink: var(--ink-day);
+  --muted: var(--muted-day);
+  --line: var(--line-day);
+  --phase: var(--phase-day);
+  --phase-ink: var(--phase-ink-day);
 }
 
 /*
-=============================================================== 
----------- Customizable styles that the user can set ----------
-=============================================================== 
+===============================================================
+02. PHASE THEMES
+===============================================================
+A turn runs Dawn -> Day -> Dusk -> Night. Putting data-phase on any
+element re-points the active palette for that element and everything
+inside it.
 */
 
-/* ---------- Customizable text sizes ---------- */
+[data-phase="dawn"] {
+  --bg: var(--bg-dawn);
+  --surface: var(--surface-dawn);
+  --surface-2: var(--surface-2-dawn);
+  --ink: var(--ink-dawn);
+  --muted: var(--muted-dawn);
+  --line: var(--line-dawn);
+  --phase: var(--phase-dawn);
+  --phase-ink: var(--phase-ink-dawn);
+}
+
+[data-phase="day"] {
+  --bg: var(--bg-day);
+  --surface: var(--surface-day);
+  --surface-2: var(--surface-2-day);
+  --ink: var(--ink-day);
+  --muted: var(--muted-day);
+  --line: var(--line-day);
+  --phase: var(--phase-day);
+  --phase-ink: var(--phase-ink-day);
+}
+
+[data-phase="dusk"] {
+  --bg: var(--bg-dusk);
+  --surface: var(--surface-dusk);
+  --surface-2: var(--surface-2-dusk);
+  --ink: var(--ink-dusk);
+  --muted: var(--muted-dusk);
+  --line: var(--line-dusk);
+  --phase: var(--phase-dusk);
+  --phase-ink: var(--phase-ink-dusk);
+  --danger: var(--danger-dusk);
+}
+
+[data-phase="night"] {
+  --bg: var(--bg-night);
+  --surface: var(--surface-night);
+  --surface-2: var(--surface-2-night);
+  --ink: var(--ink-night);
+  --muted: var(--muted-night);
+  --line: var(--line-night);
+  --phase: var(--phase-night);
+  --phase-ink: var(--phase-ink-night);
+  --danger: var(--danger-night);
+}
+
+/* Text colour has to be re-applied where the palette changes,
+   otherwise it inherits the parent's (already resolved) colour. */
+[data-phase] {
+  color: var(--ink);
+}
+
+/*
+===============================================================
+03. ACCESSIBILITY SETTINGS (from the Options page)
+===============================================================
+These come after the phase themes so they always win.
+*/
+
+/* ---------- Text size ---------- */
 html[data-text-size="small"] {
   font-size: 14px;
 }
 html[data-text-size="large"] {
   font-size: 19px;
 }
-/* ---------- Ability to set contrast high for accessibility ---------- */
-html[data-contrast="high"] {
+
+/* ---------- High contrast: overrides every phase ---------- */
+html[data-contrast="high"],
+html[data-contrast="high"] [data-phase] {
   --bg: #ffffff;
   --surface: #ffffff;
   --surface-2: #e6e6e6;
   --ink: #000000;
   --muted: #1f1f1f;
   --line: #000000;
+  --phase: #000000;
+  --phase-ink: #ffffff;
   --accent: #1f4510;
   --accent-2: #7a4a00;
   --danger: #7a1608;
@@ -60,7 +259,7 @@ html[data-contrast="high"] {
   --hatch: rgba(0, 0, 0, 0.12);
 }
 
-/* ---------- Ability to reduce motion for accessibility ---------- */
+/* ---------- Reduced motion ---------- */
 html[data-motion="reduce"] *,
 html[data-motion="reduce"] *::before,
 html[data-motion="reduce"] *::after {
@@ -69,29 +268,29 @@ html[data-motion="reduce"] *::after {
   scroll-behavior: auto !important;
 }
 
-/* ---------- Changes to the box sizes ---------- */
+/*
+===============================================================
+04. BASE ELEMENTS
+===============================================================
+*/
+
 *,
 *::before,
 *::after {
   box-sizing: border-box;
 }
 
-/*
-=============================================================== 
----------- CSS rules for the body of the pages ----------
-=============================================================== 
-*/
-
-/* ---------- Body ---------- */
 body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font-body);
   line-height: 1.45;
+  transition:
+    background-color var(--phase-fade),
+    color var(--phase-fade);
 }
 
-/* ---------- Headers ---------- */
 h1,
 h2,
 h3 {
@@ -109,7 +308,7 @@ h2 {
 h3 {
   font-size: 1.05rem;
 }
-/* ---------- Paragraphs ---------- */
+
 p {
   margin: 0;
 }
@@ -117,11 +316,16 @@ a {
   color: inherit;
 }
 
-/* ---------- Adjusts the focus styles ---------- */
 :focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 2px;
 }
+
+/*
+===============================================================
+05. UTILITIES
+===============================================================
+*/
 
 .visually-hidden {
   position: absolute !important;
@@ -170,12 +374,93 @@ a {
   margin-bottom: 1.25rem;
 }
 
+.empty {
+  padding: 2rem;
+  text-align: center;
+  color: var(--muted);
+}
+
+.plain-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.field-hint {
+  margin-top: 0.4rem;
+}
+
 /*
-=============================================================== 
----------- Buttons ----------
-=============================================================== 
+===============================================================
+06. LAYOUT
+===============================================================
 */
 
+.page {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+.page-narrow {
+  max-width: 960px;
+}
+.page-head {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.page-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+}
+
+.grid-3 {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin: 1.5rem 0 0.75rem;
+  flex-wrap: wrap;
+}
+/* Heading row at the top of each in-game tab */
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.25rem 1rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+.panel-head h2 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.75rem;
+}
+.panel-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 1rem;
+}
+
+/*
+===============================================================
+07. COMPONENTS
+===============================================================
+*/
+
+/* ---------- 7a. Buttons ---------- */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -209,6 +494,7 @@ a {
 .btn-primary:hover {
   background: var(--ink);
   border-color: var(--ink);
+  color: var(--bg); /* --ink is light at dusk/night, so the text flips too */
 }
 .btn-quiet {
   border-color: var(--line);
@@ -230,6 +516,7 @@ a {
   cursor: not-allowed;
 }
 
+/* ---------- 7b. Chips ---------- */
 .chip {
   display: inline-block;
   padding: 0.15rem 0.65rem;
@@ -239,114 +526,39 @@ a {
   background: var(--surface);
 }
 
-/*
-=============================================================== 
----------- Cards ----------
-=============================================================== 
-*/
-
+/* ---------- 7c. Cards ---------- */
 .card {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 1.1rem;
   box-shadow: var(--shadow);
+  transition:
+    background-color var(--phase-fade),
+    border-color var(--phase-fade);
+}
+/* A card tagged with a phase gets that phase's colour as a top stripe. */
+.card[data-phase] {
+  border-top: 5px solid var(--phase);
+}
+/* Cards the player works with lift slightly on hover. */
+.facility,
+.survivor,
+.choice-card {
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s,
+    border-color 0.15s,
+    background-color var(--phase-fade);
+}
+.facility:hover,
+.survivor:hover,
+.choice-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
 }
 
-.page {
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 1.5rem 1rem 3rem;
-}
-.page-head {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-.page-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  margin-top: 2rem;
-  flex-wrap: wrap;
-}
-
-.grid-3 {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-}
-
-/*
-=============================================================== 
----------- Title Screen ----------
-=============================================================== 
-*/
-
-.title-screen {
-  background: url("../assets/images/png/title_screen.png") center / cover
-    no-repeat;
-  display: grid;
-  grid-template-columns: minmax(300px, 30%) 1fr;
-  min-height: 100vh;
-}
-.title-menu {
-  padding: 4rem 3rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  background: rgb(255 253 248 / 0.92);
-}
-.title-menu .logo {
-  width: 80px;
-  height: 80px;
-  object-fit: contain;
-  margin-bottom: 1rem;
-}
-.title-menu h1 {
-  font-size: 3.5rem;
-}
-.title-menu .tagline {
-  color: var(--muted);
-  font-size: 1.15rem;
-  margin-bottom: 1.5rem;
-}
-.title-menu nav {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  max-width: 280px;
-}
-.title-menu .footnote {
-  margin-top: 2rem;
-  max-width: 260px;
-}
-
-@media (max-width: 760px) {
-  .title-screen {
-    grid-template-columns: 1fr;
-  }
-  .title-menu {
-    padding: 2.5rem 1.25rem;
-  }
-  .title-menu nav {
-    max-width: none;
-  }
-  .key-art {
-    min-height: 200px;
-    order: -1;
-    border-left: 0;
-    border-bottom: 1px solid var(--line);
-  }
-}
-
-/*
-=============================================================== 
----------- Forms for user input ----------
-=============================================================== 
-*/
-
+/* ---------- 7d. Forms ---------- */
 fieldset {
   border: 0;
   padding: 0;
@@ -358,6 +570,7 @@ legend,
   margin-bottom: 0.5rem;
   padding: 0;
 }
+
 .choices {
   display: flex;
   flex-wrap: wrap;
@@ -395,8 +608,12 @@ legend,
   background: var(--surface);
   cursor: pointer;
 }
+/* Selected card: a thicker outline drawn with a shadow (so nothing shifts)
+   and a tint of the phase colour. */
 .choice-card:has(input:checked) {
-  border: 2px solid var(--ink);
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink);
+  background: color-mix(in srgb, var(--phase) 22%, var(--surface));
 }
 .choice-card:has(input:focus-visible) {
   outline: 3px solid var(--focus);
@@ -453,25 +670,178 @@ select {
   color: var(--ink);
 }
 
-.options-grid {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  align-items: start;
+/* ---------- 7e. Tables ---------- */
+table {
+  width: 100%;
+  border-collapse: collapse;
 }
-.panel-title {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
+th,
+td {
+  text-align: left;
+  padding: 0.65rem 0.5rem;
+  border-bottom: 1px solid var(--line);
+}
+thead th {
+  border-bottom: 2px solid var(--ink);
+}
+
+/* ---------- 7f. Dialogs ---------- */
+dialog {
+  border: 0;
+  border-radius: 14px;
+  padding: 1.5rem;
+  width: min(560px, calc(100vw - 2rem));
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+dialog.wide {
+  width: min(880px, calc(100vw - 2rem));
+}
+dialog::backdrop {
+  background: var(--surface-night);
+}
+dialog h2 {
+  margin-bottom: 0.5rem;
+}
+dialog .ph.art {
+  height: 160px;
+  margin: 0.75rem 0 1rem;
+}
+
+.pause {
+  text-align: center;
+  width: min(400px, calc(100vw - 2rem));
+}
+.pause h2 {
+  font-size: 1.8rem;
   margin-bottom: 1rem;
+}
+.pause .btn {
+  margin-bottom: 0.6rem;
+}
+
+/* ---------- 7g. Toast ---------- */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 1.5rem;
+  transform: translateX(-50%);
+  background: var(--ink);
+  color: var(--surface);
+  padding: 0.7rem 1.1rem;
+  border-radius: 8px;
+  max-width: calc(100vw - 2rem);
+  box-shadow: var(--shadow);
+  z-index: 50;
+}
+
+/* ---------- 7h. Portraits and art ---------- */
+.avatar {
+  width: 56px;
+  height: 56px;
+  flex: none;
+}
+.portrait {
+  display: block;
+  object-fit: cover;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+
+dialog img.art,
+.end-art,
+.howto-art,
+.mg-card-art {
+  display: block;
+  width: 100%;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+dialog img.art {
+  height: 160px;
+  margin: 0.75rem 0 1rem;
+}
+.end-art {
+  height: 130px;
+  margin-bottom: 1.5rem;
+}
+.howto-art {
+  height: auto;
+  margin-top: 1rem;
+}
+.mg-card-art {
+  height: 80px;
+  margin-bottom: 0.75rem;
 }
 
 /*
-=============================================================== 
----------- How to Play Page ----------
-=============================================================== 
+===============================================================
+08. PAGES
+===============================================================
 */
 
+/* ---------- 8a. Title screen (index.html) ---------- */
+.title-screen {
+  background: url("../assets/images/png/title_screen.png") center / cover
+    no-repeat;
+  display: grid;
+  grid-template-columns: minmax(300px, 30%) 1fr;
+  min-height: 100vh;
+}
+.title-menu {
+  padding: 4rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: var(--title_screen);
+}
+.title-menu .logo {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  margin-bottom: 1rem;
+}
+.title-menu h1 {
+  font-size: 3.5rem;
+}
+.title-menu .tagline {
+  color: var(--muted);
+  font-size: 1.15rem;
+  margin-bottom: 1.5rem;
+}
+.title-menu nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 280px;
+}
+.title-menu .footnote {
+  margin-top: 2rem;
+  max-width: 260px;
+}
+
+@media (max-width: 760px) {
+  .title-screen {
+    grid-template-columns: 1fr;
+  }
+  .title-menu {
+    padding: 2.5rem 1.25rem;
+  }
+  .title-menu nav {
+    max-width: none;
+  }
+  .key-art {
+    min-height: 200px;
+    order: -1;
+    border-left: 0;
+    border-bottom: 1px solid var(--line);
+  }
+}
+
+/* ---------- 8b. How to Play (how-to-play.html) ---------- */
 .htp {
   display: grid;
   grid-template-columns: 200px 1fr;
@@ -504,6 +874,7 @@ select {
 .htp section > p + p {
   margin-top: 0.6rem;
 }
+
 .steps {
   display: grid;
   gap: 0.75rem;
@@ -513,6 +884,7 @@ select {
   font-size: 0.8rem;
   color: var(--muted);
 }
+
 .resource-list {
   display: grid;
   gap: 0.75rem;
@@ -531,18 +903,14 @@ select {
   height: 28px;
   flex: none;
 }
-table {
-  width: 100%;
-  border-collapse: collapse;
+.resource-list img {
+  flex: none;
+  object-fit: contain;
 }
-th,
-td {
-  text-align: left;
-  padding: 0.65rem 0.5rem;
-  border-bottom: 1px solid var(--line);
-}
-thead th {
-  border-bottom: 2px solid var(--ink);
+.res-name {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 @media (max-width: 760px) {
@@ -556,21 +924,73 @@ thead th {
   }
 }
 
-/*
-=============================================================== 
----------- New Game Page ----------
-=============================================================== 
-*/
+/* ---------- 8c. New Game (new-game.html) ----------
+   The form is a column of numbered step cards with a sticky Start bar. */
+.page-head p {
+  margin-top: 0.25rem;
+}
+.setup-form {
+  display: grid;
+  gap: 1rem;
+}
+.setup-step {
+  padding: 1.25rem 1.4rem;
+}
+fieldset.setup-step {
+  margin: 0;
+  border: 1px solid var(--line);
+  min-width: 0; /* stops fieldsets growing wider than the page */
+}
+.step-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 0.9rem;
+  padding: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+fieldset.setup-step > legend.step-title {
+  float: left; /* lets the legend sit inside the card like a heading */
+  width: 100%;
+}
+fieldset.setup-step > legend.step-title + * {
+  clear: both;
+}
+.step-num {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 50%;
+  background: var(--phase);
+  color: var(--phase-ink);
+  font-size: 0.9rem;
+}
+.setup-step .section-head {
+  margin: 0 0 0.9rem;
+}
+.setup-step .section-head .step-title {
+  margin: 0;
+}
+
+/* Start bar stays on screen at the bottom while scrolling the form. */
+.setup-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  margin: 0.5rem 0 0;
+  padding: 0.9rem 0;
+  border-top: 1px solid var(--line);
+  background: color-mix(in srgb, var(--bg) 90%, transparent);
+  backdrop-filter: blur(6px);
+}
 
 .survivor-card {
   display: flex;
   gap: 0.9rem;
-  align-items: center;
-}
-.avatar {
-  width: 56px;
-  height: 56px;
-  flex: none;
+  align-items: flex-start;
 }
 .tags {
   display: flex;
@@ -578,29 +998,98 @@ thead th {
   flex-wrap: wrap;
   margin-top: 0.35rem;
 }
-.section-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+
+/* ---------- 8d. Options (options.html) ---------- */
+.options-grid {
+  display: grid;
   gap: 1rem;
-  margin: 1.5rem 0 0.75rem;
-  flex-wrap: wrap;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  align-items: start;
+}
+
+/* ---------- 8e. End screen (end.html) ---------- */
+.end {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2rem 1rem 3rem;
+  text-align: center;
+}
+.end > .ph {
+  height: 130px;
+  margin-bottom: 1.5rem;
+}
+.end h1 {
+  font-size: 2.6rem;
+  margin: 0.4rem 0;
+}
+.end .page-actions {
+  justify-content: center;
+}
+.stat-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  margin: 1.5rem 0;
+  text-align: left;
+}
+.stat-grid .value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.group {
+  text-align: left;
+}
+.group ul {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+}
+.group li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.group li:last-child {
+  border-bottom: 0;
+}
+.group .avatar {
+  width: 32px;
+  height: 32px;
+}
+.group .fate {
+  margin-left: auto;
+  color: var(--muted);
 }
 
 /*
-=============================================================== 
----------- Top Bar: In-Game ----------
-=============================================================== 
+===============================================================
+09. IN-GAME (game.html)
+===============================================================
 */
 
+/* ---------- 9a. Top bar ----------
+   .game-header wraps the top bar and the tabs and sticks to the top. Its
+   side padding lines the header up with the centred content below. */
+.game-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-bottom: 2px solid var(--ink);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  --gutter: max(1rem, calc((100% - var(--content-max)) / 2 + 1rem));
+}
 .topbar {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  gap: 0.75rem 1.5rem;
   flex-wrap: wrap;
-  padding: 0.75rem 1rem;
+  padding: 0.75rem var(--gutter, 1rem);
   background: var(--surface);
-  border-bottom: 2px solid var(--ink);
+  border-bottom: 1px solid var(--line);
+  transition: background-color var(--phase-fade);
 }
 .topbar .brand {
   display: flex;
@@ -618,30 +1107,31 @@ thead th {
   align-items: center;
   gap: 0.5rem;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
-.phase-pill {
-  border: 1px solid var(--ink);
-  border-radius: 999px;
-  padding: 0.1rem 0.6rem;
-  font-size: 0.8rem;
-  font-weight: 400;
-}
-.phase-pill[data-phase="night"] {
-  background: var(--ink);
-  color: var(--surface);
-}
+
+/* Resources: one rounded tile per resource, pushed to the right. */
 .resources {
   display: flex;
-  gap: 1rem;
+  gap: 0.5rem;
   flex-wrap: wrap;
   list-style: none;
-  margin: 0;
+  margin: 0 0 0 auto;
   padding: 0;
 }
 .resources li {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.4rem;
+  padding: 0.25rem 0.7rem 0.25rem 0.45rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg);
+  font-size: 0.9rem;
+  transition: background-color var(--phase-fade);
+}
+.resources .res-label {
+  color: var(--muted);
 }
 .resources .ph {
   width: 20px;
@@ -649,25 +1139,61 @@ thead th {
   border-radius: 3px;
 }
 .resources strong {
+  font-size: 1rem;
   font-variant-numeric: tabular-nums;
 }
-.topbar .btn {
-  margin-left: auto;
+
+/* Medium screens: drop the words, keep icon + number (still read aloud). */
+@media (max-width: 1180px) {
+  .resources .res-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+/* Small screens: resources get their own full-width row under the title. */
+@media (max-width: 760px) {
+  .topbar .brand span {
+    display: none;
+  }
+  .topbar .btn {
+    margin-left: auto;
+  }
+  .resources {
+    order: 3;
+    width: 100%;
+    margin: 0;
+    justify-content: space-between;
+  }
 }
 
-/*
-=============================================================== 
----------- Tabs: In-Game ----------
-=============================================================== 
-*/
+/* ---------- 9b. Phase pill ----------
+   Its colour comes from its own data-phase (see section 02). */
+.phase-pill {
+  border: 1px solid var(--phase);
+  border-radius: 999px;
+  padding: 0.1rem 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  background: var(--phase);
+  color: var(--phase-ink);
+  transition:
+    background-color var(--phase-fade),
+    border-color var(--phase-fade);
+}
 
+/* ---------- 9c. Tabs and game layout ---------- */
 .tabs {
   display: flex;
   gap: 0.25rem;
-  padding: 0 1rem;
+  padding: 0 calc(var(--gutter, 1rem) - 1rem);
   background: var(--surface);
-  border-bottom: 1px solid var(--line);
   overflow-x: auto;
+  scrollbar-width: none;
+  transition: background-color var(--phase-fade);
 }
 .tab {
   padding: 0.9rem 1rem;
@@ -682,44 +1208,90 @@ thead th {
 }
 .tab[aria-selected="true"] {
   color: var(--ink);
-  border-bottom-color: var(--ink);
+  border-bottom-color: var(--phase);
 }
 .tab:hover {
   color: var(--ink);
 }
 
+/* Each tab fades in gently when opened. */
+[role="tabpanel"]:not([hidden]) {
+  animation: panel-in 0.25s ease-out;
+}
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+/* Main column + turn panel. minmax(0, 1fr) stops wide content (the map,
+   long names) from pushing the turn panel off screen. */
 .game-layout {
   display: grid;
-  grid-template-columns: 1fr 300px;
+  grid-template-columns: minmax(0, 1fr) 300px;
   gap: 1.5rem;
-  padding: 1.5rem 1rem;
-  max-width: 1400px;
+  padding: 1.5rem 1rem 3rem;
+  max-width: var(--content-max);
   margin: 0 auto;
   align-items: start;
 }
-.panel-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 1rem;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
+/* The main column is a size container: tabs adapt to the space they
+   actually have, not to the whole window (see 9g and 9h). */
+.game-layout > main {
+  container: panel / inline-size;
+  min-width: 0;
 }
 @media (max-width: 960px) {
   .game-layout {
     grid-template-columns: 1fr;
+    padding-bottom: 6rem; /* room for the floating End day button */
   }
 }
 
-/*
-=============================================================== 
----------- Side Panel: In-Game ----------
-=============================================================== 
-*/
-
+/* ---------- 9d. Side panel (the turn panel) ----------
+   Sticks just under the game header; the phase colour runs along its top. */
 .side {
   position: sticky;
-  top: 1rem;
+  top: calc(var(--header-h) + 1rem);
+  border-top: 5px solid var(--phase);
+}
+/* Each survivor's task shows as a small tag. */
+#today-list dd {
+  justify-self: end;
+  padding: 0.05rem 0.6rem;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+#end-day {
+  min-height: 3.25rem;
+  font-size: 1.05rem;
+}
+.end-hint {
+  margin-top: 0.5rem;
+  text-align: center;
+}
+/* Small screens: the panel follows the content, and End day floats at
+   the bottom of the screen so it is always one tap away. */
+@media (max-width: 960px) {
+  .side {
+    position: static;
+  }
+  #end-day {
+    position: fixed;
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+    width: auto;
+    z-index: 30;
+    box-shadow: var(--shadow-lift);
+  }
+  .toast {
+    bottom: 5.5rem;
+  }
 }
 .side dl {
   display: grid;
@@ -745,12 +1317,7 @@ thead th {
   margin-top: 1rem;
 }
 
-/*
-=============================================================== 
----------- Facility Panel: In-Game ----------
-=============================================================== 
-*/
-
+/* ---------- 9e. Facilities ---------- */
 .facility {
   display: flex;
   flex-direction: column;
@@ -759,13 +1326,15 @@ thead th {
   height: 96px;
   margin-bottom: 0.75rem;
 }
+/* Facility art runs edge to edge across the top of the card. */
 .facility .fac-art {
   display: block;
-  width: 100%;
-  height: 120px;
+  width: calc(100% + 2.2rem);
+  height: 130px;
   object-fit: cover;
-  border-radius: 6px;
-  margin-bottom: 0.75rem;
+  margin: -1.1rem -1.1rem 0.9rem;
+  border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0;
+  border-bottom: 1px solid var(--line);
 }
 .facility .row {
   display: flex;
@@ -804,12 +1373,7 @@ thead th {
   background: var(--ink);
 }
 
-/*
-=============================================================== 
----------- Survival Card: In-Game ----------
-=============================================================== 
-*/
-
+/* ---------- 9f. Survivors ---------- */
 .survivor .top {
   display: flex;
   gap: 0.75rem;
@@ -825,6 +1389,11 @@ thead th {
   color: var(--danger);
   font-weight: 700;
 }
+.survivor label {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-weight: 700;
+}
 .stats {
   display: grid;
   grid-template-columns: 4.5rem 1fr 2rem;
@@ -832,6 +1401,10 @@ thead th {
   align-items: center;
   font-size: 0.85rem;
   margin-bottom: 0.75rem;
+}
+.stats output {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 .meter {
   height: 6px;
@@ -844,10 +1417,6 @@ thead th {
   height: 100%;
   background: var(--ink);
 }
-.stats output {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
 .free-bed {
   display: grid;
   place-items: center;
@@ -857,12 +1426,7 @@ thead th {
   min-height: 220px;
 }
 
-/*
-=============================================================== 
----------- Map: In-Game ----------
-=============================================================== 
-*/
-
+/* ---------- 9g. Map ---------- */
 .map-wrap {
   display: grid;
   grid-template-columns: 1fr 260px;
@@ -910,6 +1474,11 @@ thead th {
 .loc .seen {
   color: var(--accent);
 }
+/* Location details stay in view while looking around the map. */
+.loc-detail {
+  position: sticky;
+  top: calc(var(--header-h) + 1rem);
+}
 .loc-detail .ph {
   height: 100px;
   margin: 0.75rem 0;
@@ -946,22 +1515,23 @@ thead th {
 .danger span.on {
   background: var(--ink);
 }
-@media (max-width: 760px) {
+/* When the main column is narrow, details drop below the map. */
+@container panel (max-width: 720px) {
   .map-wrap {
     grid-template-columns: 1fr;
   }
+  .loc-detail {
+    position: static;
+  }
+}
+@container panel (max-width: 560px) {
   .loc {
     font-size: 0.75rem;
     padding: 0.3rem 0.6rem;
   }
 }
 
-/*
-=============================================================== 
----------- Trade: In-Game ----------
-=============================================================== 
-*/
-
+/* ---------- 9h. Trade ---------- */
 .trader {
   display: flex;
   gap: 1rem;
@@ -1011,6 +1581,11 @@ thead th {
   align-items: center;
   margin-top: 1rem;
 }
+.trade-bar .labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+}
 .balance {
   position: relative;
   height: 10px;
@@ -1034,24 +1609,15 @@ thead th {
   width: 2px;
   background: var(--danger);
 }
-.trade-bar .labels {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.9rem;
-}
-@media (max-width: 760px) {
+/* When the main column is narrow, give and get stack. */
+@container panel (max-width: 600px) {
   .trade-cols,
   .trade-bar {
     grid-template-columns: 1fr;
   }
 }
 
-/*
-=============================================================== 
----------- Log: In-Game ----------
-=============================================================== 
-*/
-
+/* ---------- 9i. Log ---------- */
 .filters {
   display: flex;
   gap: 0.5rem;
@@ -1090,40 +1656,8 @@ thead th {
 .log-day .chip {
   text-align: center;
 }
-.empty {
-  padding: 2rem;
-  text-align: center;
-  color: var(--muted);
-}
 
-/*
-=============================================================== 
----------- Event Cards: In-Game ----------
-=============================================================== 
-*/
-
-dialog {
-  border: 0;
-  border-radius: 14px;
-  padding: 1.5rem;
-  width: min(560px, calc(100vw - 2rem));
-  background: var(--surface);
-  color: var(--ink);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
-}
-dialog.wide {
-  width: min(880px, calc(100vw - 2rem));
-}
-dialog::backdrop {
-  background: rgba(20, 18, 14, 0.6);
-}
-dialog .ph.art {
-  height: 160px;
-  margin: 0.75rem 0 1rem;
-}
-dialog h2 {
-  margin-bottom: 0.5rem;
-}
+/* ---------- 9j. Event cards ---------- */
 .event-text {
   color: var(--muted);
   margin-bottom: 1rem;
@@ -1156,6 +1690,29 @@ dialog h2 {
   opacity: 0.45;
   cursor: not-allowed;
 }
+
+/* ---------- 9k. Skills and traits ---------- */
+.perk-list {
+  list-style: none;
+  margin: 0.6rem 0 0;
+  padding: 0;
+}
+.perk-list li + li {
+  margin-top: 0.25rem;
+}
+.perk-table td:first-child {
+  font-weight: 700;
+  white-space: nowrap;
+  width: 9rem;
+}
+
+/*
+===============================================================
+10. MINI-GAMES (js/minigames.js)
+===============================================================
+*/
+
+/* ---------- 10a. Shared mini-game frame ---------- */
 .mg-head {
   display: flex;
   justify-content: space-between;
@@ -1189,7 +1746,7 @@ dialog h2 {
   background: var(--surface);
   border: 2px solid var(--ink);
   border-radius: 10px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--shadow-lift);
   z-index: 5;
 }
 .mg-banner strong {
@@ -1204,13 +1761,30 @@ dialog h2 {
 .mg-banner.lost strong {
   color: var(--danger);
 }
+.mg-stats {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--line);
+}
+.mg-stats .meter {
+  width: 140px;
+}
+.mg-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding-top: 1rem;
+  flex-wrap: wrap;
+}
+.mg-foot .btns {
+  display: flex;
+  gap: 0.5rem;
+}
 
-/*
-=============================================================== 
----------- Defense: Mini-Game ----------
-=============================================================== 
-*/
-
+/* ---------- 10b. Defense ---------- */
 .mg-defense {
   padding: 0;
 }
@@ -1295,15 +1869,14 @@ dialog h2 {
     transform 0.25s;
 }
 
-/*
-=============================================================== 
----------- Lockpick: Mini-Game ----------
-=============================================================== 
-*/
-
+/* ---------- 10c. Lockpick ---------- */
 .mg-lockpick {
   display: grid;
   place-content: center;
+}
+.mg-lockpick .mg-msg {
+  max-width: 36ch;
+  margin-inline: auto;
 }
 .mg-lock {
   padding: 1.25rem 1.5rem 1rem;
@@ -1342,6 +1915,9 @@ dialog h2 {
   border-radius: 4px;
   transition: transform 0.15s;
 }
+.mg-pin-num {
+  font-weight: 700;
+}
 .mg-pin.set {
   background: var(--accent);
   border-color: var(--accent);
@@ -1357,7 +1933,7 @@ dialog h2 {
 @keyframes mg-wrong {
   0%,
   100% {
-    border-color: var(--ink);
+    border-color: var(--white_text);
   }
   30% {
     border-color: var(--danger);
@@ -1365,24 +1941,15 @@ dialog h2 {
     color: #fff;
   }
 }
-.mg-pin-num {
-  font-weight: 700;
-}
-.mg-lockpick .mg-msg {
-  max-width: 36ch;
-  margin-inline: auto;
-}
 
-/*
-=============================================================== 
----------- Search: Mini-Game ----------
-=============================================================== 
-*/
-
+/* ---------- 10d. Search ---------- */
 .mg-search {
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+.mg-search .mg-msg {
+  margin-top: 0.6rem;
 }
 .mg-grid {
   display: grid;
@@ -1422,191 +1989,4 @@ dialog h2 {
 .mg-tile.missed {
   opacity: 0.45;
   border-style: dashed;
-}
-.mg-search .mg-msg {
-  margin-top: 0.6rem;
-}
-.mg-stats {
-  display: flex;
-  gap: 1.5rem;
-  align-items: center;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--line);
-}
-.mg-stats .meter {
-  width: 140px;
-}
-.mg-foot {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-  padding-top: 1rem;
-  flex-wrap: wrap;
-}
-.mg-foot .btns {
-  display: flex;
-  gap: 0.5rem;
-}
-.pause {
-  text-align: center;
-  width: min(400px, calc(100vw - 2rem));
-}
-.pause h2 {
-  font-size: 1.8rem;
-  margin-bottom: 1rem;
-}
-.pause .btn {
-  margin-bottom: 0.6rem;
-}
-
-.toast {
-  position: fixed;
-  left: 50%;
-  bottom: 1.5rem;
-  transform: translateX(-50%);
-  background: var(--ink);
-  color: var(--surface);
-  padding: 0.7rem 1.1rem;
-  border-radius: 8px;
-  max-width: calc(100vw - 2rem);
-  box-shadow: var(--shadow);
-  z-index: 50;
-}
-
-/*
-=============================================================== 
----------- End: In-Game ----------
-=============================================================== 
-*/
-
-.end {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 2rem 1rem 3rem;
-  text-align: center;
-}
-.end > .ph {
-  height: 130px;
-  margin-bottom: 1.5rem;
-}
-.end h1 {
-  font-size: 2.6rem;
-  margin: 0.4rem 0;
-}
-.stat-grid {
-  display: grid;
-  gap: 0.75rem;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  margin: 1.5rem 0;
-  text-align: left;
-}
-.stat-grid .value {
-  font-size: 1.8rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-.group {
-  text-align: left;
-}
-.group ul {
-  list-style: none;
-  margin: 0.5rem 0 0;
-  padding: 0;
-}
-.group li {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.55rem 0;
-  border-bottom: 1px solid var(--line);
-}
-.group li:last-child {
-  border-bottom: 0;
-}
-.group .avatar {
-  width: 32px;
-  height: 32px;
-}
-.group .fate {
-  margin-left: auto;
-  color: var(--muted);
-}
-.end .page-actions {
-  justify-content: center;
-}
-
-.res-name {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-.resource-list img {
-  flex: none;
-  object-fit: contain;
-}
-
-/*
-=============================================================== 
----------- Skills and Traits: In-Game ----------
-=============================================================== 
-*/
-
-.perk-list {
-  list-style: none;
-  margin: 0.6rem 0 0;
-  padding: 0;
-}
-.perk-list li + li {
-  margin-top: 0.25rem;
-}
-.perk-table td:first-child {
-  font-weight: 700;
-  white-space: nowrap;
-  width: 9rem;
-}
-
-/*
-=============================================================== 
----------- Character Portraits: In-Game ----------
-=============================================================== 
-*/
-.portrait {
-  display: block;
-  object-fit: cover;
-  border-radius: 50%;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-}
-
-/*
-=============================================================== 
----------- Outline Art: In-Game ----------
-=============================================================== 
-*/
-dialog img.art,
-.end-art,
-.howto-art,
-.mg-card-art {
-  display: block;
-  width: 100%;
-  object-fit: cover;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-}
-dialog img.art {
-  height: 160px;
-  margin: 0.75rem 0 1rem;
-}
-.end-art {
-  height: 130px;
-  margin-bottom: 1.5rem;
-}
-.howto-art {
-  height: auto;
-  margin-top: 1rem;
-}
-.mg-card-art {
-  height: 80px;
-  margin-bottom: 0.75rem;
 }

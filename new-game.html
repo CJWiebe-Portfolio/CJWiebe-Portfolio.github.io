@@ -37,18 +37,23 @@ and starting survivors.
   <!-- Link to the common JavaScript files, css, fonts and other resources, site Icon, etc...-->
 
   <body>
-    <main class="page">
+    <main class="page page-narrow">
       <header class="page-head">
         <!-- Header for the page that displays the title and back button -->
         <a class="btn btn-sm" href="index.html" data-back>← Back</a>
-        <h1>New game</h1>
+        <div>
+          <h1>New game</h1>
+          <p class="muted">Four quick choices, then the first day begins.</p>
+        </div>
       </header>
-      <form id="new-game-form" novalidate>
-        <!-- Form for setting up a new game, records the name of the Shelter that the player will use, uses a random name if none is provided -->
-        <label class="field-label" for="shelter" style="display: block"
-          >Shelter name</label
-        >
-        <input
+      <form id="new-game-form" class="setup-form" novalidate>
+        <!-- Step 1: records the name of the Shelter that the player will use, uses a random name if none is provided -->
+        <section class="card setup-step">
+          <label class="step-title" for="shelter"
+            ><span class="step-num" aria-hidden="true">1</span> Name your
+            shelter</label
+          >
+          <input
           type="text"
           id="shelter"
           name="shelter"
@@ -57,16 +62,16 @@ and starting survivors.
           autocomplete="off"
           aria-describedby="shelter-hint"
         /><!-- Input field for the shelter name, with restrictions on the naming conventions -->
-        <p
-          id="shelter-hint"
-          class="small muted"
-          style="margin: 0.4rem 0 1.5rem"
-        >
-          Leave blank to use the suggested name.
-        </p>
+          <p id="shelter-hint" class="small muted field-hint">
+            Leave blank to use the suggested name.
+          </p>
+        </section>
 
-        <fieldset>
-          <legend>Difficulty</legend>
+        <!-- Step 2: difficulty -->
+        <fieldset class="card setup-step">
+          <legend class="step-title">
+            <span class="step-num" aria-hidden="true">2</span> Difficulty
+          </legend>
           <!-- Allows the player to select the difficulty level, this affects the game's challenge -->
           <div class="grid-3">
             <label class="choice-card">
@@ -102,8 +107,11 @@ and starting survivors.
           </div>
         </fieldset>
 
-        <fieldset>
-          <legend>Game length</legend>
+        <!-- Step 3: game length -->
+        <fieldset class="card setup-step">
+          <legend class="step-title">
+            <span class="step-num" aria-hidden="true">3</span> Game length
+          </legend>
           <!-- Allows the player to select the game length -->
           <div class="choices">
             <label class="choice"
@@ -118,21 +126,25 @@ and starting survivors.
           </div>
         </fieldset>
 
-        <div class="section-head">
-          <h2>Starting survivors</h2>
-          <!-- Allows the player to select the starting survivors, and reroll them if they don't like the initial selection -->
-          <button class="btn" type="button" id="reroll">
-            Reroll survivors
-          </button>
-        </div>
-        <ul
-          id="survivor-list"
-          class="grid-3"
-          style="list-style: none; padding: 0; margin: 0"
-          aria-live="polite"
-        ></ul>
+        <!-- Step 4: starting survivors, with a reroll if they don't like the initial selection -->
+        <section class="card setup-step">
+          <div class="section-head">
+            <h2 class="step-title">
+              <span class="step-num" aria-hidden="true">4</span> Starting
+              survivors
+            </h2>
+            <button class="btn btn-sm" type="button" id="reroll">
+              Reroll survivors
+            </button>
+          </div>
+          <ul
+            id="survivor-list"
+            class="grid-3 plain-list"
+            aria-live="polite"
+          ></ul>
+        </section>
 
-        <div class="page-actions">
+        <div class="page-actions setup-actions">
           <!-- Allows players to cancel or start the game -->
           <a class="btn btn-quiet" href="index.html">Cancel</a>
           <button class="btn btn-primary" type="submit">Start game</button>
