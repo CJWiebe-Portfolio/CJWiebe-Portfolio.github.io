@@ -46,7 +46,7 @@ The full rules are on the in-game **How to play** page.
 - Three difficulties and three run lengths, chosen on the New Game page
 - Randomly rolled survivors, each with one skill and one trait that change the rules for them
 - Eight map locations with different loot, danger and travel time
-- Six base facilities with multi-day upgrades
+- Six base facilities, each with three named tiers, all built from scratch on every difficulty
 - Night events with skill, cost and mini-game choices
 - Four wandering traders who come and go, each with their own stock and wants
 - Three mini-games (Defense, Lockpick, Search), with an option to auto-resolve them
@@ -124,13 +124,16 @@ All the numbers for each difficulty are in the `DIFFICULTY` and `START_RESOURCES
 
 The main rules and where to find them in `game.js`:
 
-- **Night defense:** `nightDefense()`. 10 per walls level, 5 per guard (10 for a Fighter), plus up to 10 ammo.
+- **Facilities:** `FACILITIES` holds each facility's three tiers (name, effect text, cost, days) and what the base does without it. `FX` holds the numbers each level gives (level 0 = not built), so the rules and the descriptions stay in one place. `fx(id, key)` reads the current value, and `upgradeCost()` / `buildDays()` apply the Builder and Workshop discounts.
+- **Night defense:** `nightDefense()`. Walls give 0/10/20/30 by tier, 5 per guard (10 for a Fighter, +3 each with the tier 3 walls), plus up to 10 ammo. The horde's random part is rolled at dawn (`state.hordeRoll`) so the Palisade and Lookout can show the exact size.
 - **Night raid:** `nightRaid()`. The horde is compared with your defense, and a breach injures survivors and can lower the walls.
 - **Dusk:** the End day click handler. Scavenging, base production, construction, healing, fatigue, eating and drinking.
 - **Damage and death:** `hurt()` and `changeMorale()`.
 - **Traders:** the `TRADERS` list holds each trader's stock, wants and length of stay. `traderDawn()` runs the schedule each dawn, `buyValue()` adds the 50% bonus (`WANT_BONUS`) for wanted items, and `tradeNeed()` applies the markup and the Negotiator discount. One trade per day stops players from trading the same goods back and forth for profit.
 
-The difficulty was tuned by simulating full runs. Playing sensibly on a 15-day run, about 98% of Easy runs, 90% of Normal and 20% of Hard are won. Doing nothing loses most Normal runs and every Hard run.
+The difficulty was tuned by simulating full runs. Playing sensibly on a 15-day run, about 98% of Easy runs, 90% of Normal and 20% of Hard were won. Doing nothing loses most Normal runs and every Hard run.
+
+After the facility rework (nothing built at the start), starting materials, tier costs and the kitchen's output were retuned with a simple bot playing 30 runs per difficulty. It won about 100% of Easy, 90% of Normal and 37% of Hard runs, against 100%, 80% and 50% for the same bot on the old version, so Normal plays about the same and Hard is a little tougher.
 
 ## Mini-games
 
@@ -145,8 +148,8 @@ Losing a mini-game injures one survivor for 30 health (15 if they're Tough).
 ## Known limitations and next steps
 
 - No saves or accounts yet. The disabled Continue button and the Options entries are reserved for them.
-- There's no way to find new survivors yet, so free beds and the Beds upgrade don't matter.
-- The Workshop and Infirmary can be built but don't do anything yet.
+- There's no way to find new survivors yet, so free beds don't matter (the Beds tiers still make Rest recover more).
+- The Workshop doesn't craft items yet. It makes building cheaper and faster.
 - The Military checkpoint is locked and can't be unlocked yet.
 - Only four night events exist, so they repeat on longer runs.
 

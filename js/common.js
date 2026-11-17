@@ -323,26 +323,56 @@ for escaping HTML and managing survivor skills and traits.
 
   /*
   ===============================================================
-  ---------- Button Click Sound ----------
+  ---------- Button Sounds ----------
   ===============================================================
+  Every button plays the click. A button can play a different sound by
+  naming it in a data-sound attribute, e.g. <button data-sound="gunshot">,
+  and data-sound="none" makes it silent. Code can also play a sound with
+  AT.playSound("horde").
   */
 
-  var clickSound = new Audio("assets/audio/click.mp3");
-  clickSound.preload = "auto";
+  // Sound name → file. Add a line here for each new sound.
+  var SOUNDS = {
+    click: "assets/audio/click.mp3",
+    gunshot: "assets/audio/pistol_shot.mp3",
+    cock: "assets/audio/gun_cocking.mp3",
+    zombie: "assets/audio/zombie_individual.mp3",
+    horde: "assets/audio/zombie_horde.mp3",
+    searchBooks: "assets/audio/searching_books.mp3",
+    searchDesk: "assets/audio/searching_desk.mp3",
+    searchToolbox: "assets/audio/searching_toolbox.mp3",
+    buildingHammering: "assets/audio/building(hammering).mp3",
+    turnPage: "assets/audio/paper(next-page).mp3",
+    menu: "assets/audio/menu_select.mp3",
+  };
 
-  // Plays the click, using the Sound and Volume settings from the Options page.
-  function playClick() {
+  // Load each file once, up front, so the first play isn't delayed.
+  var loadedSounds = {};
+  Object.keys(SOUNDS).forEach(function (name) {
+    loadedSounds[name] = new Audio(SOUNDS[name]);
+    loadedSounds[name].preload = "auto";
+  });
+
+  // Plays a sound by name, using the Sound and Volume settings from the Options page.
+  function playSound(name) {
     var s = load();
-    if (!s.sound) return;
-    clickSound.volume = s.volume / 100;
-    clickSound.currentTime = 0; // restart so quick clicks each make a sound
-    clickSound.play().catch(function () {});
+    if (!s.sound || !loadedSounds[name]) return;
+    // A copy lets the same sound overlap itself (e.g. two quick shots).
+    var a = loadedSounds[name].cloneNode();
+    a.volume = Math.min(1, Math.max(0, Number(s.volume) / 100));
+    a.play().catch(function () {});
+  }
+
+  // Kept so older code that calls AT.playClick() still works.
+  function playClick() {
+    playSound("click");
   }
 
   document.addEventListener("click", function (e) {
     var btn = e.target.closest("button, .btn");
     if (!btn || btn.disabled) return;
-    playClick();
+    var name = btn.dataset.sound || "click";
+    if (name !== "none") playSound(name);
 
     // Links load a new page, which cuts the sound off, so wait a moment first.
     // Skip this if another handler (like data-back) already took over the click,
@@ -364,4 +394,5 @@ for escaping HTML and managing survivor skills and traits.
   });
 
   window.AT.playClick = playClick;
+  window.AT.playSound = playSound;
 })();

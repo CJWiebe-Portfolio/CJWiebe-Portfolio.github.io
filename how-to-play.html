@@ -37,7 +37,9 @@ It explains the rules and mechanics of the game.
   <body>
     <main class="page">
       <header class="page-head">
-        <a class="btn btn-sm" href="index.html" data-back>← Back</a>
+        <a class="btn btn-sm" data-sound="click" href="index.html" data-back
+          >← Back</a
+        >
         <h1>How to play</h1>
       </header>
       <!-- Header for the page that displays the title and back button -->
@@ -121,8 +123,8 @@ It explains the rules and mechanics of the game.
                 <h3>Night</h3>
                 <p class="small muted" style="margin-top: 0.4rem">
                   Every night brings an event you must answer. Then the horde
-                  attacks the walls, and your night defense decides whether
-                  they hold.
+                  attacks the walls, and your night defense decides whether they
+                  hold.
                 </p>
               </li>
             </ol>
@@ -145,8 +147,9 @@ It explains the rules and mechanics of the game.
                   >
                     Each survivor eats 1 food at dusk. A day without enough food
                     raises everyone's hunger and lowers morale. At 80 hunger,
-                    survivors start losing health every day. The kitchen grows
-                    1 food per level each day.</span
+                    survivors start losing health every day. Once built, the
+                    kitchen makes 2, 4 or 6 food a day depending on its
+                    tier.</span
                   ></span
                 >
               </li>
@@ -163,8 +166,8 @@ It explains the rules and mechanics of the game.
                   >
                     Each survivor drinks 1 water at dusk. Running short costs
                     everyone health right away, so water is the most urgent
-                    resource. The water collector gathers 2 water per level each
-                    day.</span
+                    resource. Once built, the water collector gathers 2, 4 or 6
+                    water a day depending on its tier.</span
                   ></span
                 >
               </li>
@@ -179,8 +182,9 @@ It explains the rules and mechanics of the game.
                     class="small muted"
                     style="margin-top: 0.4rem"
                   >
-                    Building and upgrading facilities costs materials. Each
-                    upgrade costs 3 more than the one before.</span
+                    Building and upgrading facilities costs materials. Nothing
+                    is built at the start, each tier costs more than the one
+                    before, and a Workshop makes every build cheaper.</span
                   ></span
                 >
               </li>
@@ -212,8 +216,8 @@ It explains the rules and mechanics of the game.
                     class="small muted"
                     style="margin-top: 0.4rem"
                   >
-                    Ammo adds to your night defense (up to 10 counts). Each guard
-                    uses 1 ammo every night, so keep restocking.</span
+                    Ammo adds to your night defense (up to 10 counts). Each
+                    guard uses 1 ammo every night, so keep restocking.</span
                   ></span
                 >
               </li>
@@ -230,10 +234,10 @@ It explains the rules and mechanics of the game.
             </p>
             <p>
               On the Survivors tab every bar reads "full is good": hunger shows
-              as <strong>Fed</strong> and fatigue as <strong>Rested</strong>. Bars
-              turn amber, then red, as they run low. Under each survivor's task, a
-              line says what that task will do today, and the Today panel flags
-              anything that won't work before you end the day.
+              as <strong>Fed</strong> and fatigue as <strong>Rested</strong>.
+              Bars turn amber, then red, as they run low. Under each survivor's
+              task, a line says what that task will do today, and the Today
+              panel flags anything that won't work before you end the day.
             </p>
             <table>
               <thead>
@@ -245,7 +249,10 @@ It explains the rules and mechanics of the game.
               <tbody>
                 <tr>
                   <td>Rest</td>
-                  <td>Lowers fatigue by 35 and raises morale by 5.</td>
+                  <td>
+                    Lowers fatigue by 25 and raises morale by 5. Better Beds
+                    recover more, and an Infirmary also heals.
+                  </td>
                 </tr>
                 <tr>
                   <td>Scavenge</td>
@@ -263,7 +270,9 @@ It explains the rules and mechanics of the game.
                 </tr>
                 <tr>
                   <td>Guard</td>
-                  <td>Adds 5 night defense (10 for a Fighter) and uses ammo.</td>
+                  <td>
+                    Adds 5 night defense (10 for a Fighter) and uses ammo.
+                  </td>
                 </tr>
                 <tr>
                   <td>Cook</td>
@@ -273,7 +282,8 @@ It explains the rules and mechanics of the game.
                   <td>Heal</td>
                   <td>
                     Treats the most injured survivor using 1 medicine: +30
-                    health for a Medic, +10 for anyone else.
+                    health for a Medic, +10 for anyone else. A Sick Bay adds 10
+                    more, and a Field Hospital treats two people.
                   </td>
                 </tr>
               </tbody>
@@ -284,12 +294,167 @@ It explains the rules and mechanics of the game.
               Morale drops when food runs short and when someone dies.
             </p>
             <p>
-              Facilities at the base cover those needs: beds set how many people
-              you can house, the kitchen and water collector make food and
-              water every day, and the walls raise your night defense.
-              Upgrades are paid for up front and only progress on days when a
-              rested survivor is on Build.
+              Facilities at the base cover those needs. On every difficulty you
+              start with nothing built, so the first days are about getting
+              water, food and walls up. Each facility has three tiers. Building
+              a tier is paid for up front in materials and only moves forward on
+              days when a rested survivor is on Build. You can have more than
+              one build going at once. A finished tier works from the next day.
             </p>
+            <p>
+              Costs below are before discounts: a Builder on Build saves 2
+              materials, and a Workshop saves 1 to 3 more (never below 1).
+            </p>
+            <div class="table-scroll">
+              <table class="facility-table">
+                <caption class="visually-hidden">
+                  Facility tiers, what each gives and what it costs
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Facility</th>
+                    <th scope="col">Tier 1</th>
+                    <th scope="col">Tier 2</th>
+                    <th scope="col">Tier 3</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <th scope="row">Beds</th>
+                    <td>
+                      <strong>Salvaged Cots</strong><br /><span
+                        class="small muted"
+                        >Rest recovers 35 fatigue. Sleeps 5.<br />3 materials, 1
+                        day.</span
+                      >
+                    </td>
+                    <td>
+                      <strong>Bunk Room</strong><br /><span class="small muted"
+                        >Rest recovers 45 fatigue. Sleeps 7.<br />5 materials, 1
+                        day.</span
+                      >
+                    </td>
+                    <td>
+                      <strong>Barracks</strong><br /><span class="small muted"
+                        >Rest recovers 55 fatigue and +10 morale. Sleeps 9.<br />8
+                        materials, 2 days.</span
+                      >
+                    </td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Kitchen and garden</th>
+                    <td>
+                      <strong>Camp Kitchen</strong><br /><span
+                        class="small muted"
+                        >+2 food a day.<br />4 materials, 1 day.</span
+                      >
+                    </td>
+                    <td>
+                      <strong>Kitchen Garden</strong><br /><span
+                        class="small muted"
+                        >+4 food a day.<br />6 materials, 1 day.</span
+                      >
+                    </td>
+                    <td>
+                      <strong>Greenhouse and Smokehouse</strong><br /><span
+                        class="small muted"
+                        >+6 food a day.<br />9 materials, 2 days.</span
+                      >
+                    </td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Water collector</th>
+                    <td>
+                      <strong>Basic Rain Catcher</strong><br /><span
+                        class="small muted"
+                        >+2 water a day.<br />4 materials, 1 day.</span
+                      >
+                    </td>
+                    <td>
+                      <strong>Rooftop Collection System</strong><br /><span
+                        class="small muted"
+                        >+4 water a day.<br />6 materials, 2 days.</span
+                      >
+                    </td>
+                    <td>
+                      <strong>Advanced Water Harvesting Network</strong
+                      ><br /><span class="small muted"
+                        >+6 water a day.<br />9 materials, 2 days.</span
+                      >
+                    </td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Workshop</th>
+                    <td>
+                      <strong>Tool Bench</strong><br /><span class="small muted"
+                        >Builds cost 1 less material.<br />3 materials, 1
+                        day.</span
+                      >
+                    </td>
+                    <td>
+                      <strong>Repair Shop</strong><br /><span
+                        class="small muted"
+                        >Builds cost 2 less. Mechanics salvage +1 more.<br />6
+                        materials, 1 day.</span
+                      >
+                    </td>
+                    <td>
+                      <strong>Fabrication Shop</strong><br /><span
+                        class="small muted"
+                        >Builds cost 3 less and take 1 day less.<br />9
+                        materials, 2 days.</span
+                      >
+                    </td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Infirmary</th>
+                    <td>
+                      <strong>First Aid Station</strong><br /><span
+                        class="small muted"
+                        >Resting survivors heal +10 health at dusk.<br />4
+                        materials, 1 day.</span
+                      >
+                    </td>
+                    <td>
+                      <strong>Sick Bay</strong><br /><span class="small muted"
+                        >Resting survivors heal +20. Heal treats +10 more.<br />7
+                        materials, 2 days.</span
+                      >
+                    </td>
+                    <td>
+                      <strong>Field Hospital</strong><br /><span
+                        class="small muted"
+                        >Resting survivors heal +30. Heal treats two people.<br />10
+                        materials, 2 days.</span
+                      >
+                    </td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Walls and watchtower</th>
+                    <td>
+                      <strong>Scrap Barricades</strong><br /><span
+                        class="small muted"
+                        >+10 night defense.<br />4 materials, 1 day.</span
+                      >
+                    </td>
+                    <td>
+                      <strong>Palisade and Lookout</strong><br /><span
+                        class="small muted"
+                        >+20 night defense. Shows the exact horde size.<br />7
+                        materials, 2 days.</span
+                      >
+                    </td>
+                    <td>
+                      <strong>Fortified Wall and Watchtower</strong><br /><span
+                        class="small muted"
+                        >+30 night defense. Each guard adds +3 more.<br />10
+                        materials, 2 days.</span
+                      >
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
             <img
               class="howto-art"
               src="assets/images/png/howto_needs.png"
@@ -301,11 +466,10 @@ It explains the rules and mechanics of the game.
             <!-- Explains how scavenging trips work -->
             <h2 id="scavenging-h">Scavenging</h2>
             <p>
-              Pick a location on the Map tab and send a survivor. They come
-              back at dusk with the kinds of supplies listed for that place:
-              the farm and supermarket have food and water, the police station
-              has ammo and medicine, and the gas station and school have
-              materials.
+              Pick a location on the Map tab and send a survivor. They come back
+              at dusk with the kinds of supplies listed for that place: the farm
+              and supermarket have food and water, the police station has ammo
+              and medicine, and the gas station and school have materials.
             </p>
             <ul>
               <li>
@@ -342,22 +506,28 @@ It explains the rules and mechanics of the game.
               <tbody>
                 <tr>
                   <td>Walls and watchtower</td>
-                  <td>10 per level</td>
+                  <td>10, 20 or 30 by tier (none until built)</td>
                 </tr>
                 <tr>
                   <td>Each rested survivor on Guard</td>
-                  <td>5 (Fighter 10, Night owl +5, Coward 0)</td>
+                  <td>
+                    5 (Fighter 10, Night owl +5, Coward 0). +3 more each with
+                    the Fortified Wall and Watchtower
+                  </td>
                 </tr>
                 <tr>
                   <td>Ammo in stock</td>
-                  <td>1 per ammo, up to 10 (double with a Sharpshooter on Guard)</td>
+                  <td>
+                    1 per ammo, up to 10 (double with a Sharpshooter on Guard)
+                  </td>
                 </tr>
               </tbody>
             </table>
             <p>
               If your defense is lower than the horde, it breaks through and
               injures a survivor. A big breach injures two, and can knock your
-              walls down a level.
+              walls back a tier. Once you build the Palisade and Lookout, you
+              see the exact size of tonight's horde instead of an estimate.
             </p>
           </section>
 
@@ -415,9 +585,9 @@ It explains the rules and mechanics of the game.
                 <strong>One trade a day.</strong> Put everything into one offer.
               </li>
               <li>
-                <strong>Prices depend on difficulty.</strong> On Normal and Hard,
-                traders ask for more than their goods are worth. A Negotiator
-                in your group knocks 25% off what they ask.
+                <strong>Prices depend on difficulty.</strong> On Normal and
+                Hard, traders ask for more than their goods are worth. A
+                Negotiator in your group knocks 25% off what they ask.
               </li>
             </ul>
           </section>

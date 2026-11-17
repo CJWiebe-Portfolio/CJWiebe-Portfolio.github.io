@@ -59,9 +59,10 @@ are marked TODO.
   ];
   // Defines starting resources for each difficulty level
   var START_RESOURCES = {
-    easy: { food: 15, water: 15, materials: 12, medicine: 4, ammo: 8 },
-    normal: { food: 10, water: 10, materials: 8, medicine: 2, ammo: 5 },
-    hard: { food: 6, water: 6, materials: 5, medicine: 1, ammo: 3 },
+    // Materials are higher than you might expect because nothing is built at the start.
+    easy: { food: 15, water: 15, materials: 22, medicine: 4, ammo: 8 },
+    normal: { food: 10, water: 10, materials: 16, medicine: 2, ammo: 5 },
+    hard: { food: 8, water: 8, materials: 13, medicine: 1, ammo: 3 },
   };
   // Defines how hard each difficulty is beyond the starting resources. [TUNE THESE]
   // yield:       share of scavenged supplies you actually bring home
@@ -72,9 +73,39 @@ are marked TODO.
   // autoWin:     chance an auto-resolved mini-game is won
   // moraleLoss:  morale lost by everyone when a survivor dies
   var DIFFICULTY = {
-    easy: { yield: 0.95, threatBase: 9, threatPeak: 18, starveDmg: 10, scavRisk: 0.1, autoWin: 0.7, moraleLoss: 10, tradeMarkup: 1.0, traderGap: [2, 3] },
-    normal: { yield: 0.85, threatBase: 8, threatPeak: 22, starveDmg: 15, scavRisk: 0.15, autoWin: 0.55, moraleLoss: 15, tradeMarkup: 1.15, traderGap: [3, 4] },
-    hard: { yield: 0.8, threatBase: 7, threatPeak: 23, starveDmg: 20, scavRisk: 0.2, autoWin: 0.4, moraleLoss: 20, tradeMarkup: 1.3, traderGap: [4, 6] },
+    easy: {
+      yield: 0.95,
+      threatBase: 9,
+      threatPeak: 18,
+      starveDmg: 10,
+      scavRisk: 0.1,
+      autoWin: 0.7,
+      moraleLoss: 10,
+      tradeMarkup: 1.0,
+      traderGap: [2, 3],
+    },
+    normal: {
+      yield: 0.85,
+      threatBase: 8,
+      threatPeak: 22,
+      starveDmg: 15,
+      scavRisk: 0.15,
+      autoWin: 0.55,
+      moraleLoss: 15,
+      tradeMarkup: 1.15,
+      traderGap: [3, 4],
+    },
+    hard: {
+      yield: 0.8,
+      threatBase: 7,
+      threatPeak: 23,
+      starveDmg: 20,
+      scavRisk: 0.2,
+      autoWin: 0.4,
+      moraleLoss: 20,
+      tradeMarkup: 1.3,
+      traderGap: [4, 6],
+    },
   };
   // tradeMarkup: how much more value traders ask for than they give (1.15 = 15% extra)
   // traderGap:   [min, max] days with no trader between visits
@@ -128,64 +159,193 @@ are marked TODO.
   var TASKS = ["Rest", "Scavenge", "Build", "Guard", "Cook", "Heal"];
 
   /* 
----------- Facilities [WORK IN PROGRESS NEEDS TUNING]----------
+---------- Facilities [TUNE THESE] ----------
+Every facility starts unbuilt and has 3 tiers. Each tier has a name, a short
+line saying what it gives, its cost in materials and how many days of work it
+takes. "none" says what the base does without it. The numbers each tier uses
+are in the FX table below so the rules and the descriptions stay together.
 */
   var FACILITIES = [
     {
       id: "beds",
       img: "bedroom",
       name: "Beds",
-      level: 1,
-      desc: "Sets how many survivors you can house",
-      cost: 4,
-      days: 1,
+      desc: "Better sleep: Rest recovers more, and more beds for newcomers",
+      none: "Bedrolls on the floor. Rest recovers 25 fatigue. Sleeps 3.",
+      tiers: [
+        {
+          name: "Salvaged Cots",
+          effect: "Rest recovers 35 fatigue. Sleeps 5.",
+          cost: 3,
+          days: 1,
+        },
+        {
+          name: "Bunk Room",
+          effect: "Rest recovers 45 fatigue. Sleeps 7.",
+          cost: 5,
+          days: 1,
+        },
+        {
+          name: "Barracks",
+          effect: "Rest recovers 55 fatigue and +10 morale. Sleeps 9.",
+          cost: 8,
+          days: 2,
+        },
+      ],
     },
     {
       id: "kitchen",
       img: "kitchen",
       name: "Kitchen and garden",
-      level: 1,
-      desc: "Grows and cooks food",
-      cost: 5,
-      days: 1,
+      desc: "Grows and cooks food every day",
+      none: "No kitchen. The base makes no food.",
+      tiers: [
+        { name: "Camp Kitchen", effect: "+2 food a day.", cost: 4, days: 1 },
+        { name: "Kitchen Garden", effect: "+4 food a day.", cost: 6, days: 1 },
+        {
+          name: "Greenhouse and Smokehouse",
+          effect: "+6 food a day.",
+          cost: 9,
+          days: 2,
+        },
+      ],
     },
     {
       id: "water",
       img: "watercollector",
       name: "Water collector",
-      level: 1,
-      desc: "Collects water each day",
-      cost: 6,
-      days: 2,
+      desc: "Collects rainwater every day",
+      none: "No collector. The base gathers no water.",
+      tiers: [
+        {
+          name: "Basic Rain Catcher",
+          effect: "+2 water a day.",
+          cost: 4,
+          days: 1,
+        },
+        {
+          name: "Rooftop Collection System",
+          effect: "+4 water a day.",
+          cost: 6,
+          days: 2,
+        },
+        {
+          name: "Advanced Water Harvesting Network",
+          effect: "+6 water a day.",
+          cost: 9,
+          days: 2,
+        },
+      ],
     },
     {
       id: "workshop",
       img: "workshop",
       name: "Workshop",
-      level: 1,
-      desc: "Crafts items and lowers upgrade costs",
-      cost: 5,
-      days: 1,
+      desc: "Makes every other build cheaper and faster",
+      none: "No workshop. Builds cost full price.",
+      tiers: [
+        {
+          name: "Tool Bench",
+          effect: "Builds cost 1 less material.",
+          cost: 3,
+          days: 1,
+        },
+        {
+          name: "Repair Shop",
+          effect: "Builds cost 2 less. Mechanics salvage +1 more.",
+          cost: 6,
+          days: 1,
+        },
+        {
+          name: "Fabrication Shop",
+          effect: "Builds cost 3 less and take 1 day less.",
+          cost: 9,
+          days: 2,
+        },
+      ],
     },
     {
       id: "infirmary",
       img: "infirmary",
       name: "Infirmary",
-      level: 0,
-      desc: "Heals injured and sick survivors",
-      cost: 8,
-      days: 2,
+      desc: "Heals survivors who rest, and helps whoever is on Heal",
+      none: "No infirmary. Only the Heal task treats injuries.",
+      tiers: [
+        {
+          name: "First Aid Station",
+          effect: "Resting survivors heal +10 health at dusk.",
+          cost: 4,
+          days: 1,
+        },
+        {
+          name: "Sick Bay",
+          effect: "Resting survivors heal +20. Heal treats +10 more.",
+          cost: 7,
+          days: 2,
+        },
+        {
+          name: "Field Hospital",
+          effect: "Resting survivors heal +30. Heal treats two people.",
+          cost: 10,
+          days: 2,
+        },
+      ],
     },
     {
       id: "walls",
       img: "watchtower",
       name: "Walls and watchtower",
-      level: 1,
       desc: "Raises night defense",
-      cost: 6,
-      days: 2,
+      none: "No walls. Only guards and ammo hold the horde back.",
+      tiers: [
+        {
+          name: "Scrap Barricades",
+          effect: "+10 night defense.",
+          cost: 4,
+          days: 1,
+        },
+        {
+          name: "Palisade and Lookout",
+          effect: "+20 night defense. Shows the exact horde size.",
+          cost: 7,
+          days: 2,
+        },
+        {
+          name: "Fortified Wall and Watchtower",
+          effect: "+30 night defense. Each guard adds +3 more.",
+          cost: 10,
+          days: 2,
+        },
+      ],
     },
   ];
+
+  // What each facility gives at levels 0 (not built) to 3. [TUNE THESE]
+  // Keep these in step with the "effect" lines above.
+  var FX = {
+    beds: {
+      sleeps: [3, 5, 7, 9],
+      rest: [25, 35, 45, 55],
+      restMorale: [5, 5, 5, 10],
+    },
+    kitchen: { food: [0, 2, 4, 6] },
+    water: { water: [0, 2, 4, 6] },
+    workshop: {
+      discount: [0, 1, 2, 3],
+      fasterBy: [0, 0, 0, 1],
+      salvage: [0, 0, 1, 1],
+    },
+    infirmary: {
+      restHeal: [0, 10, 20, 30],
+      healBonus: [0, 0, 10, 10],
+      patients: [1, 1, 1, 2],
+    },
+    walls: {
+      defense: [0, 10, 20, 30],
+      exactHorde: [false, false, true, true],
+      guardBonus: [0, 0, 0, 3],
+    },
+  };
 
   /* 
 ---------- Map Locations and there button x/y coordinates [WORK IN PROGRESS NEEDS TUNING] ----------
@@ -261,7 +421,7 @@ are marked TODO.
       danger: 1,
       travel: 1,
       finds: "Materials",
-      loot: ["materials"]
+      loot: ["materials"],
     },
     {
       id: "military",
@@ -419,8 +579,9 @@ are marked TODO.
       {},
       START_RESOURCES[setup.difficulty] || START_RESOURCES.normal,
     ),
+    // Every facility starts unbuilt (level 0) on every difficulty.
     facilities: FACILITIES.map(function (f) {
-      return Object.assign({}, f);
+      return Object.assign({}, f, { level: 0, building: null, buildTotal: 0 });
     }),
     survivors: setup.survivors.map(function (s, i) {
       return {
@@ -436,7 +597,7 @@ are marked TODO.
         status: "Healthy",
         alive: true,
         lostOn: null,
-        task: ["Scavenge", "Build", "Rest"][i] || "Rest",
+        task: ["Scavenge", "Build", "Guard"][i] || "Rest",
         target: i === 0 ? "hospital" : null,
       };
     }),
@@ -453,6 +614,7 @@ are marked TODO.
     sendWho: null, // survivor picked in advance on the Map (set by "Choose destination" links)
     logSeen: 0, // how many log entries the player has seen on the Log tab (for its badge)
     logOpen: {}, // which days the player has opened or closed in the Log
+    hordeRoll: randInt(-3, 3), // tonight's horde is threatTonight() + this; rolled each dawn
   };
   var leaving = false;
 
@@ -468,9 +630,20 @@ are marked TODO.
       return f.id === id;
     });
   }
+  // What a facility gives at its current level (see the FX table).
+  function fx(id, key) {
+    return FX[id][key][facility(id).level];
+  }
+  // The tier being worked on next (null when maxed), and the current one (null when not built).
+  function nextTier(f) {
+    return f.tiers[f.level] || null;
+  }
+  function currentTier(f) {
+    return f.level ? f.tiers[f.level - 1] : null;
+  }
   // ---------- Checks the number of available beds ----------
   function bedCount() {
-    return 2 + facility("beds").level * 2;
+    return fx("beds", "sleeps");
   }
   // ---------- Checks the number of available guards ----------
   function guards() {
@@ -481,20 +654,29 @@ are marked TODO.
   // ---------- Checks the night defense value ----------
   // How much night defense one survivor adds. Skills/traits are defined in common.js.
   function guardPower(s) {
-    if (s.task !== "Guard" || s.trait === "Coward" || s.fatigue >= TIRED) return 0;
+    if (s.task !== "Guard" || s.trait === "Coward" || s.fatigue >= TIRED)
+      return 0;
     var power = s.skill === "Fighter" ? 10 : 5;
     if (s.trait === "Night owl") power += 5;
-    return power;
+    return power + fx("walls", "guardBonus");
   }
   // Calculates the total night defense value based on walls, guards, and ammo.
   //  Skills and traits are defined in common.js.
-  function nightDefense() {
+  // Pass ahead = true for the Today panel: it counts walls that will finish at dusk,
+  // since they'll be up before the horde arrives.
+  function nightDefense(ahead) {
     var ammo = Math.min(state.resources.ammo, 10);
     if (onTask("Guard", "Sharpshooter")) ammo *= 2;
     var guardTotal = alive().reduce(function (sum, s) {
       return sum + guardPower(s);
     }, 0);
-    return facility("walls").level * 10 + guardTotal + ammo;
+    var walls = facility("walls");
+    var level = walls.level + (ahead && wallsFinishToday() ? 1 : 0);
+    return FX.walls.defense[level] + guardTotal + ammo;
+  }
+  // True when the walls' next tier will be finished at dusk today.
+  function wallsFinishToday() {
+    return facility("walls").building === 1 && builders().length > 0;
   } // [WORK IN PROGRESS NEEDS TUNING]
 
   // Survivors on Build who are rested enough to work.
@@ -510,9 +692,22 @@ are marked TODO.
       return s.task === task && s.skill === skill;
     });
   }
-  // Calculates the cost of upgrading a facility, taking into account any discounts from survivors on the Build task with the Builder skill.
+  // Cost of a facility's next tier: 2 less with a Builder on Build, and less again
+  // with a Workshop. Never below 1.
   function upgradeCost(f) {
-    return Math.max(1, f.cost - (onTask("Build", "Builder") ? 2 : 0));
+    var t = nextTier(f);
+    if (!t) return 0;
+    return Math.max(
+      1,
+      t.cost -
+        (onTask("Build", "Builder") ? 2 : 0) -
+        fx("workshop", "discount"),
+    );
+  }
+  // Days of work for a facility's next tier. A Fabrication Shop saves a day. Never below 1.
+  function buildDays(f) {
+    var t = nextTier(f);
+    return t ? Math.max(1, t.days - fx("workshop", "fasterBy")) : 0;
   }
 
   // Heals a survivor by a specified amount, ensuring health does not exceed 100 and updating status if health is above 60.
@@ -666,7 +861,10 @@ so they always agree with each other.
         state.trade = { give: {}, get: {} };
         t.nextIn = randInt(D.traderGap[0], D.traderGap[1]);
       } else if (t.leaves === 1) {
-        addLog("trade", t.name + " is leaving after today. Last chance to trade.");
+        addLog(
+          "trade",
+          t.name + " is leaving after today. Last chance to trade.",
+        );
       }
       return;
     }
@@ -698,14 +896,33 @@ so they always agree with each other.
     if (onTask("Cook", "Cook")) need = Math.max(0, need - 1);
     return need;
   }
-  // Who Heal would treat: the most hurt survivor, if anyone is hurt.
-  function patient() {
-    var p = alive()
-      .slice()
+  // Who Heal would treat: the most hurt survivors, as many as the infirmary
+  // allows (1, or 2 with a Field Hospital). Empty when no one is hurt.
+  function patients() {
+    return alive()
+      .filter(function (p) {
+        return p.health < 100;
+      })
       .sort(function (a, b) {
         return a.health - b.health;
-      })[0];
-    return p && p.health < 100 ? p : null;
+      })
+      .slice(0, fx("infirmary", "patients"));
+  }
+  // Health one treatment restores. A Medic does more; a Sick Bay adds more.
+  // Without medicine only a Medic can do anything.
+  function healAmount(healer, meds) {
+    var amount = meds
+      ? healer.skill === "Medic"
+        ? 30
+        : 10
+      : healer.skill === "Medic"
+        ? 10
+        : 0;
+    return amount ? amount + fx("infirmary", "healBonus") : 0;
+  }
+  // Materials a Mechanic on Build salvages each day.
+  function salvageAmount() {
+    return 2 + fx("workshop", "salvage");
   }
 
   // What a survivor's task will actually do today.
@@ -715,16 +932,25 @@ so they always agree with each other.
   function taskInfo(s) {
     var tired = s.fatigue >= TIRED;
     if (s.task === "Rest") {
+      var restHeal =
+        s.health < 100
+          ? (s.trait === "Quick healer" ? 10 : 0) + fx("infirmary", "restHeal")
+          : 0;
       return {
         text:
-          "Recovers fatigue and morale" +
-          (s.trait === "Quick healer" && s.health < 100 ? ", +10 health" : "") +
+          "Recovers " +
+          fx("beds", "rest") +
+          " fatigue and " +
+          fx("beds", "restMorale") +
+          " morale" +
+          (restHeal ? ", +" + restHeal + " health" : "") +
           ".",
         level: "",
       };
     }
     if (s.task === "Scavenge") {
-      if (tired) return { text: "Too tired to scavenge. Will stay home.", level: "bad" };
+      if (tired)
+        return { text: "Too tired to scavenge. Will stay home.", level: "bad" };
       if (!s.target) {
         return {
           text: "No destination picked.",
@@ -745,8 +971,15 @@ so they always agree with each other.
       };
     }
     if (s.task === "Build") {
-      if (tired) return { text: "Too tired to build. Work won't move forward.", level: "bad" };
-      var extra = s.skill === "Mechanic" ? " Also salvages 2 materials." : "";
+      if (tired)
+        return {
+          text: "Too tired to build. Work won't move forward.",
+          level: "bad",
+        };
+      var extra =
+        s.skill === "Mechanic"
+          ? " Also salvages " + salvageAmount() + " materials."
+          : "";
       var jobs = inProgress();
       if (!jobs.length) {
         return {
@@ -760,7 +993,9 @@ so they always agree with each other.
           "Working on " +
           jobs
             .map(function (f) {
-              return f.name + " (" + plural(f.building, "day") + " left)";
+              return (
+                nextTier(f).name + " (" + plural(f.building, "day") + " left)"
+              );
             })
             .join(", ") +
           "." +
@@ -769,8 +1004,10 @@ so they always agree with each other.
       };
     }
     if (s.task === "Guard") {
-      if (tired) return { text: "Too tired to guard. Adds no defense.", level: "bad" };
-      if (s.trait === "Coward") return { text: "Cowards add no defense on Guard.", level: "info" };
+      if (tired)
+        return { text: "Too tired to guard. Adds no defense.", level: "bad" };
+      if (s.trait === "Coward")
+        return { text: "Cowards add no defense on Guard.", level: "info" };
       return {
         text:
           "+" +
@@ -782,23 +1019,37 @@ so they always agree with each other.
       };
     }
     if (s.task === "Cook") {
-      if (s.skill === "Cook") return { text: "The group eats 1 less food at dusk.", level: "" };
+      if (s.skill === "Cook")
+        return { text: "The group eats 1 less food at dusk.", level: "" };
       return { text: "Only a Cook saves food. No effect.", level: "info" };
     }
     if (s.task === "Heal") {
-      var p = patient();
-      if (!p) return { text: "Everyone is at full health. No effect.", level: "info" };
+      var list = patients();
+      if (!list.length)
+        return {
+          text: "Everyone is at full health. No effect.",
+          level: "info",
+        };
       var meds = state.resources.medicine > 0;
-      var amount = meds ? (s.skill === "Medic" ? 30 : 10) : s.skill === "Medic" ? 10 : 0;
-      if (!amount) return { text: "No medicine left. No effect.", level: "info" };
+      var amount = healAmount(s, meds);
+      if (!amount)
+        return { text: "No medicine left. No effect.", level: "info" };
+      // With no medicine only one person can be treated (by a Medic).
+      if (!meds) list = list.slice(0, 1);
+      else list = list.slice(0, state.resources.medicine);
       return {
         text:
           "Treats " +
-          (p === s ? "themself" : p.name) +
+          list
+            .map(function (p) {
+              return p === s ? "themself" : p.name;
+            })
+            .join(" and ") +
           " (+" +
           amount +
           " health" +
-          (meds ? ", uses 1 medicine" : "") +
+          (list.length > 1 ? " each" : "") +
+          (meds ? ", uses " + list.length + " medicine" : "") +
           ").",
         level: "",
       };
@@ -810,12 +1061,12 @@ so they always agree with each other.
   function duskForecast() {
     var food = {
       have: state.resources.food,
-      made: facility("kitchen").level,
+      made: fx("kitchen", "food"),
       need: foodNeeded(),
     };
     var water = {
       have: state.resources.water,
-      made: facility("water").level * 2,
+      made: fx("water", "water"),
       need: alive().length,
     };
     [food, water].forEach(function (r) {
@@ -825,13 +1076,24 @@ so they always agree with each other.
   }
 
   // Night defense against tonight's horde. The real horde is up to 3 bigger or smaller.
+  // With a lookout (walls tier 2+) the exact horde size is known.
   function tonightOdds() {
-    var def = nightDefense(),
-      threat = threatTonight();
-    var level = def >= threat + 3 ? "good" : def >= threat - 3 ? "info" : "bad";
+    var def = nightDefense(true),
+      exact = fx("walls", "exactHorde"),
+      threat = exact ? hordeSize() : threatTonight();
+    var level = exact
+      ? def >= threat
+        ? "good"
+        : "bad"
+      : def >= threat + 3
+        ? "good"
+        : def >= threat - 3
+          ? "info"
+          : "bad";
     return {
       def: def,
       threat: threat,
+      exact: exact,
       level: level,
       label: {
         good: "Walls should hold",
@@ -877,7 +1139,13 @@ so they always agree with each other.
     if (odds.level === "bad") {
       list.push({
         text:
-          "Night defense " + odds.def + " is well below the horde (about " + odds.threat + ").",
+          "Night defense " +
+          odds.def +
+          (odds.exact
+            ? " is below the horde ("
+            : " is well below the horde (about ") +
+          odds.threat +
+          ").",
         fix: { label: "Add guards", goto: "survivors" },
       });
     }
@@ -898,7 +1166,11 @@ so they always agree with each other.
   }
   function warnItem(w) {
     return (
-      '<li class="warn"><span>' + esc(w.text) + "</span>" + (w.fix ? fixLink(w.fix) : "") + "</li>"
+      '<li class="warn"><span>' +
+      esc(w.text) +
+      "</span>" +
+      (w.fix ? fixLink(w.fix) : "") +
+      "</li>"
     );
   }
 
@@ -989,7 +1261,8 @@ so they always agree with each other.
       '<div class="odds"><span><strong>' +
       pad(odds.def) +
       "</strong> defense</span>" +
-      '<span class="muted">vs</span><span><strong>~' +
+      '<span class="muted">vs</span><span><strong>' +
+      (odds.exact ? "" : "~") +
       pad(odds.threat) +
       "</strong> horde</span></div>" +
       '<p class="odds-label ' +
@@ -997,7 +1270,13 @@ so they always agree with each other.
       '">' +
       odds.label +
       ' <span class="muted">· ' +
+      (odds.exact ? "horde spotted from the lookout · " : "") +
       plural(guards(), "guard") +
+      (wallsFinishToday()
+        ? " · counts the " +
+          nextTier(facility("walls")).name +
+          " finishing at dusk"
+        : "") +
       "</span></p>";
 
     // Things to fix before ending the day.
@@ -1015,7 +1294,10 @@ Small counts on the tabs show where something needs a look.
     b.hidden = !text;
     b.className = "tab-badge" + (tone ? " " + tone : "");
     b.innerHTML = text
-      ? esc(String(text)) + '<span class="visually-hidden"> ' + srText + "</span>"
+      ? esc(String(text)) +
+        '<span class="visually-hidden"> ' +
+        srText +
+        "</span>"
       : "";
   }
 
@@ -1036,7 +1318,9 @@ Small counts on the tabs show where something needs a look.
     setBadge(
       "map",
       lost,
-      lost === 1 ? "scavenger needs a destination" : "scavengers need a destination",
+      lost === 1
+        ? "scavenger needs a destination"
+        : "scavengers need a destination",
       "alert",
     );
 
@@ -1051,7 +1335,11 @@ Small counts on the tabs show where something needs a look.
       state.logSeen = state.log.length;
     }
     var unseen = state.log.length - state.logSeen;
-    setBadge("log", unseen > 0 ? unseen : "", unseen === 1 ? "new entry" : "new entries");
+    setBadge(
+      "log",
+      unseen > 0 ? unseen : "",
+      unseen === 1 ? "new entry" : "new entries",
+    );
   }
 
   /* 
@@ -1059,20 +1347,143 @@ Small counts on the tabs show where something needs a look.
 ---------- Base Tab ----------
 =============================================================== 
 */
-  function levelBar(level) {
-    return (
-      '<div class="level-bar" aria-hidden="true">' +
-      [1, 2, 3]
-        .map(function (n) {
-          return '<span class="' + (n <= level ? "on" : "") + '"></span>';
+  // One facility card. The ladder lists all three tiers: built ones are ticked,
+  // the next one is highlighted with its cost, and later ones are greyed.
+  function facilityCard(f) {
+    var built = f.level > 0,
+      maxed = f.level >= 3,
+      next = nextTier(f),
+      now = currentTier(f);
+    var short = maxed ? 0 : upgradeCost(f) - state.resources.materials;
+
+    // A line under the button says why it can't be used, or what happens next.
+    var note = "",
+      noteTone = "";
+    if (f.building) {
+      if (!builders().length) {
+        note = "Stalled. Put someone rested on Build.";
+        noteTone = "bad";
+      }
+    } else if (!maxed && short > 0) {
+      note = "Need " + short + " more materials.";
+      noteTone = "bad";
+    } else if (!maxed && !builders().length) {
+      note = "You'll pick who builds it.";
+    }
+
+    var ladder =
+      '<ol class="tier-ladder">' +
+      f.tiers
+        .map(function (t, i) {
+          var n = i + 1;
+          var cls =
+            n <= f.level ? "done" : n === f.level + 1 ? "next" : "later";
+          var mark = n <= f.level ? "✓" : String(n);
+          var state_ =
+            n <= f.level
+              ? "built"
+              : n === f.level + 1
+                ? f.building
+                  ? "in progress"
+                  : "next"
+                : "locked";
+          return (
+            '<li class="' +
+            cls +
+            (cls === "next" && f.building ? " building" : "") +
+            '"><span class="tier-mark" aria-hidden="true">' +
+            mark +
+            '</span><span class="tier-text"><strong>' +
+            t.name +
+            '</strong><span class="visually-hidden"> (' +
+            state_ +
+            ")</span><span>" +
+            t.effect +
+            "</span></span></li>"
+          );
         })
         .join("") +
-      "</div>"
+      "</ol>";
+
+    var progress = "";
+    if (f.building) {
+      var done = f.buildTotal - f.building;
+      progress =
+        '<div class="build-progress"><div class="row small"><span>Building <strong>' +
+        next.name +
+        "</strong></span><span>" +
+        done +
+        " of " +
+        plural(f.buildTotal, "day") +
+        '</span></div><span class="meter" role="progressbar" aria-label="Build progress" aria-valuemin="0" aria-valuemax="' +
+        f.buildTotal +
+        '" aria-valuenow="' +
+        done +
+        '"><span style="width:' +
+        Math.round((done / f.buildTotal) * 100) +
+        '%"></span></span></div>';
+    }
+
+    var action = f.building
+      ? "Building"
+      : maxed
+        ? "Fully upgraded"
+        : built
+          ? "Upgrade"
+          : "Build";
+    var costLine = maxed
+      ? "All tiers built"
+      : f.building
+        ? plural(f.building, "day") + " of work left"
+        : "Next: " +
+          plural(upgradeCost(f), "material") +
+          " · " +
+          plural(buildDays(f), "day");
+
+    return (
+      '<article class="card facility' +
+      (built ? "" : " unbuilt") +
+      (maxed ? " maxed" : "") +
+      '">' +
+      '<img class="fac-art" src="assets/images/png/' +
+      f.img +
+      '.png" alt="">' +
+      '<div class="row"><h3>' +
+      f.name +
+      '</h3><span class="fac-level">' +
+      (built ? "Level " + f.level + " of 3" : "Not built") +
+      "</span></div>" +
+      '<p class="fac-current">' +
+      (now
+        ? "<strong>" + now.name + "</strong> " + now.effect
+        : '<span class="muted">' + f.none + "</span>") +
+      "</p>" +
+      ladder +
+      progress +
+      '<div class="foot"><span>' +
+      costLine +
+      "</span>" +
+      '<button class="btn btn-sm" type="button" data-sound="buildingHammering" data-upgrade="' +
+      f.id +
+      '"' +
+      (maxed || f.building || short > 0 ? " disabled" : "") +
+      ' aria-label="' +
+      (next && !f.building
+        ? action + ": " + next.name
+        : action + " " + f.name) +
+      '">' +
+      action +
+      "</button></div>" +
+      (note ? '<p class="fac-note ' + noteTone + '">' + note + "</p>" : "") +
+      "</article>"
     );
   }
 
   function renderBase() {
     var p = $("panel-base");
+    var builtCount = state.facilities.filter(function (f) {
+      return f.level > 0;
+    }).length;
     p.innerHTML =
       '<div class="panel-head"><h2>' +
       esc(state.shelter) +
@@ -1083,75 +1494,16 @@ Small counts on the tabs show where something needs a look.
       bedCount() +
       " · Night defense " +
       pad(nightDefense()) +
-      " · Horde tonight about " +
-      pad(threatTonight()) +
+      (fx("walls", "exactHorde")
+        ? " · Horde tonight " + pad(hordeSize()) + " (spotted from the lookout)"
+        : " · Horde tonight about " + pad(threatTonight())) +
       "</p></div>" +
+      (builtCount
+        ? ""
+        : '<p class="card base-intro">Nothing is built yet. Each facility has three tiers. ' +
+          "Pay the materials, then someone on Build works on it until it's done.</p>") +
       '<div class="grid-3">' +
-      state.facilities
-        .map(function (f) {
-          var built = f.level > 0,
-            maxed = f.level >= 3;
-          var short = upgradeCost(f) - state.resources.materials;
-          // A line under the button says why it can't be used, or what happens next.
-          var note = "",
-            noteTone = "";
-          if (f.building) {
-            if (builders().length) {
-              note = plural(f.building, "more day") + " of work left.";
-            } else {
-              note = "Stalled. Put someone rested on Build.";
-              noteTone = "bad";
-            }
-          } else if (!maxed && short > 0) {
-            note = "Need " + short + " more materials.";
-            noteTone = "bad";
-          } else if (!maxed && !builders().length) {
-            note = "You'll pick who builds it.";
-          }
-          var action = f.building
-            ? "Building · " + f.building + " day" + (f.building > 1 ? "s" : "")
-            : !built
-              ? "Build"
-              : maxed
-                ? "Max level"
-                : "Upgrade";
-          return (
-            '<article class="card facility">' +
-            '<img class="fac-art" src="assets/images/png/' +
-            f.img +
-            '.png" alt="">' +
-            '<div class="row"><h3>' +
-            f.name +
-            '</h3><span class="small muted">' +
-            (built ? "Level " + f.level + " of 3" : "Not built") +
-            "</span></div>" +
-            levelBar(f.level) +
-            "<p>" +
-            f.desc +
-            "</p>" +
-            '<div class="foot"><span>Materials ' +
-            pad(upgradeCost(f)) +
-            " · " +
-            f.days +
-            " day" +
-            (f.days > 1 ? "s" : "") +
-            "</span>" +
-            '<button class="btn btn-sm" type="button" data-upgrade="' +
-            f.id +
-            '"' +
-            (maxed || f.building || short > 0 ? " disabled" : "") +
-            ' aria-label="' +
-            action +
-            " " +
-            f.name +
-            '">' +
-            action +
-            "</button></div>" +
-            (note ? '<p class="fac-note ' + noteTone + '">' + note + "</p>" : "") +
-            "</article>"
-          );
-        })
-        .join("") +
+      state.facilities.map(facilityCard).join("") +
       "</div>";
   }
 
@@ -1165,14 +1517,22 @@ Small counts on the tabs show where something needs a look.
     else openBuildPicker(f);
   });
 
-  // Materials are paid now; the work finishes after f.days days with someone on Build.
+  // Materials are paid now; the work finishes after buildDays(f) days with someone on Build.
   function startWork(f) {
     var cost = upgradeCost(f);
     if (f.building || state.resources.materials < cost) return;
     state.resources.materials -= cost;
-    f.building = f.days;
-    addLog("base", "Work started on " + f.name + " (" + plural(f.days, "day") + ").");
-    toast("Work started on " + f.name + ".");
+    var tier = nextTier(f);
+    f.building = f.buildTotal = buildDays(f);
+    addLog(
+      "base",
+      "Work started on the " +
+        tier.name +
+        " (" +
+        plural(f.building, "day") +
+        ").",
+    );
+    toast("Work started on the " + tier.name + ".");
     renderAll();
   }
 
@@ -1180,21 +1540,27 @@ Small counts on the tabs show where something needs a look.
   var buildFor = null;
   function openBuildPicker(f) {
     buildFor = f;
-    $("build-title").textContent = "Who works on the " + f.name + "?";
+    $("build-title").textContent = "Who builds the " + nextTier(f).name + "?";
     $("build-text").textContent =
-      "It takes " +
-      plural(f.days, "day") +
+      f.name +
+      ", tier " +
+      (f.level + 1) +
+      " of 3. It takes " +
+      plural(buildDays(f), "day") +
       " with someone on Build each day. Whoever you pick switches to Build now.";
     $("build-choices").innerHTML = alive()
       .map(function (s) {
         var tired = s.fatigue >= TIRED;
         var now =
-          s.task + (s.task === "Scavenge" && s.target ? " (" + findLoc(s.target).name + ")" : "");
+          s.task +
+          (s.task === "Scavenge" && s.target
+            ? " (" + findLoc(s.target).name + ")"
+            : "");
         var perk =
           s.skill === "Builder"
             ? " · Builder: costs 2 fewer materials"
             : s.skill === "Mechanic"
-              ? " · Mechanic: also salvages 2 materials"
+              ? " · Mechanic: also salvages " + salvageAmount() + " materials"
               : "";
         return (
           '<button type="button" class="event-choice" data-builder="' +
@@ -1305,7 +1671,11 @@ Small counts on the tabs show where something needs a look.
             "</span></div>" +
             '<div class="stats">' +
             statRow("Health", s.health, "At 0 they die.") +
-            statRow("Fed", 100 - s.hunger, "Drops when food runs short. Near empty, they starve.") +
+            statRow(
+              "Fed",
+              100 - s.hunger,
+              "Drops when food runs short. Near empty, they starve.",
+            ) +
             statRow(
               "Rested",
               100 - s.fatigue,
@@ -1628,17 +1998,27 @@ Small counts on the tabs show where something needs a look.
     if (t.tradedToday) {
       msg = t.name + " is done trading for today. Come back tomorrow.";
     } else if (!get) {
-      msg = "Pick what you want from " + t.name + "'s side. One trade a day, so put it all in one offer.";
+      msg =
+        "Pick what you want from " +
+        t.name +
+        "'s side. One trade a day, so put it all in one offer.";
     } else if (give < need) {
-      msg = t.name + " wants " + (need - give) + " more value. Add more to your side.";
+      msg =
+        t.name +
+        " wants " +
+        (need - give) +
+        " more value. Add more to your side.";
     } else {
       ok = true;
       msg =
         t.name +
         " will accept this trade." +
-        (give > need ? " You're offering " + (give - need) + " more value than needed." : "");
+        (give > need
+          ? " You're offering " + (give - need) + " more value than needed."
+          : "");
     }
-    if (hasSkill("Negotiator") && !t.tradedToday) msg += " Your negotiator gets you a better deal.";
+    if (hasSkill("Negotiator") && !t.tradedToday)
+      msg += " Your negotiator gets you a better deal.";
 
     function column(side, title, haveLabel) {
       return (
@@ -1712,7 +2092,9 @@ Small counts on the tabs show where something needs a look.
       plural(t.leaves, "day") +
       " · pays extra for " +
       wantLabels +
-      (markupPct ? " · asks " + markupPct + "% more than things are worth" : "") +
+      (markupPct
+        ? " · asks " + markupPct + "% more than things are worth"
+        : "") +
       "</p></div></div>" +
       '<div class="trade-cols">' +
       column("give", "You give · from your stores", "You have") +
@@ -1721,7 +2103,9 @@ Small counts on the tabs show where something needs a look.
       '<div class="card trade-bar"><div>' +
       '<div class="labels"><span>Your offer · value ' +
       pad(give) +
-      "</span><span>" + esc(t.name) + "'s offer · value " +
+      "</span><span>" +
+      esc(t.name) +
+      "'s offer · value " +
       pad(get) +
       "</span></div>" +
       '<div class="balance" style="--accept:' +
@@ -1857,7 +2241,8 @@ Small counts on the tabs show where something needs a look.
         ? '<p class="card empty">Nothing here yet.</p>'
         : days
             .map(function (d, i) {
-              var open = d.day in state.logOpen ? state.logOpen[d.day] : i === 0;
+              var open =
+                d.day in state.logOpen ? state.logOpen[d.day] : i === 0;
               return (
                 '<details class="log-day" data-day="' +
                 d.day +
@@ -1995,13 +2380,17 @@ Small counts on the tabs show where something needs a look.
         return l.id === s.target;
       });
       if (s.fatigue >= TIRED) {
-        addLog("exploring", s.name + " was too tired to scavenge and stayed home.");
+        addLog(
+          "exploring",
+          s.name + " was too tired to scavenge and stayed home.",
+        );
         return;
       }
       scavenged = true;
       // Riskier places hold more, but every trip wears survivors out.
       var found = randInt(1, 4) + (loc.danger - 1);
-      if (s.trait === "Lucky") found = Math.max(found, randInt(1, 4) + (loc.danger - 1));
+      if (s.trait === "Lucky")
+        found = Math.max(found, randInt(1, 4) + (loc.danger - 1));
       if (s.skill === "Scavenger") found += 2;
       if (s.trait === "Loner" && scavengers.length === 1) found += 1;
       if (s.trait === "Clumsy") found = Math.max(0, found - 1);
@@ -2030,46 +2419,68 @@ Small counts on the tabs show where something needs a look.
         s.name +
           " scavenged the " +
           loc.name +
-          (total ? " and brought back " + AT.minigames.describe(haul) + "." : " but found nothing."),
+          (total
+            ? " and brought back " + AT.minigames.describe(haul) + "."
+            : " but found nothing."),
       );
       tire(s, 20 * loc.travel);
       if (rng() < D.scavRisk * loc.danger) {
-        hurt(s, 10 * loc.danger, "exploring", "was attacked at the " + loc.name);
+        hurt(
+          s,
+          10 * loc.danger,
+          "exploring",
+          "was attacked at the " + loc.name,
+        );
       }
     });
 
     // Facilities that produce something every day.
-    var waterMade = facility("water").level * 2;
-    var foodMade = facility("kitchen").level;
+    var waterMade = fx("water", "water");
+    var foodMade = fx("kitchen", "food");
     state.resources.water += waterMade;
     state.resources.food += foodMade;
-    if (waterMade || foodMade) {
+    if (waterMade) {
       addLog(
         "base",
-        "The base produced " +
-          [waterMade ? waterMade + " water" : "", foodMade ? foodMade + " food" : ""]
-            .filter(Boolean)
-            .join(" and ") +
-          ".",
+        "The " +
+          currentTier(facility("water")).name +
+          " collected " +
+          waterMade +
+          " water.",
+      );
+    }
+    if (foodMade) {
+      addLog(
+        "base",
+        "The " +
+          currentTier(facility("kitchen")).name +
+          " made " +
+          foodMade +
+          " food.",
       );
     }
 
     // Construction moves forward one day if someone rested is on Build.
+    // A finished tier works from tomorrow on.
     var working = builders().length > 0;
     state.facilities.forEach(function (f) {
       if (!f.building) return;
+      var tier = nextTier(f);
       if (!working) {
-        addLog("base", "No one worked on " + f.name + " today.");
+        addLog("base", "No one worked on the " + tier.name + " today.");
         return;
       }
       f.building -= 1;
       if (f.building === 0) {
         f.building = null;
         f.level += 1;
-        f.cost += 3;
         addLog(
           "base",
-          f.name + (f.level === 1 ? " built." : " upgraded to level " + f.level + "."),
+          f.name +
+            (f.level === 1 ? " built: " : " upgraded: ") +
+            tier.name +
+            ". " +
+            tier.effect,
           "good",
         );
       }
@@ -2077,39 +2488,54 @@ Small counts on the tabs show where something needs a look.
 
     alive().forEach(function (s) {
       if (s.task === "Build" && s.skill === "Mechanic" && s.fatigue < TIRED) {
-        state.resources.materials += 2;
-        addLog("base", s.name + " salvaged 2 materials.");
+        state.resources.materials += salvageAmount();
+        addLog("base", s.name + " salvaged " + salvageAmount() + " materials.");
       }
-      if (s.task === "Rest" && s.trait === "Quick healer" && s.health < 100) {
-        heal(s, 10);
-        addLog("base", s.name + " rested and recovered 10 health.");
+      if (s.task === "Rest" && s.health < 100) {
+        // Quick healers mend on their own; an infirmary helps everyone who rests.
+        var mend =
+          (s.trait === "Quick healer" ? 10 : 0) + fx("infirmary", "restHeal");
+        if (mend) {
+          heal(s, mend);
+          addLog(
+            "base",
+            s.name +
+              " rested" +
+              (fx("infirmary", "restHeal") ? " in the infirmary" : "") +
+              " and recovered " +
+              mend +
+              " health.",
+          );
+        }
       }
       if (s.task === "Heal") {
-        var patient = alive()
-          .slice()
-          .sort(function (a, b) {
-            return a.health - b.health;
-          })[0];
-        if (patient.health >= 100) return;
-        // Treatment uses 1 medicine. Without it, only a Medic can do anything.
-        var amount;
-        if (state.resources.medicine > 0) {
-          state.resources.medicine -= 1;
-          amount = s.skill === "Medic" ? 30 : 10;
-        } else {
-          amount = s.skill === "Medic" ? 10 : 0;
-        }
-        if (amount) {
-          heal(patient, amount);
-          addLog("base", s.name + " treated " + patient.name + " (+" + amount + " health).");
-        } else {
-          addLog("base", s.name + " had no medicine to treat " + patient.name + ".");
-        }
+        var list = patients();
+        if (!list.length) return;
+        // Each treatment uses 1 medicine. Without it, only a Medic can treat one person.
+        list.forEach(function (p, i) {
+          var meds = state.resources.medicine > 0;
+          if (!meds && i > 0) return;
+          var amount = healAmount(s, meds);
+          if (!amount) {
+            addLog(
+              "base",
+              s.name + " had no medicine to treat " + p.name + ".",
+            );
+            return;
+          }
+          if (meds) state.resources.medicine -= 1;
+          heal(p, amount);
+          addLog(
+            "base",
+            s.name + " treated " + p.name + " (+" + amount + " health).",
+          );
+        });
       }
-      // Rest lowers fatigue; every other task raises it (scavenging was counted above).
+      // Rest lowers fatigue (more with better beds); every other task raises it
+      // (scavenging was counted above).
       if (s.task === "Rest") {
-        tire(s, -35);
-        changeMorale(s, 5);
+        tire(s, -fx("beds", "rest"));
+        changeMorale(s, fx("beds", "restMorale"));
       } else if (s.task !== "Scavenge") {
         tire(s, 10);
       }
@@ -2128,13 +2554,19 @@ Small counts on the tabs show where something needs a look.
     // Going short on food builds hunger; going short on water hurts right away.
     var shortFood = needFood - eaten;
     var shortWater = alive().length - drunk;
-    if (shortFood > 0) addLog("base", "There was not enough food for everyone.", "bad");
-    if (shortWater > 0) addLog("base", "There was not enough water for everyone.", "bad");
+    if (shortFood > 0)
+      addLog("base", "There was not enough food for everyone.", "bad");
+    if (shortWater > 0)
+      addLog("base", "There was not enough water for everyone.", "bad");
     alive().forEach(function (s) {
-      s.hunger = Math.max(0, Math.min(100, s.hunger + (shortFood > 0 ? 25 : -15)));
+      s.hunger = Math.max(
+        0,
+        Math.min(100, s.hunger + (shortFood > 0 ? 25 : -15)),
+      );
       if (shortFood > 0) changeMorale(s, -5);
       if (shortWater > 0) hurt(s, D.starveDmg, "base", "is dehydrated");
-      if (s.alive && s.hunger >= 80) hurt(s, D.starveDmg, "base", "is starving");
+      if (s.alive && s.hunger >= 80)
+        hurt(s, D.starveDmg, "base", "is starving");
     });
 
     // Switch to Dusk and show what happened today. Continue moves on to the night.
@@ -2241,7 +2673,9 @@ Small counts on the tabs show where something needs a look.
         } else if (c.kind === "minigame") {
           note = "Starts a mini-game";
         } else {
-          note = costParts.length ? "Costs: " + costParts.join(", ") : "No cost";
+          note = costParts.length
+            ? "Costs: " + costParts.join(", ")
+            : "No cost";
           if (c.morale) note += " · Hurts morale";
           ok = affordable;
         }
@@ -2376,7 +2810,11 @@ Small counts on the tabs show where something needs a look.
     var cat =
       name === "Defense" ? "night" : name === "Search" ? "exploring" : "event";
     var from = state.currentEvent ? state.currentEvent.title + ": " : "";
-    addLog(cat, from + name + " mini-game " + (won ? "won" : "lost") + how + ".", won ? "good" : "bad");
+    addLog(
+      cat,
+      from + name + " mini-game " + (won ? "won" : "lost") + how + ".",
+      won ? "good" : "bad",
+    );
     reward = reward || {};
     var gained = 0;
     Object.keys(reward).forEach(function (k) {
@@ -2385,7 +2823,11 @@ Small counts on the tabs show where something needs a look.
     });
     if (gained) {
       state.suppliesGathered += gained;
-      addLog(cat, "Brought back " + AT.minigames.describe(reward) + ".", "good");
+      addLog(
+        cat,
+        "Brought back " + AT.minigames.describe(reward) + ".",
+        "good",
+      );
     }
     // Zombie bites from the Search mini-game all land on one survivor (Cowards are spared if possible).
     if (result && result.bites) {
@@ -2398,7 +2840,9 @@ Small counts on the tabs show where something needs a look.
         bittenOne,
         result.bites * result.biteDamage,
         cat,
-        "was bitten " + (result.bites === 1 ? "once" : result.bites + " times") + " while searching",
+        "was bitten " +
+          (result.bites === 1 ? "once" : result.bites + " times") +
+          " while searching",
       );
     }
     if (!won) {
@@ -2419,12 +2863,16 @@ Small counts on the tabs show where something needs a look.
   function threatTonight() {
     return Math.round(D.threatBase + D.threatPeak * (state.day / state.length));
   }
+  // The real horde tonight: the estimate plus tonight's roll (re-rolled each dawn).
+  function hordeSize() {
+    return Math.max(1, threatTonight() + state.hordeRoll);
+  }
 
   // Every night the horde tests your defense. Guards use up ammo, and a breach
   // injures survivors and can knock the walls down a level.
   function nightRaid() {
     if (!alive().length) return;
-    var threat = threatTonight() + randInt(-3, 3);
+    var threat = hordeSize();
     var def = nightDefense();
     var shots = Math.min(state.resources.ammo, guards());
     state.resources.ammo -= shots;
@@ -2432,22 +2880,45 @@ Small counts on the tabs show where something needs a look.
       if (s.task === "Guard") tire(s, 15);
     });
     if (def >= threat) {
-      addLog("night", "The horde hit the walls and broke (defense " + def + " vs " + threat + ").", "good");
+      addLog(
+        "night",
+        "The horde hit the walls and broke (defense " +
+          def +
+          " vs " +
+          threat +
+          ").",
+        "good",
+      );
       return;
     }
     var breach = threat - def;
-    addLog("night", "The horde broke through (defense " + def + " vs " + threat + ").", "bad");
+    addLog(
+      "night",
+      "The horde broke through (defense " + def + " vs " + threat + ").",
+      "bad",
+    );
     // Bigger breaches catch more people.
     var hits = breach >= 15 ? 2 : 1;
     for (var i = 0; i < hits && alive().length; i++) {
       var list = alive();
       var v = list[Math.floor(rng() * list.length)];
-      hurt(v, Math.min(50, 5 + breach * 2), "night", "was caught in the breach");
+      hurt(
+        v,
+        Math.min(50, 5 + breach * 2),
+        "night",
+        "was caught in the breach",
+      );
     }
     var walls = facility("walls");
     if (breach >= 15 && walls.level > 1) {
       walls.level -= 1;
-      addLog("night", "The walls were damaged and dropped to level " + walls.level + ".", "bad");
+      addLog(
+        "night",
+        "The walls were damaged and fell back to " +
+          currentTier(walls).name +
+          ".",
+        "bad",
+      );
     }
   }
 
@@ -2490,6 +2961,7 @@ Small counts on the tabs show where something needs a look.
 
     state.day += 1;
     state.phase = "dawn";
+    state.hordeRoll = randInt(-3, 3);
     traderDawn();
     alive().forEach(function (s) {
       if (s.trait === "Optimist" && s.health < 100) {

@@ -685,6 +685,19 @@ td {
 thead th {
   border-bottom: 2px solid var(--ink);
 }
+/* Wide tables (How to play's facility tiers) scroll sideways on small screens. */
+.table-scroll {
+  overflow-x: auto;
+}
+.facility-table th,
+.facility-table td {
+  vertical-align: top;
+  min-width: 9.5rem;
+}
+.facility-table .small {
+  display: inline-block;
+  margin-top: 0.2rem;
+}
 
 /* ---------- 7f. Dialogs ---------- */
 dialog {
@@ -1299,7 +1312,16 @@ fieldset.setup-step > legend.step-title + * {
   top: calc(var(--header-h) + 1rem);
   border-top: 5px solid var(--phase);
 }
-/* Today panel styles live in 9l. */
+/* Each survivor's task shows as a small tag. */
+#today-list dd {
+  justify-self: end;
+  padding: 0.05rem 0.6rem;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
 #end-day {
   min-height: 3.25rem;
   font-size: 1.05rem;
@@ -1392,19 +1414,107 @@ fieldset.setup-step > legend.step-title + * {
   font-size: 0.9rem;
   margin-top: auto;
 }
-.level-bar {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 4px;
-  margin-top: 0.5rem;
-}
-.level-bar span {
-  height: 5px;
-  border-radius: 3px;
-  background: var(--surface-2);
-}
-.level-bar span.on {
+/* Level label: a filled pill once the facility is built. */
+.facility .fac-level {
+  padding: 0.05rem 0.55rem;
+  border-radius: 999px;
   background: var(--ink);
+  color: var(--surface);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.facility.unbuilt .fac-level {
+  background: none;
+  color: var(--muted);
+  border: 1px dashed var(--line);
+}
+/* Not built yet: the art is greyed out, so built facilities stand out. */
+.facility.unbuilt .fac-art {
+  filter: grayscale(1);
+  opacity: 0.5;
+}
+/* The tier the base has now, and what it gives. */
+.facility .fac-current {
+  color: var(--ink);
+  margin: 0.5rem 0 0.75rem;
+}
+.facility .fac-current strong {
+  display: block;
+  font-size: 1rem;
+}
+
+/* Tier ladder: built tiers are ticked, the next one is highlighted, later ones fade. */
+.tier-ladder {
+  list-style: none;
+  margin: 0 0 0.9rem;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+.tier-ladder li {
+  display: grid;
+  grid-template-columns: 1.5rem 1fr;
+  gap: 0.6rem;
+  align-items: start;
+  padding: 0.45rem 0.4rem;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.85rem;
+}
+.tier-text strong {
+  display: block;
+  line-height: 1.3;
+}
+.tier-text > span:last-child {
+  display: block;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.tier-mark {
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.tier-ladder li.done .tier-mark {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--surface);
+}
+.tier-ladder li.next {
+  background: color-mix(in srgb, var(--phase) 18%, var(--surface));
+  border-radius: 6px;
+}
+.tier-ladder li.next .tier-mark {
+  border-color: var(--ink);
+}
+.tier-ladder li.later {
+  opacity: 0.55;
+}
+
+/* Work in progress on the next tier. */
+.build-progress {
+  margin-bottom: 0.9rem;
+}
+.build-progress .row {
+  margin-bottom: 0.35rem;
+}
+.build-progress .row span {
+  white-space: normal;
+}
+.build-progress .meter {
+  display: block;
+}
+.build-progress .meter span {
+  background: var(--accent);
+}
+
+/* Shown on the Base tab before anything is built. */
+.base-intro {
+  margin-bottom: 1rem;
+  color: var(--muted);
 }
 
 /* ---------- 9f. Survivors ---------- */
@@ -2245,14 +2355,6 @@ details.log-day li.good {
     transform: translateX(4px);
   }
 }
-/* After a missed shot the gun is jammed: red border, greyed lane keys. */
-.mg-defense.jammed {
-  box-shadow: inset 0 0 0 4px var(--danger);
-  cursor: not-allowed;
-}
-.mg-defense.jammed .mg-lane-key {
-  opacity: 0.3;
-}
 .mg-wall-strip {
   position: absolute;
   left: 0;
@@ -2439,20 +2541,6 @@ details.log-day li.good {
 .mg-tile.loot {
   border-color: var(--accent);
   background: color-mix(in srgb, var(--accent) 15%, var(--surface));
-}
-.mg-tile.zombie {
-  border-color: var(--danger);
-  background: color-mix(in srgb, var(--danger) 20%, var(--surface));
-  font-size: 1.3rem;
-}
-.mg-clue {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-.mg-growl {
-  font-size: 0.8rem;
-  color: var(--danger);
 }
 .mg-tile.missed {
   opacity: 0.45;
