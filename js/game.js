@@ -481,13 +481,13 @@ are marked TODO.
     s.health = Math.max(0, s.health - amount);
     if (s.health > 0) {
       if (s.health < 60) s.status = "Injured";
-      addLog(cat, s.name + " " + why + " (-" + amount + " health).");
+      addLog(cat, s.name + " " + why + " (-" + amount + " health).", "bad");
       return;
     }
     s.alive = false;
     s.lostOn = state.day;
     s.status = "Dead";
-    addLog(cat, s.name + " " + why + " and did not survive.");
+    addLog(cat, s.name + " " + why + " and did not survive.", "bad");
     alive().forEach(function (o) {
       changeMorale(o, -D.moraleLoss);
     });
@@ -501,7 +501,7 @@ are marked TODO.
       s.alive = false;
       s.lostOn = state.day;
       s.status = "Left";
-      addLog("base", s.name + " lost all hope and left the group.");
+      addLog("base", s.name + " lost all hope and left the group.", "bad");
     }
   }
 
@@ -511,8 +511,9 @@ are marked TODO.
   }
 
   // Adds an entry to the game log with the current day, category, and text.
-  function addLog(cat, text) {
-    state.log.push({ day: state.day, cat: cat, text: text });
+  // tone is optional: "good" or "bad" adds a coloured marker in the report pop-up.
+  function addLog(cat, text, tone) {
+    state.log.push({ day: state.day, cat: cat, text: text, tone: tone || "" });
   }
   // Checks if any survivor has a specific skill, returning true if at least one survivor possesses that skill.
   function hasSkill(skill) {
@@ -550,9 +551,6 @@ are marked TODO.
 */
   // Display names for each phase. Their colours live in css/style.css (02. Phase themes).
   var PHASE_LABELS = { dawn: "Dawn", day: "Day", dusk: "Dusk", night: "Night" };
-  // How long the short Dusk and Dawn phases stay on screen (ms).
-  var DUSK_MS = 1500;
-  var DAWN_MS = 3500;
 
   function renderHeader() {
     var night = state.phase === "night";
@@ -1215,6 +1213,8 @@ are marked TODO.
 ---------- End day → dusk → night event → (mini-game) → dawn ----------
 */
   $("end-day").addEventListener("click", function () {
+    // Everything logged from here on goes into the Dusk report pop-up.
+    var duskMark = state.log.length;
     // This is dusk where the results come in.
     // Skill and trait effects are listed in common.js.
     var scavenged = false;
@@ -1301,6 +1301,7 @@ are marked TODO.
         addLog(
           "base",
           f.name + (f.level === 1 ? " built." : " upgraded to level " + f.level + "."),
+          "good",
         );
       }
     });
@@ -1361,8 +1362,8 @@ are marked TODO.
     // Going short on food builds hunger; going short on water hurts right away.
     var shortFood = needFood - eaten;
     var shortWater = alive().length - drunk;
-    if (shortFood > 0) addLog("base", "There was not enough food for everyone.");
-    if (shortWater > 0) addLog("base", "There was not enough water for everyone.");
+    if (shortFood > 0) addLog("base", "There was not enough food for everyone.", "bad");
+    if (shortWater > 0) addLog("base", "There was not enough water for everyone.", "bad");
     alive().forEach(function (s) {
       s.hunger = Math.max(0, Math.min(100, s.hunger + (shortFood > 0 ? 25 : -15)));
       if (shortFood > 0) changeMorale(s, -5);
@@ -1370,28 +1371,82 @@ are marked TODO.
       if (s.alive && s.hunger >= 80) hurt(s, D.starveDmg, "base", "is starving");
     });
 
+    // Switch to Dusk and show what happened today. Continue moves on to the night.
+    state.phase = "dusk";
+    renderAll();
+    var duskEntries = state.log.slice(duskMark);
     if (!alive().length) {
-      endRun(false);
+      showReport({
+        kicker: "Dusk · Day " + pad(state.day),
+        title: "No one is left",
+        art: "end_lose",
+        entries: duskEntries,
+        button: "See how it ended",
+        next: function () {
+          endRun(false);
+        },
+      });
       return;
     }
-
-    // Show Dusk briefly, then fall into Night and open the night event.
-    state.phase = "dusk";
-    $("end-day").disabled = true;
-    renderAll();
     var pool = EVENTS.filter(function (ev) {
       return !ev.needsScavenging || scavenged;
     });
-    setTimeout(function () {
-      state.phase = "night";
-      $("end-day").disabled = false;
-      renderAll();
-      openEvent(pool[Math.floor(rng() * pool.length)]);
-    }, DUSK_MS);
+    showReport({
+      kicker: "Dusk · Day " + pad(state.day),
+      title: "Dusk report",
+      entries: duskEntries,
+      button: "Continue to night",
+      next: function () {
+        state.phase = "night";
+        renderAll();
+        openEvent(pool[Math.floor(rng() * pool.length)]);
+      },
+    });
+  });
+
+  // ---------- Report pop-up ----------
+  // Shows a list of log entries and waits for Continue before running opts.next.
+  // opts = { kicker, title, entries, art (optional image name), button, next }
+  var reportNext = null;
+  function showReport(opts) {
+    $("report-kicker").textContent = opts.kicker;
+    $("report-title").textContent = opts.title;
+    var art = $("report-art");
+    art.hidden = !opts.art;
+    if (opts.art) art.src = "assets/images/png/" + opts.art + ".png";
+    $("report-list").innerHTML = opts.entries.length
+      ? opts.entries
+          .map(function (l) {
+            return (
+              '<li class="' +
+              l.tone +
+              '"><span class="chip">' +
+              LOG_LABELS[l.cat] +
+              "</span><span>" +
+              esc(l.text) +
+              "</span></li>"
+            );
+          })
+          .join("")
+      : '<li><span class="muted">Nothing happened.</span></li>';
+    $("report-continue").textContent = opts.button || "Continue";
+    reportNext = opts.next;
+    $("report-dialog").showModal();
+    $("report-continue").focus();
+  }
+
+  $("report-continue").addEventListener("click", function () {
+    var next = reportNext;
+    reportNext = null;
+    $("report-dialog").close();
+    if (next) next();
   });
 
   // ---------- Event overlay ----------
+  // Everything logged from the night event on goes into the Dawn report pop-up.
+  var nightMark = 0;
   function openEvent(ev) {
+    nightMark = state.log.length;
     state.currentEvent = ev;
     state.eventsFaced += 1;
     $("event-kicker").textContent = "Night " + pad(state.day) + " · Event";
@@ -1552,7 +1607,8 @@ are marked TODO.
     var how = auto ? " (auto-resolved)" : "";
     var cat =
       name === "Defense" ? "night" : name === "Search" ? "exploring" : "event";
-    addLog(cat, name + " mini-game " + (won ? "won" : "lost") + how + ".");
+    var from = state.currentEvent ? state.currentEvent.title + ": " : "";
+    addLog(cat, from + name + " mini-game " + (won ? "won" : "lost") + how + ".", won ? "good" : "bad");
     reward = reward || {};
     var gained = 0;
     Object.keys(reward).forEach(function (k) {
@@ -1561,7 +1617,7 @@ are marked TODO.
     });
     if (gained) {
       state.suppliesGathered += gained;
-      addLog(cat, "Brought back " + AT.minigames.describe(reward) + ".");
+      addLog(cat, "Brought back " + AT.minigames.describe(reward) + ".", "good");
     }
     if (!won) {
       // A loss injures one survivor (Cowards are spared if anyone else is around).
@@ -1573,7 +1629,6 @@ are marked TODO.
       var victim = pool[Math.floor(rng() * pool.length)];
       hurt(victim, 30, cat, "was injured");
     }
-    toast(name + " " + (won ? "won" : "lost") + how + ".");
     finishNight();
   }
 
@@ -1595,11 +1650,11 @@ are marked TODO.
       if (s.task === "Guard") tire(s, 15);
     });
     if (def >= threat) {
-      addLog("night", "The horde hit the walls and broke (defense " + def + " vs " + threat + ").");
+      addLog("night", "The horde hit the walls and broke (defense " + def + " vs " + threat + ").", "good");
       return;
     }
     var breach = threat - def;
-    addLog("night", "The horde broke through (defense " + def + " vs " + threat + ").");
+    addLog("night", "The horde broke through (defense " + def + " vs " + threat + ").", "bad");
     // Bigger breaches catch more people.
     var hits = breach >= 15 ? 2 : 1;
     for (var i = 0; i < hits && alive().length; i++) {
@@ -1610,44 +1665,75 @@ are marked TODO.
     var walls = facility("walls");
     if (breach >= 15 && walls.level > 1) {
       walls.level -= 1;
-      addLog("night", "The walls were damaged and dropped to level " + walls.level + ".");
+      addLog("night", "The walls were damaged and dropped to level " + walls.level + ".", "bad");
     }
   }
 
+  // Runs after the night event (and any mini-game) is resolved: the horde
+  // attacks, then the Dawn report shows the whole night before the new day.
   function finishNight() {
     state.currentEvent = null;
     nightRaid();
+    var kicker = "Night " + pad(state.day) + " · Results";
+
     if (!alive().length) {
-      endRun(false);
+      renderAll();
+      showReport({
+        kicker: kicker,
+        title: "No one survived the night",
+        art: "end_lose",
+        entries: state.log.slice(nightMark),
+        button: "See how it ended",
+        next: function () {
+          endRun(false);
+        },
+      });
       return;
     }
     if (state.day >= state.length) {
-      endRun(true);
+      addLog("base", "The group survived the last night.", "good");
+      renderAll();
+      showReport({
+        kicker: kicker,
+        title: "You made it",
+        art: "end_win",
+        entries: state.log.slice(nightMark),
+        button: "See how it ended",
+        next: function () {
+          endRun(true);
+        },
+      });
       return;
     }
+
     state.day += 1;
-    // The new day opens on Dawn (the dawn report), then settles into Day.
     state.phase = "dawn";
-    setTimeout(function () {
-      if (state.phase !== "dawn") return; // the player already ended the day
-      state.phase = "day";
-      renderHeader();
-    }, DAWN_MS);
     state.trader.leaves = Math.max(0, state.trader.leaves - 1);
     // [WORK IN PROGRESS] implement trader behavior
     alive().forEach(function (s) {
-      if (s.trait === "Optimist" && s.health < 100) heal(s, 5);
+      if (s.trait === "Optimist" && s.health < 100) {
+        heal(s, 5);
+        addLog("base", s.name + " woke up hopeful (+5 health).", "good");
+      }
     });
     addLog(
       "base",
-      "Dawn report: " +
-        alive().length +
+      alive().length +
         " survivor" +
         (alive().length === 1 ? "" : "s") +
         " made it through the night.",
     );
-    toast("Day " + state.day + " begins.");
     renderAll();
+    showReport({
+      kicker: "Dawn · Day " + pad(state.day),
+      title: "Dawn report",
+      entries: state.log.slice(nightMark),
+      button: "Start day " + state.day,
+      next: function () {
+        state.phase = "day";
+        renderAll();
+      },
+    });
   }
 
   // ---------- Leaving the page ----------
@@ -1712,8 +1798,8 @@ are marked TODO.
     location.href = "index.html";
   });
 
-  // Events and mini-games must be answered; Esc does not dismiss them.
-  ["event-dialog", "minigame-dialog"].forEach(function (id) {
+  // Events, mini-games and reports must be answered; Esc does not dismiss them.
+  ["event-dialog", "minigame-dialog", "report-dialog"].forEach(function (id) {
     $(id).addEventListener("cancel", function (e) {
       e.preventDefault();
     });
