@@ -106,10 +106,10 @@ DESCRIPTION:
   // Creates the various elements of the Defense minigame, including the wall, lanes, and zombies.
   function Defense(o) {
     var LANES = 4;
-    var total = byDifficulty(o.difficulty, 10, 12, 15);
+    var total = byDifficulty(o.difficulty, 15, 25, 50);
     var crossMs = byDifficulty(o.difficulty, 7500, 6000, 4800);
-    var spawnMs = byDifficulty(o.difficulty, 1600, 1300, 1000);
-    var hitDamage = byDifficulty(o.difficulty, 15, 20, 25);
+    var spawnMs = byDifficulty(o.difficulty, 1600, 1300, 1000); // This
+    var hitDamage = byDifficulty(o.difficulty, 25, 35, 45);
     var wallMax = 100;
     var wall = Math.min(wallMax, 40 + (o.wallLevel || 0) * 30);
     var WALL_X = 6; // percent: where a zombie hits the wall

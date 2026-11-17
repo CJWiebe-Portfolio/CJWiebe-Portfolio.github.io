@@ -91,6 +91,7 @@ for escaping HTML and managing survivor skills and traits.
     root.dataset.textSize = s.textSize;
     root.dataset.contrast = s.highContrast ? "high" : "normal";
     root.dataset.motion = s.reduceMotion ? "reduce" : "full";
+    syncMusic(s);
   }
 
   // These functions manage sessionStorage for handing off the game setup
@@ -183,8 +184,74 @@ for escaping HTML and managing survivor skills and traits.
     Hoarder: "Also brings back 1 material when scavenging.",
   };
 
-  /* 
-=============================================================== 
+  /*
+===============================================================
+---------- Background Music ----------
+===============================================================
+*/
+
+  // One looping track that carries across every page. Each page is a new
+  // document, so the current position is saved in sessionStorage when the
+  // page is left and picked up again on the next page.
+  var MUSIC_SRC =
+    "assets/audio/636147__emilybbarrios__zombie-eating-a-carcus.mp3";
+  var MUSIC_TIME_KEY = "anotherTally.musicTime";
+  // Pages opened from the pause menu (new tab) stay silent so the music doesn't double up.
+  var musicAllowed =
+    new URLSearchParams(location.search).get("from") !== "game";
+  var music = null;
+
+  if (musicAllowed) {
+    music = new Audio(MUSIC_SRC);
+    music.loop = true;
+    music.preload = "auto";
+
+    // Resume from where the last page left off.
+    music.addEventListener(
+      "loadedmetadata",
+      function () {
+        try {
+          var t = Number(sessionStorage.getItem(MUSIC_TIME_KEY));
+          if (t > 0 && t < music.duration) music.currentTime = t;
+        } catch (e) {
+          // storage blocked
+        }
+      },
+      { once: true },
+    );
+
+    // Save the position when leaving the page.
+    window.addEventListener("pagehide", function () {
+      try {
+        sessionStorage.setItem(MUSIC_TIME_KEY, String(music.currentTime));
+      } catch (e) {
+        // storage blocked
+      }
+    });
+  }
+
+  // Applies the Sound and Volume settings, and starts the music if it's allowed.
+  function syncMusic(s) {
+    if (!music) return;
+    music.volume = Math.min(1, Math.max(0, Number(s.volume) / 100));
+    if (!s.sound) {
+      music.pause();
+      return;
+    }
+    if (music.paused) music.play().catch(waitForInteraction);
+  }
+
+  // Browsers block sound until the player clicks or presses a key on the page.
+  function waitForInteraction() {
+    document.addEventListener("pointerdown", resumeMusic, { once: true });
+    document.addEventListener("keydown", resumeMusic, { once: true });
+  }
+  function resumeMusic() {
+    syncMusic(load());
+  }
+
+  /*
+===============================================================
 ---------- Game Logistics ----------
 =============================================================== 
 */
@@ -253,4 +320,48 @@ for escaping HTML and managing survivor skills and traits.
       history.back();
     }
   });
+
+  /*
+  ===============================================================
+  ---------- Button Click Sound ----------
+  ===============================================================
+  */
+
+  var clickSound = new Audio("assets/audio/click.mp3");
+  clickSound.preload = "auto";
+
+  // Plays the click, using the Sound and Volume settings from the Options page.
+  function playClick() {
+    var s = load();
+    if (!s.sound) return;
+    clickSound.volume = s.volume / 100;
+    clickSound.currentTime = 0; // restart so quick clicks each make a sound
+    clickSound.play().catch(function () {});
+  }
+
+  document.addEventListener("click", function (e) {
+    var btn = e.target.closest("button, .btn");
+    if (!btn || btn.disabled) return;
+    playClick();
+
+    // Links load a new page, which cuts the sound off, so wait a moment first.
+    // Skip this if another handler (like data-back) already took over the click,
+    // or if the player is opening the link in a new tab.
+    if (
+      btn.tagName === "A" &&
+      btn.href &&
+      !e.defaultPrevented &&
+      btn.target !== "_blank" &&
+      !e.ctrlKey &&
+      !e.metaKey &&
+      !e.shiftKey
+    ) {
+      e.preventDefault();
+      setTimeout(function () {
+        location.href = btn.href;
+      }, 150);
+    }
+  });
+
+  window.AT.playClick = playClick;
 })();
