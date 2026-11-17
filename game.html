@@ -231,7 +231,12 @@ It provides the interface for playing the game.
           <div id="tonight" class="tonight"></div>
           <!-- Anything that needs fixing before the day ends -->
           <ul id="warnings" class="warn-list" aria-live="polite"></ul>
-          <button class="btn btn-primary btn-block" type="button" id="end-day">
+          <button
+            class="btn btn-primary btn-block"
+            type="button"
+            id="end-day"
+            data-sound="none"
+          >
             End day</button
           ><!-- Ends the day -->
           <p class="small muted end-hint">
@@ -339,7 +344,12 @@ It provides the interface for playing the game.
         <ul class="warn-list" id="confirm-list"></ul>
         <div class="confirm-actions">
           <button class="btn" type="button" id="confirm-back">Go back</button>
-          <button class="btn btn-primary" type="button" id="confirm-end">
+          <button
+            class="btn btn-primary"
+            type="button"
+            id="confirm-end"
+            data-sound="none"
+          >
             End day anyway
           </button>
         </div>

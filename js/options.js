@@ -50,11 +50,15 @@ DESCRIPTION:
     return s;
   }
 
-  function onChange() {
+  function onChange(e) {
     var s = read();
     AT.save(s);
     form.elements.volume.disabled = !s.sound;
     msg.textContent = "Saved.";
+    // Let the player hear the new volume (silent if sound was just turned off).
+    if (e && (e.target.name === "volume" || e.target.name === "sound")) {
+      AT.playSound("click");
+    }
   }
 
   form.addEventListener("change", onChange);

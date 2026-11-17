@@ -128,6 +128,7 @@ are marked TODO.
       stock: { food: 5, water: 5, materials: 6, medicine: 2, ammo: 0 },
       wants: ["ammo"],
       stays: [2, 3],
+      greet: "helloWoman", // said when you first visit the Trade tab each day
     },
     {
       id: "rook",
@@ -144,6 +145,7 @@ are marked TODO.
       stock: { food: 2, water: 4, materials: 0, medicine: 6, ammo: 0 },
       wants: ["materials"],
       stays: [2, 3],
+      greet: "helloWoman",
     },
     {
       id: "abe",
@@ -168,6 +170,7 @@ are in the FX table below so the rules and the descriptions stay together.
   var FACILITIES = [
     {
       id: "beds",
+      sound: "cardboardBox", // plays over the hammering when work starts
       img: "bedroom",
       name: "Beds",
       desc: "Better sleep: Rest recovers more, and more beds for newcomers",
@@ -195,6 +198,7 @@ are in the FX table below so the rules and the descriptions stay together.
     },
     {
       id: "kitchen",
+      sound: "shovel", // plays over the hammering when work starts
       img: "kitchen",
       name: "Kitchen and garden",
       desc: "Grows and cooks food every day",
@@ -212,6 +216,7 @@ are in the FX table below so the rules and the descriptions stay together.
     },
     {
       id: "water",
+      sound: "rustyMetal", // plays over the hammering when work starts
       img: "watercollector",
       name: "Water collector",
       desc: "Collects rainwater every day",
@@ -239,6 +244,7 @@ are in the FX table below so the rules and the descriptions stay together.
     },
     {
       id: "workshop",
+      sound: "woodCutting", // plays over the hammering when work starts
       img: "workshop",
       name: "Workshop",
       desc: "Makes every other build cheaper and faster",
@@ -266,6 +272,7 @@ are in the FX table below so the rules and the descriptions stay together.
     },
     {
       id: "infirmary",
+      sound: "cabinet", // plays over the hammering when work starts
       img: "infirmary",
       name: "Infirmary",
       desc: "Heals survivors who rest, and helps whoever is on Heal",
@@ -293,6 +300,7 @@ are in the FX table below so the rules and the descriptions stay together.
     },
     {
       id: "walls",
+      sound: "woodSplitting", // plays over the hammering when work starts
       img: "watchtower",
       name: "Walls and watchtower",
       desc: "Raises night defense",
@@ -443,12 +451,15 @@ are in the FX table below so the rules and the descriptions stay together.
 */
   // Any choice can also have: cost (resources), fatigue (added to the survivor with the skill),
   // injure (health the skill survivor loses) and morale (added to everyone, can be negative).
+  // sounds (on the event and on a choice) play stacked when the event opens or the choice is
+  // picked. Names are listed in common.js; [name, ms] starts that one a little later.
   // All event choices have a three options types: 'skills' (require a survivor with a specific skill), the 'minigame' is a challenge of the player, or 'cost' which requires a resource cost. [WORK IN PROGRESS NEEDS TUNING]
   var EVENTS = [
     {
       title: "Knocking at the gate",
       art: "event_gate",
       text: "Someone is pounding on the gate, begging to be let in. Behind them, shapes shuffle out of the dark.",
+      sounds: ["knockSoft", ["knockHard", 1500], ["zombieGroan", 2600]],
       choices: [
         {
           label: "Talk them through it",
@@ -457,6 +468,7 @@ are in the FX table below so the rules and the descriptions stay together.
           cost: { medicine: 1 },
           outcome:
             "You checked the stranger for bites and let them sleep in the yard.",
+          sounds: ["doorOpen", ["pillCap", 600], ["closeJar", 1400]],
         },
         { label: "Clear the street first", kind: "minigame", game: "Defense" },
         {
@@ -464,6 +476,7 @@ are in the FX table below so the rules and the descriptions stay together.
           kind: "cost",
           cost: { food: 3 },
           outcome: "You passed food through the gate. They left.",
+          sounds: ["canJiggle", ["footsteps", 600]],
         },
       ],
     },
@@ -471,6 +484,7 @@ are in the FX table below so the rules and the descriptions stay together.
       title: "A locked supply crate",
       art: "event_crate",
       text: "A survivor found a padlocked crate in the alley behind the shelter.",
+      sounds: ["rustyMetal"],
       choices: [
         {
           label: "Pry it open",
@@ -478,6 +492,7 @@ are in the FX table below so the rules and the descriptions stay together.
           skill: "Builder",
           fatigue: 20,
           outcome: "The crate gave way. (Loot is a placeholder.)",
+          sounds: ["woodSplitting", ["rustyHinges", 500], ["cardboardBox", 1100]],
         },
         { label: "Pick the lock", kind: "minigame", game: "Lockpick" },
         {
@@ -486,6 +501,7 @@ are in the FX table below so the rules and the descriptions stay together.
           cost: {},
           morale: -5,
           outcome: "You left the crate where it was.",
+          sounds: ["footsteps"],
         },
       ],
     },
@@ -493,6 +509,7 @@ are in the FX table below so the rules and the descriptions stay together.
       title: "Raid on the walls",
       art: "event_raid",
       text: "A crowd of the dead presses against the north wall. It will not hold for long.",
+      sounds: ["hordeClose", ["zombieAttack", 800], ["knockHard", 1200]],
       choices: [
         {
           label: "Hold the line",
@@ -501,6 +518,7 @@ are in the FX table below so the rules and the descriptions stay together.
           fatigue: 30,
           injure: 10,
           outcome: "Your fighter held the wall until dawn.",
+          sounds: ["swing", ["swing", 450], ["swing", 900], ["zombieDying", 1100]],
         },
         { label: "Defend the wall", kind: "minigame", game: "Defense" },
         {
@@ -508,6 +526,12 @@ are in the FX table below so the rules and the descriptions stay together.
           kind: "cost",
           cost: { ammo: 3 },
           outcome: "The shots scattered the crowd.",
+          sounds: [
+            "gunshot",
+            ["gunshot", 350],
+            ["gunshot", 700],
+            ["zombieDying", 1100],
+          ],
         },
       ],
     },
@@ -516,6 +540,7 @@ are in the FX table below so the rules and the descriptions stay together.
       art: "event_house",
       text: "On the way back, your scavenger spotted a house with the door hanging open. The dead can't be far.",
       needsScavenging: true, // only offered on nights after someone went scavenging
+      sounds: ["rustyDoor", ["glassSteps", 900]],
       choices: [
         { label: "Search it room by room", kind: "minigame", game: "Search" },
         {
@@ -525,12 +550,14 @@ are in the FX table below so the rules and the descriptions stay together.
           fatigue: 20,
           outcome:
             "Your scavenger went straight for the pantry and slipped out quietly.",
+          sounds: ["carefulWalking", ["drawer", 700], ["searchDesk", 1400]],
         },
         {
           label: "Head home before dark",
           kind: "cost",
           cost: {},
           outcome: "You left the house alone.",
+          sounds: ["footsteps", ["doorClose", 1200]],
         },
       ],
     },
@@ -543,6 +570,52 @@ are in the FX table below so the rules and the descriptions stay together.
     Defense: "Click zombies before they reach the wall.",
     Lockpick: "Turn the pins in the right order before time runs out.",
     Search: "Find the supplies hidden in the room.",
+  };
+
+  /* 
+---------- Sounds ----------
+Sound names are listed in common.js (SOUNDS). A list of names plays them
+stacked on top of each other; [name, ms] starts that one a little later.
+*/
+  // Plays when the player picks a task for a survivor.
+  var TASK_SOUNDS = {
+    Rest: "lightSwitch",
+    Scavenge: "footsteps",
+    Build: "buildingHammering",
+    Guard: "guardReady",
+    Cook: "stove",
+    Heal: "openJar",
+  };
+  // Footsteps when sending someone out, by the location's danger (1 to 3).
+  var SCAVENGE_STEPS = ["", "footsteps", "carefulWalking", "glassSteps"];
+  // Looping ambience for each phase, plus one-off extras layered over it now and
+  // then. every: [min, max] seconds between extras.
+  var PHASE_SOUNDS = {
+    dawn: { ambience: "ambMorning" },
+    day: {
+      ambience: "ambDay",
+      extras: { sounds: ["ambDayExtra"], every: [45, 120] },
+    },
+    dusk: { ambience: "ambEvening" },
+    night: {
+      ambience: "ambNight",
+      extras: { sounds: ["zombieGroan"], every: [12, 35] },
+    },
+  };
+  // What an auto-resolved mini-game sounds like, won or lost.
+  var AUTO_SOUNDS = {
+    Defense: {
+      won: ["gunshot", ["gunshot", 300], ["zombieDying", 650]],
+      lost: ["zombieAttack", ["woodSplitting", 400], ["zombieScream", 800]],
+    },
+    Lockpick: {
+      won: ["lightSwitch", ["rustyHinges", 400]],
+      lost: ["rustyMetal", ["glassBreak", 300], ["zombieShout", 700]],
+    },
+    Search: {
+      won: ["rummage", ["canJiggle", 600]],
+      lost: ["rummage", ["zombieScream", 600]],
+    },
   };
 
   /* 
@@ -732,6 +805,8 @@ are in the FX table below so the rules and the descriptions stay together.
     alive().forEach(function (o) {
       changeMorale(o, -D.moraleLoss);
     });
+    // Whoever is left buries them: a shovel plays with the next report.
+    if (alive().length && !cued("shovel")) cue("shovel", 3000);
   }
 
   // Changes morale. A survivor whose morale hits 0 walks out on the group.
@@ -743,6 +818,7 @@ are in the FX table below so the rules and the descriptions stay together.
       s.lostOn = state.day;
       s.status = "Left";
       addLog("base", s.name + " lost all hope and left the group.", "bad");
+      if (!cued("doorClose")) cue("doorClose", 2000);
     }
   }
 
@@ -783,6 +859,26 @@ are in the FX table below so the rules and the descriptions stay together.
     toast.timer = setTimeout(function () {
       t.hidden = true;
     }, 3500);
+  }
+
+  // Sounds saved up for the next report pop-up, so they play while the player
+  // reads what happened (e.g. the rooster at dawn). cue("rooster", 2500)
+  // queues a sound to start 2.5 seconds after the report opens.
+  var cues = [];
+  function cue(name, delay) {
+    cues.push([name, delay || 0]);
+  }
+  function cued(name) {
+    return cues.some(function (c) {
+      return c[0] === name;
+    });
+  }
+
+  // Keeps the ambience matching the phase. Safe to call often:
+  // if the track is already playing it just keeps going.
+  function phaseSound() {
+    var p = PHASE_SOUNDS[state.phase];
+    if (p) AT.setAmbience(p.ambience, p.extras);
   }
 
   /* 
@@ -840,6 +936,8 @@ so they always agree with each other.
       leaves: stays || randInt(t.stays[0], t.stays[1]),
       nextIn: 0, // days until the next trader arrives (only counts down while no one is here)
       tradedToday: false,
+      greet: t.greet || null, // sound name for their hello, if they say one
+      greeted: false, // the shop bell has rung today
     };
   }
 
@@ -854,6 +952,7 @@ so they always agree with each other.
   function traderDawn() {
     var t = state.trader;
     t.tradedToday = false;
+    t.greeted = false;
     if (t.leaves > 0) {
       t.leaves -= 1;
       if (t.leaves === 0) {
@@ -875,6 +974,7 @@ so they always agree with each other.
     });
     var next = makeTrader(choices[Math.floor(rng() * choices.length)]);
     state.trader = next;
+    cue("knock", 5500); // someone new at the door, after the rooster
     addLog(
       "trade",
       next.name +
@@ -1463,7 +1563,7 @@ Small counts on the tabs show where something needs a look.
       '<div class="foot"><span>' +
       costLine +
       "</span>" +
-      '<button class="btn btn-sm" type="button" data-sound="buildingHammering" data-upgrade="' +
+      '<button class="btn btn-sm" type="button" data-sound="none" data-upgrade="' +
       f.id +
       '"' +
       (maxed || f.building || short > 0 ? " disabled" : "") +
@@ -1514,7 +1614,10 @@ Small counts on the tabs show where something needs a look.
     if (!btn) return;
     var f = facility(btn.dataset.upgrade);
     if (builders().length) startWork(f);
-    else openBuildPicker(f);
+    else {
+      AT.playSound("menu");
+      openBuildPicker(f);
+    }
   });
 
   // Materials are paid now; the work finishes after buildDays(f) days with someone on Build.
@@ -1522,6 +1625,8 @@ Small counts on the tabs show where something needs a look.
     var cost = upgradeCost(f);
     if (f.building || state.resources.materials < cost) return;
     state.resources.materials -= cost;
+    // Hammering, stacked with a sound for what is being built.
+    AT.playSounds(["buildingHammering", [f.sound, 250]]);
     var tier = nextTier(f);
     f.building = f.buildTotal = buildDays(f);
     addLog(
@@ -1563,7 +1668,7 @@ Small counts on the tabs show where something needs a look.
               ? " · Mechanic: also salvages " + salvageAmount() + " materials"
               : "";
         return (
-          '<button type="button" class="event-choice" data-builder="' +
+          '<button type="button" class="event-choice" data-sound="none" data-builder="' +
           s.id +
           '"' +
           (tired ? " disabled" : "") +
@@ -1695,6 +1800,8 @@ Small counts on the tabs show where something needs a look.
                 s.id +
                 '" data-set-task="' +
                 t +
+                '" data-sound="' +
+                TASK_SOUNDS[t] +
                 '" aria-pressed="' +
                 (t === s.task) +
                 '" title="' +
@@ -1807,7 +1914,9 @@ Small counts on the tabs show where something needs a look.
           (seen ? "" : " unseen") +
           '" data-loc="' +
           l.id +
-          '" style="left:' +
+          '"' +
+          (l.locked ? ' data-sound="rustyDoor"' : "") +
+          ' style="left:' +
           l.x +
           "%;top:" +
           l.y +
@@ -1909,7 +2018,7 @@ Small counts on the tabs show where something needs a look.
             })
             .join("") +
           "</select>" +
-          '<button class="btn btn-primary btn-block" type="button" id="send-btn" style="margin-top:.75rem"' +
+          '<button class="btn btn-primary btn-block" type="button" id="send-btn" data-sound="none" style="margin-top:.75rem"' +
           (sender ? "" : " disabled") +
           ">Send here to scavenge</button>" +
           '<p class="small muted" style="margin-top:.5rem">' +
@@ -1939,6 +2048,8 @@ Small counts on the tabs show where something needs a look.
       s.task = "Scavenge";
       s.target = loc.id;
       state.sendWho = null;
+      // Out the door, then footsteps that get quieter the more dangerous the place.
+      AT.playSounds(["doorOpen", [SCAVENGE_STEPS[loc.danger], 300]]);
       toast(s.name + " will scavenge the " + loc.name + " today.");
       renderAll();
       $("send-btn").focus();
@@ -2191,6 +2302,7 @@ Small counts on the tabs show where something needs a look.
         "good",
       );
       toast("Trade accepted.");
+      AT.playSounds(["cardboardBox", ["canJiggle", 350]]);
       state.trade = { give: {}, get: {} };
       renderAll();
     }
@@ -2280,6 +2392,7 @@ Small counts on the tabs show where something needs a look.
     if (sum) {
       var d = sum.parentElement;
       state.logOpen[d.dataset.day] = !d.open;
+      AT.playSound("turnPage");
       return;
     }
     var f = e.target.closest("[data-filter]");
@@ -2300,6 +2413,15 @@ Small counts on the tabs show where something needs a look.
     document.querySelectorAll('[role="tab"]'),
   );
 
+  // The shop bell rings the first time the player visits the trader each day,
+  // and some traders say hello on top of it.
+  function greetTrader() {
+    var t = state.trader;
+    if (!traderHere() || t.greeted) return;
+    t.greeted = true;
+    AT.playSounds(["shopBell"].concat(t.greet ? [[t.greet, 700]] : []));
+  }
+
   function selectTab(tab, focus) {
     tabs.forEach(function (t) {
       var on = t === tab;
@@ -2308,6 +2430,7 @@ Small counts on the tabs show where something needs a look.
       $(t.getAttribute("aria-controls")).hidden = !on;
     });
     if (tab.id === "tab-log") state.logSeen = state.log.length;
+    if (tab.id === "tab-trade") greetTrader();
     renderBadges();
     if (focus) tab.focus();
   }
@@ -2354,6 +2477,7 @@ Small counts on the tabs show where something needs a look.
       endDay();
       return;
     }
+    AT.playSound("menu");
     $("confirm-list").innerHTML = problems.map(warnItem).join("");
     $("confirm-dialog").showModal();
     $("confirm-back").focus();
@@ -2367,6 +2491,9 @@ Small counts on the tabs show where something needs a look.
   });
 
   function endDay() {
+    // A match is struck as the light goes. The rest of dusk's sounds are cued
+    // below and play with the Dusk report.
+    AT.playSound("match");
     // Everything logged from here on goes into the Dusk report pop-up.
     var duskMark = state.log.length;
     // This is dusk where the results come in.
@@ -2434,6 +2561,12 @@ Small counts on the tabs show where something needs a look.
       }
     });
 
+    // The scavengers come home and unpack.
+    if (scavenged) {
+      cue("doorClose", 1200);
+      cue("rummage", 1700);
+    }
+
     // Facilities that produce something every day.
     var waterMade = fx("water", "water");
     var foodMade = fx("kitchen", "food");
@@ -2474,6 +2607,7 @@ Small counts on the tabs show where something needs a look.
       if (f.building === 0) {
         f.building = null;
         f.level += 1;
+        cue(f.sound, 2000);
         addLog(
           "base",
           f.name +
@@ -2546,6 +2680,12 @@ Small counts on the tabs show where something needs a look.
     var drunk = Math.min(state.resources.water, alive().length);
     state.resources.food -= eaten;
     state.resources.water -= drunk;
+    // Dinner: the old fridge, a can cracked open, then water poured out.
+    if (eaten) cue("fridge", 2400);
+    if (drunk) {
+      cue("canOpen", 2700);
+      cue("pourWater", 3100);
+    }
     addLog(
       "base",
       "The group ate " + eaten + " food and drank " + drunk + " water at dusk.",
@@ -2631,6 +2771,9 @@ Small counts on the tabs show where something needs a look.
     reportNext = opts.next;
     $("report-dialog").showModal();
     $("report-continue").focus();
+    // Paper for the report, with everything cued since the last one stacked on top.
+    AT.playSounds(["turnPage"].concat(cues));
+    cues = [];
   }
 
   $("report-continue").addEventListener("click", function () {
@@ -2683,6 +2826,7 @@ Small counts on the tabs show where something needs a look.
           '<button class="event-choice" type="button" data-choice="' +
           i +
           '"' +
+          (c.sounds ? ' data-sound="none"' : "") +
           (ok ? "" : " disabled") +
           ">" +
           "<strong>" +
@@ -2695,6 +2839,7 @@ Small counts on the tabs show where something needs a look.
       })
       .join("");
     $("event-dialog").showModal();
+    AT.playSounds(ev.sounds);
   }
 
   $("event-choices").addEventListener("click", function (e) {
@@ -2703,6 +2848,7 @@ Small counts on the tabs show where something needs a look.
     var ev = state.currentEvent;
     var c = ev.choices[Number(btn.dataset.choice)];
     $("event-dialog").close();
+    AT.playSounds(c.sounds);
     if (c.kind === "minigame") {
       if (AT.load().minigames === "auto") autoResolve(c.game);
       else openMinigame(c.game);
@@ -2799,6 +2945,8 @@ Small counts on the tabs show where something needs a look.
   // Auto-resolve a mini-game with a D.autoWin chance of winning (depends on difficulty), and a reward based on the game.
   function autoResolve(name) {
     var r = AT.minigames.autoResult(name, rng() < D.autoWin, rng);
+    var sounds = AUTO_SOUNDS[name];
+    if (sounds) AT.playSounds(r.won ? sounds.won : sounds.lost);
     resolveMinigame(name, r.won, true, r.reward);
   }
 
@@ -2876,10 +3024,17 @@ Small counts on the tabs show where something needs a look.
     var def = nightDefense();
     var shots = Math.min(state.resources.ammo, guards());
     state.resources.ammo -= shots;
+    // Raid sounds play with the Dawn report, after the night event's own sounds.
+    // One gunshot per bullet the guards fire (up to 4 you can hear).
+    for (var shot = 0; shot < Math.min(shots, 4); shot++) {
+      cue("gunshot", 1500 + shot * 350);
+    }
     alive().forEach(function (s) {
       if (s.task === "Guard") tire(s, 15);
     });
     if (def >= threat) {
+      cue("horde", 1300);
+      cue("zombieDying", 2700);
       addLog(
         "night",
         "The horde hit the walls and broke (defense " +
@@ -2892,6 +3047,9 @@ Small counts on the tabs show where something needs a look.
       return;
     }
     var breach = threat - def;
+    cue("hordeClose", 1300);
+    cue("zombieAttack", 2000);
+    cue("glassBreak", 2300);
     addLog(
       "night",
       "The horde broke through (defense " + def + " vs " + threat + ").",
@@ -2912,6 +3070,7 @@ Small counts on the tabs show where something needs a look.
     var walls = facility("walls");
     if (breach >= 15 && walls.level > 1) {
       walls.level -= 1;
+      cue("woodSplitting", 2800);
       addLog(
         "night",
         "The walls were damaged and fell back to " +
@@ -2945,6 +3104,7 @@ Small counts on the tabs show where something needs a look.
     }
     if (state.day >= state.length) {
       addLog("base", "The group survived the last night.", "good");
+      cue("rooster", 4000);
       renderAll();
       showReport({
         kicker: kicker,
@@ -2961,6 +3121,7 @@ Small counts on the tabs show where something needs a look.
 
     state.day += 1;
     state.phase = "dawn";
+    cue("rooster", 4000);
     state.hordeRoll = randInt(-3, 3);
     traderDawn();
     alive().forEach(function (s) {
@@ -3068,6 +3229,7 @@ Small counts on the tabs show where something needs a look.
     renderTrade();
     renderLog();
     renderBadges();
+    phaseSound();
   }
 
   // Tells the CSS how tall the sticky header is, so the side panel and
@@ -3084,5 +3246,9 @@ Small counts on the tabs show where something needs a look.
 
   addLog("base", "The group settled into " + state.shelter + ".");
   state.logSeen = state.log.length; // the opening line doesn't count as news
+  // Load the game's sounds now so the first gunshot or footstep isn't late.
+  AT.preloadSounds();
   renderAll();
+  // The door shuts behind the group as they settle in.
+  AT.playSound("doorClose");
 })();

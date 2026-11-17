@@ -56,6 +56,16 @@ DESCRIPTION:
     reward[res] = (reward[res] || 0) + n;
   }
 
+  // Plays a sound from common.js (see SOUNDS there for the names).
+  // Any random choice about sounds uses Math.random, not the run's seeded
+  // rng, so sounds never change how a seeded run plays out.
+  function sfx(name, opts) {
+    return window.AT && AT.playSound ? AT.playSound(name, opts) : null;
+  }
+  function stopSfx(a, ms) {
+    if (a && window.AT && AT.stopSound) AT.stopSound(a, ms);
+  }
+
   // Countdown shared by all three games. onTick gets whole seconds left; onEnd fires at zero.
   function makeClock(seconds, ui, onEnd) {
     var endAt = 0,
@@ -122,6 +132,7 @@ DESCRIPTION:
       misses = 0;
     // State variable for the zombies, including their position, speed, and lane.
     // The game loop updates these values and checks for collisions with the wall.
+    var hordeLoop = null; // the horde growling under the whole game
     var zombies = [],
       spawned = 0,
       cleared = 0,
@@ -169,6 +180,7 @@ DESCRIPTION:
       var el = document.createElement("button");
       el.type = "button";
       el.className = "mg-zombie";
+      el.dataset.sound = "none"; // the gunshot is played in kill()
       el.tabIndex = -1; // moving targets: keyboard players use the lane keys instead
       el.setAttribute("aria-label", "Zombie in lane " + (lane + 1));
       el.textContent = "🧟";
@@ -189,6 +201,8 @@ DESCRIPTION:
       zombies.push(z);
       o.arena.appendChild(el);
       spawned += 1;
+      // Some of them shout as they come out (not all, or it's a wall of noise).
+      if (Math.random() < 0.35) sfx("zombieShout", { gap: 900, volume: 0.7 });
       if (spawned < total)
         spawnTimer = setTimeout(spawn, spawnMs * (0.6 + o.rng() * 0.8));
     }
@@ -208,6 +222,9 @@ DESCRIPTION:
       if (!running || jammed()) return; // a press during a jam does nothing and doesn't stack
       misses += 1;
       jammedUntil = performance.now() + missJamMs;
+      // The shot misses, then the bolt is racked to clear the jam.
+      sfx("gunshot");
+      sfx("gunJam", { delay: 120 });
       wall -= missDamage;
       o.arena.classList.add("jammed"); // red border and greyed lane keys until the jam clears
       clearTimeout(jamTimer);
@@ -231,6 +248,8 @@ DESCRIPTION:
       if (jammed()) return; // can't shoot until the jam clears
       remove(z);
       killed += 1;
+      sfx("gunshot");
+      if (Math.random() < 0.4) sfx("zombieDying", { delay: 150, gap: 400 });
       z.el.classList.add("down");
       z.el.disabled = true;
       setTimeout(function () {
@@ -251,6 +270,9 @@ DESCRIPTION:
           remove(z);
           z.el.remove();
           wall -= hitDamage;
+          // Pounding on the wall, with a bite on top.
+          sfx("knockHard", { gap: 700 });
+          sfx("zombieAttack", { gap: 1200, volume: 0.8 });
           o.arena.classList.remove("hit");
           void o.arena.offsetWidth; // restart the shake animation
           o.arena.classList.add("hit");
@@ -288,6 +310,8 @@ DESCRIPTION:
       cancelAnimationFrame(raf);
       document.removeEventListener("keydown", onKey);
       o.arena.removeEventListener("pointerdown", onArenaClick);
+      stopSfx(hordeLoop, 800);
+      hordeLoop = null;
       clearTimeout(jamTimer);
       o.arena.classList.remove("jammed");
     }
@@ -308,6 +332,11 @@ DESCRIPTION:
           (misses ? " Missed shots: " + misses + "." : "")
         : "The wall broke. Someone got hurt pushing them back." +
           (misses ? " Missed shots: " + misses + "." : "");
+      if (won) sfx("reload");
+      else {
+        sfx("woodSplitting");
+        sfx("zombieScream", { delay: 300 });
+      }
       showBanner(o.arena, won, summary);
       o.done({ won: won, summary: summary, reward: {} });
     }
@@ -320,6 +349,8 @@ DESCRIPTION:
         document.addEventListener("keydown", onKey);
         o.arena.addEventListener("pointerdown", onArenaClick);
         o.arena.querySelector(".mg-hint").classList.add("faded");
+        sfx("cock");
+        hordeLoop = sfx("hordeClose", { loop: true, volume: 0.5 });
         clock.start();
         spawn();
         raf = requestAnimationFrame(frame);
@@ -355,7 +386,7 @@ DESCRIPTION:
       order
         .map(function (_, i) {
           return (
-            '<button type="button" class="mg-pin" data-pin="' +
+            '<button type="button" class="mg-pin" data-sound="none" data-pin="' +
             i +
             '" disabled aria-label="Pin ' +
             (i + 1) +
@@ -397,11 +428,13 @@ DESCRIPTION:
         btn.classList.add("set");
         btn.setAttribute("aria-label", "Pin " + (i + 1) + ", set");
         setCount += 1;
+        sfx("lightSwitch"); // a crisp click as the pin sets
         msg.textContent = "Click. Pin " + (i + 1) + " is set.";
         stats();
         if (setCount === count) finish(true);
       } else {
         slips += 1;
+        sfx("rustyMetal"); // the pins rattle back down
         pins.forEach(function (p, n) {
           p.classList.remove("set");
           p.setAttribute("aria-label", "Pin " + (n + 1));
@@ -460,6 +493,14 @@ DESCRIPTION:
           " of " +
           count +
           " pins set. The noise drew attention.";
+      if (won) {
+        // The lid creaks open and you dig through the crate.
+        sfx("rustyHinges", { delay: 200 });
+        sfx("cardboardBox", { delay: 700 });
+      } else {
+        sfx("glassBreak");
+        sfx("zombieShout", { delay: 400 });
+      }
       showBanner(o.arena, won, summary);
       o.done({ won: won, summary: summary, reward: reward });
     }
@@ -515,7 +556,16 @@ DESCRIPTION:
     });
     var found = [],
       bitten = [],
-      running = false;
+      running = false,
+      lastRummage = null; // cut off when the next spot is searched
+    // What finding each supply sounds like (stacked on the rummaging).
+    var LOOT_SOUNDS = {
+      food: "canJiggle",
+      water: "canDrop",
+      materials: "rubbish",
+      medicine: "pillCap",
+      ammo: "reload",
+    };
 
     o.arena.className = "mg-canvas mg-search";
     o.arena.innerHTML =
@@ -527,7 +577,7 @@ DESCRIPTION:
           var r = Math.floor(i / COLS) + 1,
             c = (i % COLS) + 1;
           return (
-            '<button type="button" class="mg-tile" data-tile="' +
+            '<button type="button" class="mg-tile" data-sound="none" data-tile="' +
             i +
             '" disabled aria-label="Row ' +
             r +
@@ -615,11 +665,17 @@ DESCRIPTION:
       if (t.classList.contains("open")) return;
       searches -= 1;
       t.classList.add("open");
+      stopSfx(lastRummage, 150);
+      lastRummage = null;
       var where = t.getAttribute("aria-label").replace(", not searched", "");
       if (zombieAt[i]) {
         bitten.push(i);
         searches = Math.max(0, searches - biteSearchCost);
         t.classList.add("zombie");
+        // A scream, the bite, and a swing to fight it off, all at once.
+        sfx("zombieScream");
+        sfx("zombieAttack", { delay: 200, volume: 0.8 });
+        sfx("swing", { delay: 450 });
         t.innerHTML = '<span aria-hidden="true">🧟</span>';
         t.setAttribute("aria-label", where + ", a zombie");
         msg.textContent =
@@ -632,6 +688,8 @@ DESCRIPTION:
       } else if (loot[i]) {
         found.push(i);
         t.classList.add("loot");
+        lastRummage = sfx("rummage");
+        sfx(LOOT_SOUNDS[loot[i]], { delay: 300 });
         t.innerHTML =
           '<img src="assets/icons/ingame/' +
           loot[i] +
@@ -641,6 +699,7 @@ DESCRIPTION:
         // Numbers count supplies still hidden, so refresh the open empty tiles.
         relabel();
       } else {
+        lastRummage = sfx("rummage");
         label(i);
         var n = nearby(i),
           nz = nearbyZombies(i);
@@ -717,6 +776,7 @@ DESCRIPTION:
         }
       });
       var won = found.length >= need;
+      if (!won) sfx("zombieShout", { delay: 300 }); // the dead caught up
       var reward = {};
       found.forEach(function (i) {
         addReward(reward, loot[i], randInt(o.rng, 1, 2));

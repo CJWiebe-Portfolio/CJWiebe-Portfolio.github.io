@@ -29,6 +29,10 @@ It contains the logic for displaying the game results and run summary.
 
   document.getElementById("end-art").src =
     "assets/images/png/" + (r.won ? "end_win" : "end_lose") + ".png";
+
+  // A rooster for making it to the last dawn; the horde if the shelter fell.
+  if (r.won) AT.playSound("rooster");
+  else AT.playSounds(["hordeClose", ["zombieScream", 600]]);
   var pad = function (n) {
     return String(n).padStart(2, "0");
   };
