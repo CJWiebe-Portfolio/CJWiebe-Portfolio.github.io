@@ -2072,6 +2072,11 @@ dialog .warn-list {
   font-size: 0.75rem;
   color: var(--muted);
 }
+/* Items the current trader pays extra for */
+.res-name .worth.wanted {
+  color: var(--accent);
+  font-weight: 700;
+}
 .res-name {
   display: grid;
   grid-template-columns: 20px auto;
@@ -2434,6 +2439,20 @@ details.log-day li.good {
 .mg-tile.loot {
   border-color: var(--accent);
   background: color-mix(in srgb, var(--accent) 15%, var(--surface));
+}
+.mg-tile.zombie {
+  border-color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 20%, var(--surface));
+  font-size: 1.3rem;
+}
+.mg-clue {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.mg-growl {
+  font-size: 0.8rem;
+  color: var(--danger);
 }
 .mg-tile.missed {
   opacity: 0.45;

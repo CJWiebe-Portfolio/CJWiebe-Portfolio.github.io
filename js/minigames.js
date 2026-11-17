@@ -492,17 +492,29 @@ DESCRIPTION:
     var need = byDifficulty(o.difficulty, 2, 3, 3);
     var searchesMax = byDifficulty(o.difficulty, 10, 8, 7);
     var searches = searchesMax;
-    var spots = shuffle(
+    // Zombies hide in the room too. Opening one costs an extra search, and each
+    // bite hurts a survivor after the mini-game (game.js applies the damage).
+    var zombieCount = byDifficulty(o.difficulty, 1, 2, 3);
+    var biteDamage = byDifficulty(o.difficulty, 10, 15, 20);
+    var biteSearchCost = 1; // extra searches lost fighting a zombie off
+    var order = shuffle(
       o.rng,
       Array.apply(null, Array(COLS * ROWS)).map(function (_, i) {
         return i;
       }),
-    ).slice(0, hidden);
+    );
+    var spots = order.slice(0, hidden);
+    var zombieSpots = order.slice(hidden, hidden + zombieCount);
     var loot = {}; // tile index -> resource id
     spots.forEach(function (i) {
       loot[i] = pick(o.rng, RES_IDS);
     });
+    var zombieAt = {}; // tile index -> true
+    zombieSpots.forEach(function (i) {
+      zombieAt[i] = true;
+    });
     var found = [],
+      bitten = [],
       running = false;
 
     o.arena.className = "mg-canvas mg-search";
@@ -526,10 +538,14 @@ DESCRIPTION:
         })
         .join("") +
       "</div>" +
-      '<p class="mg-msg" aria-live="polite">Empty spots show how many supplies are hidden next to them. Find ' +
+      '<p class="mg-msg" aria-live="polite">Empty spots show how many supplies are hidden next to them, and 🧟 warns of zombies close by. Find ' +
       need +
       " of " +
       hidden +
+      " and watch out for " +
+      zombieCount +
+      " zombie" +
+      (zombieCount === 1 ? "" : "s") +
       ".</p>";
 
     var tiles = Array.prototype.slice.call(
@@ -568,6 +584,30 @@ DESCRIPTION:
       return n;
     }
 
+    // This function counts how many zombies that haven't been found yet are next to a tile.
+    function nearbyZombies(i) {
+      var r = Math.floor(i / COLS),
+        c = i % COLS,
+        n = 0;
+      for (var dr = -1; dr <= 1; dr++)
+        for (var dc = -1; dc <= 1; dc++) {
+          if (!dr && !dc) continue;
+          var rr = r + dr,
+            cc = c + dc;
+          if (rr < 0 || rr >= ROWS || cc < 0 || cc >= COLS) continue;
+          var k = rr * COLS + cc;
+          if (zombieAt[k] && bitten.indexOf(k) === -1) n++;
+        }
+      return n;
+    }
+
+    // Refreshes the clues on every opened empty tile (they change as things are found).
+    function relabel() {
+      tiles.forEach(function (t, n) {
+        if (t.classList.contains("open") && !loot[n] && !zombieAt[n]) label(n);
+      });
+    }
+
     // This function handles the logic for searching a tile, revealing whether it contains loot or is empty, and updating the game state accordingly.
     function searchTile(i) {
       if (!running || searches <= 0) return;
@@ -576,7 +616,20 @@ DESCRIPTION:
       searches -= 1;
       t.classList.add("open");
       var where = t.getAttribute("aria-label").replace(", not searched", "");
-      if (loot[i]) {
+      if (zombieAt[i]) {
+        bitten.push(i);
+        searches = Math.max(0, searches - biteSearchCost);
+        t.classList.add("zombie");
+        t.innerHTML = '<span aria-hidden="true">🧟</span>';
+        t.setAttribute("aria-label", where + ", a zombie");
+        msg.textContent =
+          "A zombie! You fought it off, but someone was bitten (-" +
+          biteDamage +
+          " health, -" +
+          biteSearchCost +
+          " search).";
+        relabel();
+      } else if (loot[i]) {
         found.push(i);
         t.classList.add("loot");
         t.innerHTML =
@@ -586,20 +639,22 @@ DESCRIPTION:
         t.setAttribute("aria-label", where + ", found " + RES_LABEL[loot[i]]);
         msg.textContent = "Found " + RES_LABEL[loot[i]].toLowerCase() + "!";
         // Numbers count supplies still hidden, so refresh the open empty tiles.
-        tiles.forEach(function (o2, n) {
-          if (o2.classList.contains("open") && !loot[n]) label(n);
-        });
+        relabel();
       } else {
         label(i);
-        var n = nearby(i);
+        var n = nearby(i),
+          nz = nearbyZombies(i);
         msg.textContent =
-          n === 0
-            ? "Nothing here, and nothing next to it."
+          (n === 0
+            ? "Nothing here, and no supplies next to it."
             : "Nothing here, but " +
               n +
               " supply" +
               (n === 1 ? " is" : " are") +
-              " hidden next to it.";
+              " hidden next to it.") +
+          (nz
+            ? " You can hear " + nz + " zombie" + (nz === 1 ? "" : "s") + " close by."
+            : "");
       }
       stats();
       if (found.length === hidden || searches === 0) finish();
@@ -608,11 +663,23 @@ DESCRIPTION:
     // This function updates the label and text content of a tile to show how many hidden supplies are adjacent to it.
     function label(i) {
       var t = tiles[i],
-        n = nearby(i);
+        n = nearby(i),
+        nz = nearbyZombies(i);
       var where = t.getAttribute("aria-label").split(",").slice(0, 2).join(",");
-      t.textContent = n ? String(n) : "·";
+      t.innerHTML =
+        '<span class="mg-clue">' +
+        (n ? String(n) : "·") +
+        (nz ? ' <span class="mg-growl">🧟' + nz + "</span>" : "") +
+        "</span>";
       t.dataset.near = n;
-      t.setAttribute("aria-label", where + ", empty, " + n + " hidden nearby");
+      t.setAttribute(
+        "aria-label",
+        where +
+          ", empty, " +
+          n +
+          " hidden nearby" +
+          (nz ? ", " + nz + " zombie" + (nz === 1 ? "" : "s") + " nearby" : ""),
+      );
     }
 
     o.arena.querySelector(".mg-grid").addEventListener("click", function (e) {
@@ -643,6 +710,12 @@ DESCRIPTION:
             '.png" alt="" width="28" height="28">';
         }
       });
+      zombieSpots.forEach(function (i) {
+        if (bitten.indexOf(i) === -1) {
+          tiles[i].classList.add("zombie", "missed");
+          tiles[i].innerHTML = '<span aria-hidden="true">🧟</span>';
+        }
+      });
       var won = found.length >= need;
       var reward = {};
       found.forEach(function (i) {
@@ -652,9 +725,18 @@ DESCRIPTION:
         (found.length
           ? "You found " + describe(reward) + "."
           : "You found nothing.") +
-        (won ? "" : " Not enough before the dead caught up.");
+        (won ? "" : " Not enough before the dead caught up.") +
+        (bitten.length
+          ? " Bitten " + bitten.length + " time" + (bitten.length === 1 ? "" : "s") + "."
+          : "");
       showBanner(o.arena, won, summary);
-      o.done({ won: won, summary: summary, reward: reward });
+      o.done({
+        won: won,
+        summary: summary,
+        reward: reward,
+        bites: bitten.length,
+        biteDamage: biteDamage,
+      });
     }
 
     return {

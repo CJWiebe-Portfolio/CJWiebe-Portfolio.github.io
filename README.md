@@ -48,6 +48,7 @@ The full rules are on the in-game **How to play** page.
 - Eight map locations with different loot, danger and travel time
 - Six base facilities with multi-day upgrades
 - Night events with skill, cost and mini-game choices
+- Four wandering traders who come and go, each with their own stock and wants
 - Three mini-games (Defense, Lockpick, Search), with an option to auto-resolve them
 - Dusk and Dawn report pop-ups, plus a filterable log of everything that happened
 - A seed option in Options for repeatable runs
@@ -118,6 +119,8 @@ All the numbers for each difficulty are in the `DIFFICULTY` and `START_RESOURCES
 | `scavRisk`   | 10%  | 15%    | 20%  | Chance of attack per danger level when scavenging |
 | `autoWin`    | 70%  | 55%    | 40%  | Chance an auto-resolved mini-game is won          |
 | `moraleLoss` | 10   | 15     | 20   | Morale everyone loses when a survivor dies        |
+| `tradeMarkup` | 1.0 | 1.15   | 1.3  | How much more value traders ask than they give    |
+| `traderGap`  | 2–3  | 3–4    | 4–6  | Days with no trader between visits                |
 
 The main rules and where to find them in `game.js`:
 
@@ -125,6 +128,7 @@ The main rules and where to find them in `game.js`:
 - **Night raid:** `nightRaid()`. The horde is compared with your defense, and a breach injures survivors and can lower the walls.
 - **Dusk:** the End day click handler. Scavenging, base production, construction, healing, fatigue, eating and drinking.
 - **Damage and death:** `hurt()` and `changeMorale()`.
+- **Traders:** the `TRADERS` list holds each trader's stock, wants and length of stay. `traderDawn()` runs the schedule each dawn, `buyValue()` adds the 50% bonus (`WANT_BONUS`) for wanted items, and `tradeNeed()` applies the markup and the Negotiator discount. One trade per day stops players from trading the same goods back and forth for profit.
 
 The difficulty was tuned by simulating full runs. Playing sensibly on a 15-day run, about 98% of Easy runs, 90% of Normal and 20% of Hard are won. Doing nothing loses most Normal runs and every Hard run.
 
@@ -143,7 +147,6 @@ Losing a mini-game injures one survivor for 30 health (15 if they're Tough).
 - No saves or accounts yet. The disabled Continue button and the Options entries are reserved for them.
 - There's no way to find new survivors yet, so free beds and the Beds upgrade don't matter.
 - The Workshop and Infirmary can be built but don't do anything yet.
-- The trader counts down days but never leaves or comes back.
 - The Military checkpoint is locked and can't be unlocked yet.
 - Only four night events exist, so they repeat on longer runs.
 

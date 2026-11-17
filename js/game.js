@@ -72,16 +72,58 @@ are marked TODO.
   // autoWin:     chance an auto-resolved mini-game is won
   // moraleLoss:  morale lost by everyone when a survivor dies
   var DIFFICULTY = {
-    easy: { yield: 0.95, threatBase: 9, threatPeak: 18, starveDmg: 10, scavRisk: 0.1, autoWin: 0.7, moraleLoss: 10 },
-    normal: { yield: 0.85, threatBase: 8, threatPeak: 22, starveDmg: 15, scavRisk: 0.15, autoWin: 0.55, moraleLoss: 15 },
-    hard: { yield: 0.8, threatBase: 7, threatPeak: 23, starveDmg: 20, scavRisk: 0.2, autoWin: 0.4, moraleLoss: 20 },
+    easy: { yield: 0.95, threatBase: 9, threatPeak: 18, starveDmg: 10, scavRisk: 0.1, autoWin: 0.7, moraleLoss: 10, tradeMarkup: 1.0, traderGap: [2, 3] },
+    normal: { yield: 0.85, threatBase: 8, threatPeak: 22, starveDmg: 15, scavRisk: 0.15, autoWin: 0.55, moraleLoss: 15, tradeMarkup: 1.15, traderGap: [3, 4] },
+    hard: { yield: 0.8, threatBase: 7, threatPeak: 23, starveDmg: 20, scavRisk: 0.2, autoWin: 0.4, moraleLoss: 20, tradeMarkup: 1.3, traderGap: [4, 6] },
   };
+  // tradeMarkup: how much more value traders ask for than they give (1.15 = 15% extra)
+  // traderGap:   [min, max] days with no trader between visits
   var D = DIFFICULTY[setup.difficulty] || DIFFICULTY.normal;
   // Fatigue at or above this keeps a survivor from scavenging or guarding.
   var TIRED = 80;
 
   // Defines trade values for each resource
   var TRADE_VALUE = { food: 2, water: 2, materials: 1, medicine: 4, ammo: 3 };
+
+  // Wandering traders. One visits at a time and the next one is never the same person.
+  // stock:  what they arrive with (each amount varies by -1 to +1)
+  // wants:  what they pay extra for (WANT_BONUS x value). They never sell what they want.
+  // stays:  [min, max] days they stay
+  var TRADERS = [
+    {
+      id: "marguerite",
+      name: "Old Marguerite",
+      title: "General goods",
+      stock: { food: 5, water: 5, materials: 6, medicine: 2, ammo: 0 },
+      wants: ["ammo"],
+      stays: [2, 3],
+    },
+    {
+      id: "rook",
+      name: "Rook",
+      title: "Gun runner",
+      stock: { food: 0, water: 0, materials: 4, medicine: 1, ammo: 8 },
+      wants: ["food", "water"],
+      stays: [2, 2],
+    },
+    {
+      id: "ines",
+      name: "Doc Ines",
+      title: "Field medic",
+      stock: { food: 2, water: 4, materials: 0, medicine: 6, ammo: 0 },
+      wants: ["materials"],
+      stays: [2, 3],
+    },
+    {
+      id: "abe",
+      name: "Abe Tanner",
+      title: "Farmer",
+      stock: { food: 9, water: 7, materials: 2, medicine: 0, ammo: 0 },
+      wants: ["ammo", "medicine"],
+      stays: [2, 3],
+    },
+  ];
+  var WANT_BONUS = 1.5;
   // Defines tasks that survivors can be assigned to each day
   var TASKS = ["Rest", "Scavenge", "Build", "Guard", "Cook", "Heal"];
 
@@ -401,12 +443,8 @@ are marked TODO.
     explored: [],
     selectedLocation: "hospital",
     trade: { give: {}, get: {} },
-    trader: {
-      name: "Old Marguerite",
-      leaves: 2,
-      // What the trader has to sell. [WORK IN PROGRESS NEEDS TUNING]
-      stock: { food: 6, water: 6, materials: 8, medicine: 3, ammo: 4 },
-    },
+    // The first trader is already here on day 1. See makeTrader() and traderDawn().
+    trader: makeTrader(TRADERS[0], 2),
     log: [],
     logFilter: "all",
     eventsFaced: 0,
@@ -589,6 +627,68 @@ so they always agree with each other.
   }
   function traderHere() {
     return state.trader.leaves > 0;
+  }
+
+  // Sets up a trader's visit: fresh stock, how long they stay, and no trade made yet.
+  function makeTrader(t, stays) {
+    var stock = {};
+    RESOURCES.forEach(function (r) {
+      var base = t.stock[r.id] || 0;
+      stock[r.id] = base ? Math.max(1, base + randInt(-1, 1)) : 0;
+    });
+    return {
+      id: t.id,
+      name: t.name,
+      title: t.title,
+      wants: t.wants.slice(),
+      stock: stock,
+      leaves: stays || randInt(t.stays[0], t.stays[1]),
+      nextIn: 0, // days until the next trader arrives (only counts down while no one is here)
+      tradedToday: false,
+    };
+  }
+
+  // What the trader will pay for one of a resource you give: more for what they want.
+  function buyValue(id) {
+    var wanted = state.trader.wants.indexOf(id) !== -1;
+    return wanted ? Math.round(TRADE_VALUE[id] * WANT_BONUS) : TRADE_VALUE[id];
+  }
+
+  // Runs every dawn: the trader's stay counts down; when no one is here, the next
+  // trader's arrival counts down. Arrivals and departures go into the Dawn report.
+  function traderDawn() {
+    var t = state.trader;
+    t.tradedToday = false;
+    if (t.leaves > 0) {
+      t.leaves -= 1;
+      if (t.leaves === 0) {
+        addLog("trade", t.name + " packed up and moved on.");
+        state.trade = { give: {}, get: {} };
+        t.nextIn = randInt(D.traderGap[0], D.traderGap[1]);
+      } else if (t.leaves === 1) {
+        addLog("trade", t.name + " is leaving after today. Last chance to trade.");
+      }
+      return;
+    }
+    t.nextIn -= 1;
+    if (t.nextIn > 0) return;
+    var choices = TRADERS.filter(function (x) {
+      return x.id !== t.id;
+    });
+    var next = makeTrader(choices[Math.floor(rng() * choices.length)]);
+    state.trader = next;
+    addLog(
+      "trade",
+      next.name +
+        " (" +
+        next.title.toLowerCase() +
+        ") arrived and will stay " +
+        plural(next.leaves, "day") +
+        ". Pays extra for " +
+        next.wants.join(" and ") +
+        ".",
+      "good",
+    );
   }
   // Food the group eats at dusk (also used by the dusk itself).
   function foodNeeded() {
@@ -1480,27 +1580,43 @@ Small counts on the tabs show where something needs a look.
 ---------- Trade Tab ----------
 =============================================================== 
 */
+  // Value of one side of the offer. What you give is valued at the trader's buy price
+  // (extra for what they want); what you get is valued at the normal price.
   function tradeValue(side) {
     return RESOURCES.reduce(function (sum, r) {
-      return sum + (state.trade[side][r.id] || 0) * TRADE_VALUE[r.id];
+      var each = side === "give" ? buyValue(r.id) : TRADE_VALUE[r.id];
+      return sum + (state.trade[side][r.id] || 0) * each;
     }, 0);
   }
 
-  // Share of the trader's value you must offer. A Negotiator in the group lowers it.
+  // Share of the trader's value you must offer: the difficulty's markup,
+  // lowered by 25% if someone in the group is a Negotiator.
   function tradeNeed() {
-    return hasSkill("Negotiator") ? 0.75 : 1;
+    return D.tradeMarkup * (hasSkill("Negotiator") ? 0.75 : 1);
   }
 
   function renderTrade() {
     // No trader around: say so instead of showing an empty trade screen.
+    var t = state.trader;
     if (!traderHere()) {
       $("panel-trade").innerHTML =
         '<div class="panel-head"><h2>Trade</h2></div>' +
         '<div class="card trade-empty"><h3>No trader nearby</h3><p class="muted">' +
-        esc(state.trader.name) +
-        " has moved on. There is no one to trade with right now.</p></div>";
+        esc(t.name) +
+        " has moved on. Word is the next trader will pass by in about " +
+        plural(t.nextIn, "day") +
+        ".</p></div>";
       return;
     }
+    // Wanted items as readable labels, e.g. "Food and Water".
+    var wantLabels = t.wants
+      .map(function (w) {
+        return RESOURCES.find(function (r) {
+          return r.id === w;
+        }).label;
+      })
+      .join(" and ");
+    var markupPct = Math.round((D.tradeMarkup - 1) * 100);
     var give = tradeValue("give"),
       get = tradeValue("get");
     var need = Math.ceil(get * tradeNeed());
@@ -1509,17 +1625,20 @@ Small counts on the tabs show where something needs a look.
     // Plain-language status of the offer.
     var msg,
       ok = false;
-    if (!get) {
-      msg = "Pick what you want from her side.";
+    if (t.tradedToday) {
+      msg = t.name + " is done trading for today. Come back tomorrow.";
+    } else if (!get) {
+      msg = "Pick what you want from " + t.name + "'s side. One trade a day, so put it all in one offer.";
     } else if (give < need) {
-      msg = "She wants " + (need - give) + " more value. Add more to your side.";
+      msg = t.name + " wants " + (need - give) + " more value. Add more to your side.";
     } else {
       ok = true;
       msg =
-        "She'll accept this trade." +
-        (give > need ? " You're offering " + (give - need) + " more value than she needs." : "");
+        t.name +
+        " will accept this trade." +
+        (give > need ? " You're offering " + (give - need) + " more value than needed." : "");
     }
-    if (hasSkill("Negotiator")) msg += " Your negotiator gets you a better deal.";
+    if (hasSkill("Negotiator") && !t.tradedToday) msg += " Your negotiator gets you a better deal.";
 
     function column(side, title, haveLabel) {
       return (
@@ -1531,14 +1650,19 @@ Small counts on the tabs show where something needs a look.
         "</span><span></span><span>Pick</span><span></span></div>" +
         RESOURCES.map(function (r) {
           var n = state.trade[side][r.id] || 0;
-          var have = side === "give" ? state.resources[r.id] : state.trader.stock[r.id];
+          var have = side === "give" ? state.resources[r.id] : t.stock[r.id];
+          var wanted = side === "give" && t.wants.indexOf(r.id) !== -1;
+          var worth = side === "give" ? buyValue(r.id) : TRADE_VALUE[r.id];
           return (
             '<div class="trade-row"><span class="res-name"><img src="assets/icons/ingame/' +
             r.id +
             '.png" alt="" width="20" height="20">' +
             r.label +
-            '<span class="worth">worth ' +
-            TRADE_VALUE[r.id] +
+            '<span class="worth' +
+            (wanted ? " wanted" : "") +
+            '">worth ' +
+            worth +
+            (wanted ? " · wanted" : "") +
             "</span>" +
             '</span><span class="have">' +
             pad(have) +
@@ -1566,7 +1690,7 @@ Small counts on the tabs show where something needs a look.
             '" data-res="' +
             r.id +
             '" data-delta="1"' +
-            (n >= have ? " disabled" : "") +
+            (n >= have || t.tradedToday ? " disabled" : "") +
             ' aria-label="' +
             (side === "give" ? "Give" : "Get") +
             " one more " +
@@ -1580,19 +1704,24 @@ Small counts on the tabs show where something needs a look.
     $("panel-trade").innerHTML =
       '<div class="panel-head"><h2>Trade</h2></div>' +
       '<div class="card trader"><img class="avatar portrait" src="assets/images/png/trader.png" alt=""><div><h3>' +
-      state.trader.name +
+      esc(t.name) +
       "</h3>" +
-      '<p class="small muted">Wandering trader · leaves in ' +
-      plural(state.trader.leaves, "day") +
+      '<p class="small muted">' +
+      esc(t.title) +
+      " · leaves in " +
+      plural(t.leaves, "day") +
+      " · pays extra for " +
+      wantLabels +
+      (markupPct ? " · asks " + markupPct + "% more than things are worth" : "") +
       "</p></div></div>" +
       '<div class="trade-cols">' +
       column("give", "You give · from your stores", "You have") +
-      column("get", "You get · from her stock", "She has") +
+      column("get", "You get · from " + esc(t.name), "Has") +
       "</div>" +
       '<div class="card trade-bar"><div>' +
       '<div class="labels"><span>Your offer · value ' +
       pad(give) +
-      "</span><span>Her offer · value " +
+      "</span><span>" + esc(t.name) + "'s offer · value " +
       pad(get) +
       "</span></div>" +
       '<div class="balance" style="--accept:' +
@@ -1644,25 +1773,38 @@ Small counts on the tabs show where something needs a look.
         toast("Pick something you want from the trader first.");
         return;
       }
-      if (give < get * tradeNeed()) {
-        toast(state.trader.name + " shakes her head. Offer more.");
+      var t = state.trader;
+      if (t.tradedToday) {
+        toast(t.name + " is done trading for today.");
         return;
       }
+      if (give < Math.ceil(get * tradeNeed())) {
+        toast(t.name + " shakes their head. Offer more.");
+        return;
+      }
+      var gaveList = {},
+        gotList = {};
       RESOURCES.forEach(function (r) {
         var gave = state.trade.give[r.id] || 0,
           got = state.trade.get[r.id] || 0;
         state.resources[r.id] += got - gave;
-        state.trader.stock[r.id] += gave - got;
+        t.stock[r.id] -= got;
+        // Traders keep what they wanted; anything else goes into their stock to sell on.
+        if (t.wants.indexOf(r.id) === -1) t.stock[r.id] += gave;
+        if (gave) gaveList[r.id] = gave;
+        if (got) gotList[r.id] = got;
       });
+      t.tradedToday = true;
       addLog(
         "trade",
         "Traded with " +
-          state.trader.name +
-          " (gave value " +
-          give +
-          ", got value " +
-          get +
-          ").",
+          t.name +
+          ": gave " +
+          AT.minigames.describe(gaveList) +
+          ", got " +
+          AT.minigames.describe(gotList) +
+          ".",
+        "good",
       );
       toast("Trade accepted.");
       state.trade = { give: {}, get: {} };
@@ -2209,6 +2351,7 @@ Small counts on the tabs show where something needs a look.
         r.won,
         false,
         r.reward,
+        r,
       );
     }
   });
@@ -2226,7 +2369,8 @@ Small counts on the tabs show where something needs a look.
   }
 
   // Close the mini-game overlay, log the result, apply any reward, and finish the night.
-  function resolveMinigame(name, won, auto, reward) {
+  // result is the mini-game's full result (optional). Search adds bites and biteDamage.
+  function resolveMinigame(name, won, auto, reward, result) {
     if ($("minigame-dialog").open) $("minigame-dialog").close();
     var how = auto ? " (auto-resolved)" : "";
     var cat =
@@ -2242,6 +2386,20 @@ Small counts on the tabs show where something needs a look.
     if (gained) {
       state.suppliesGathered += gained;
       addLog(cat, "Brought back " + AT.minigames.describe(reward) + ".", "good");
+    }
+    // Zombie bites from the Search mini-game all land on one survivor (Cowards are spared if possible).
+    if (result && result.bites) {
+      var biteable = alive().filter(function (s) {
+        return s.trait !== "Coward";
+      });
+      if (!biteable.length) biteable = alive();
+      var bittenOne = biteable[Math.floor(rng() * biteable.length)];
+      hurt(
+        bittenOne,
+        result.bites * result.biteDamage,
+        cat,
+        "was bitten " + (result.bites === 1 ? "once" : result.bites + " times") + " while searching",
+      );
     }
     if (!won) {
       // A loss injures one survivor (Cowards are spared if anyone else is around).
@@ -2332,12 +2490,7 @@ Small counts on the tabs show where something needs a look.
 
     state.day += 1;
     state.phase = "dawn";
-    if (state.trader.leaves === 1) {
-      addLog("trade", state.trader.name + " packed up and moved on.");
-      state.trade = { give: {}, get: {} };
-    }
-    state.trader.leaves = Math.max(0, state.trader.leaves - 1);
-    // [WORK IN PROGRESS] implement trader behavior
+    traderDawn();
     alive().forEach(function (s) {
       if (s.trait === "Optimist" && s.health < 100) {
         heal(s, 5);
