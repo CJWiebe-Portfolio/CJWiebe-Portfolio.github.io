@@ -1299,16 +1299,7 @@ fieldset.setup-step > legend.step-title + * {
   top: calc(var(--header-h) + 1rem);
   border-top: 5px solid var(--phase);
 }
-/* Each survivor's task shows as a small tag. */
-#today-list dd {
-  justify-self: end;
-  padding: 0.05rem 0.6rem;
-  border-radius: 999px;
-  background: var(--surface-2);
-  color: var(--ink);
-  font-size: 0.8rem;
-  font-weight: 700;
-}
+/* Today panel styles live in 9l. */
 #end-day {
   min-height: 3.25rem;
   font-size: 1.05rem;
@@ -1779,6 +1770,383 @@ dialog img.art[hidden] {
   width: 9rem;
 }
 
+/* ---------- 9l. Turn clarity ----------
+   The Today panel's checklist, tab badges, task buttons and the small
+   "why" notes that explain what each choice will do. A "good" colour is
+   the accent mixed toward the text colour so it stays readable in every phase. */
+:root,
+[data-phase] {
+  --good-text: color-mix(in srgb, var(--accent) 70%, var(--ink));
+}
+
+/* Tab badges: a small count after the tab name. */
+.tab-badge {
+  display: inline-block;
+  min-width: 1.35rem;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 0.75rem;
+  line-height: 1.3;
+  text-align: center;
+  vertical-align: 0.1em;
+}
+.tab-badge[hidden] {
+  display: none;
+}
+.tab-badge.alert {
+  background: var(--danger);
+  color: #fff;
+}
+/* Trade tab when no trader is around. */
+.tab.quiet {
+  opacity: 0.55;
+}
+
+/* Today: one row per survivor. Name and task on top, what it does below. */
+.plan-list {
+  list-style: none;
+  margin: 0.6rem 0 0;
+  padding: 0;
+}
+.plan-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.1rem 0.5rem;
+  padding: 0.45rem 0 0.45rem 0.6rem;
+  border-left: 3px solid transparent;
+}
+.plan-row + .plan-row {
+  border-top: 1px solid var(--line);
+}
+.plan-name {
+  font-weight: 700;
+}
+.task-tag {
+  justify-self: end;
+  padding: 0.05rem 0.6rem;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.plan-detail {
+  grid-column: 1 / -1;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.plan-row.bad {
+  border-left-color: var(--danger);
+}
+.plan-row.bad .plan-detail {
+  color: var(--danger);
+  font-weight: 700;
+}
+.plan-row.info .plan-detail {
+  font-style: italic;
+}
+
+/* At dusk: have + made − eaten → left. */
+.side .forecast {
+  margin-top: 0.6rem;
+}
+.forecast dd .calc {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-right: 0.15rem;
+}
+.forecast dd strong {
+  color: var(--ink);
+}
+.forecast dd.bad strong {
+  color: var(--danger);
+}
+.forecast-note {
+  margin: 0.4rem 0 0;
+}
+
+/* Tonight: defense vs horde, with a verdict underneath. */
+.odds {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+.odds strong {
+  font-size: 1.35rem;
+  font-variant-numeric: tabular-nums;
+}
+.odds-label {
+  margin: 0.25rem 0 0;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+.odds-label.good {
+  color: var(--good-text);
+}
+.odds-label.info {
+  color: var(--accent-2);
+}
+.odds-label.bad {
+  color: var(--danger);
+}
+
+/* Things to fix before ending the day (Today panel and End day check). */
+.warn-list {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+}
+.warn-list:empty {
+  display: none;
+}
+.warn-list li {
+  padding: 0.5rem 0.6rem;
+  border-left: 3px solid var(--danger);
+  background: color-mix(in srgb, var(--danger) 10%, var(--surface));
+  border-radius: 0 6px 6px 0;
+  font-size: 0.85rem;
+}
+.warn-list li + li {
+  margin-top: 0.4rem;
+}
+.warn-list li .link-btn {
+  display: block;
+  margin-top: 0.2rem;
+}
+dialog .warn-list {
+  margin: 0.5rem 0 1.25rem;
+}
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+/* A text-style button that jumps to the place where something is fixed. */
+.link-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.link-btn:hover {
+  text-decoration-thickness: 2px;
+}
+
+/* Facility cards: why the button can't be used, or what happens next. */
+.facility .fac-note {
+  margin: 0.5rem 0 0;
+  font-size: 0.8rem;
+  text-align: right;
+}
+.facility .fac-note.bad {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+/* Stat bars: every bar is "full is good"; low turns amber, then red. */
+.meter.mid span {
+  background: var(--accent-2);
+}
+.meter.low span {
+  background: var(--danger);
+}
+
+/* Task picker: six buttons instead of a dropdown, with a line below
+   saying what the chosen task will do today. */
+.task-label {
+  margin: 0 0 0.35rem;
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+.task-picker {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.3rem;
+}
+.task-btn {
+  padding: 0.4rem 0.25rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.task-btn:hover {
+  border-color: var(--ink);
+}
+.task-btn[aria-pressed="true"] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--surface);
+  font-weight: 700;
+}
+.task-desc {
+  margin: 0.6rem 0 0;
+  min-height: 2.6em;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.task-desc.bad {
+  color: var(--danger);
+  font-weight: 700;
+}
+.task-desc.info {
+  font-style: italic;
+}
+
+/* Map: explored, not explored, locked, and who's heading where. */
+.map-col {
+  min-width: 0;
+}
+.loc.unseen {
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
+  color: var(--muted);
+}
+.loc.unseen[aria-pressed="true"] {
+  color: var(--ink);
+}
+.pin-who {
+  display: inline-grid;
+  place-items: center;
+  width: 1.3rem;
+  height: 1.3rem;
+  margin-left: 0.3rem;
+  border-radius: 50%;
+  background: var(--phase);
+  color: var(--phase-ink);
+  font-size: 0.7rem;
+  font-weight: 700;
+  vertical-align: 0.05em;
+}
+.map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.1rem;
+  margin: 0.6rem 0 0;
+}
+.map-legend .seen {
+  color: var(--good-text);
+  font-weight: 700;
+}
+.legend-unseen {
+  padding: 0 0.4rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  opacity: 0.7;
+}
+.map-legend .pin-who {
+  margin-left: 0;
+}
+.loc-detail dd .danger-label {
+  vertical-align: 0.1em;
+}
+.loc-detail dd .muted {
+  font-weight: 400;
+}
+
+/* Trade: column headings, what each item is worth, and the offer status. */
+.trade-head {
+  padding: 0 0 0.25rem;
+}
+.trade-head span:nth-child(2) {
+  text-align: right;
+}
+.trade-head span:nth-child(4) {
+  text-align: center;
+}
+.res-name .worth {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.res-name {
+  display: grid;
+  grid-template-columns: 20px auto;
+  column-gap: 0.4rem;
+  align-items: center;
+}
+.res-name img {
+  grid-row: span 2;
+}
+.trade-msg {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.trade-msg.good {
+  color: var(--good-text);
+  font-weight: 700;
+}
+.trade-msg.bad {
+  color: var(--danger);
+  font-weight: 700;
+}
+.trade-empty h3 {
+  margin-bottom: 0.4rem;
+}
+
+/* Log: each day folds open and closed. */
+.log-intro {
+  margin: 0 0 0.75rem;
+}
+details.log-day {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 0 1rem;
+  margin-bottom: 0.6rem;
+}
+details.log-day summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  cursor: pointer;
+  list-style: none;
+}
+details.log-day summary::-webkit-details-marker {
+  display: none;
+}
+details.log-day summary::before {
+  content: "▸";
+  margin-right: 0.5rem;
+  color: var(--muted);
+  transition: transform 0.15s;
+}
+details.log-day[open] summary::before {
+  transform: rotate(90deg);
+}
+details.log-day summary .eyebrow {
+  margin-right: auto;
+}
+details.log-day ol {
+  margin: 0 0 0.5rem;
+}
+details.log-day li:last-child {
+  border-bottom: 0;
+}
+details.log-day li.bad {
+  box-shadow: inset 3px 0 0 var(--danger);
+  padding-left: 0.6rem;
+}
+details.log-day li.good {
+  box-shadow: inset 3px 0 0 var(--accent);
+  padding-left: 0.6rem;
+}
+
 /*
 ===============================================================
 10. MINI-GAMES (js/minigames.js)
@@ -1871,6 +2239,14 @@ dialog img.art[hidden] {
   75% {
     transform: translateX(4px);
   }
+}
+/* After a missed shot the gun is jammed: red border, greyed lane keys. */
+.mg-defense.jammed {
+  box-shadow: inset 0 0 0 4px var(--danger);
+  cursor: not-allowed;
+}
+.mg-defense.jammed .mg-lane-key {
+  opacity: 0.3;
 }
 .mg-wall-strip {
   position: absolute;

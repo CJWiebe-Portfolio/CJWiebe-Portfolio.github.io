@@ -401,12 +401,20 @@ are marked TODO.
     explored: [],
     selectedLocation: "hospital",
     trade: { give: {}, get: {} },
-    trader: { name: "Old Marguerite", leaves: 2 },
+    trader: {
+      name: "Old Marguerite",
+      leaves: 2,
+      // What the trader has to sell. [WORK IN PROGRESS NEEDS TUNING]
+      stock: { food: 6, water: 6, materials: 8, medicine: 3, ammo: 4 },
+    },
     log: [],
     logFilter: "all",
     eventsFaced: 0,
     suppliesGathered: 0,
     currentEvent: null,
+    sendWho: null, // survivor picked in advance on the Map (set by "Choose destination" links)
+    logSeen: 0, // how many log entries the player has seen on the Log tab (for its badge)
+    logOpen: {}, // which days the player has opened or closed in the Log
   };
   var leaving = false;
 
@@ -546,6 +554,256 @@ are marked TODO.
 
   /* 
 =============================================================== 
+---------- Plan checks ----------
+=============================================================== 
+These look at today's plan without changing anything. The Today panel,
+the tab badges, the survivor cards and the End day check all use them,
+so they always agree with each other.
+*/
+  var DANGER_LABELS = ["", "Low", "Medium", "High"];
+
+  function plural(n, word) {
+    return n + " " + word + (n === 1 ? "" : "s");
+  }
+  function findLoc(id) {
+    return LOCATIONS.find(function (l) {
+      return l.id === id;
+    });
+  }
+  function findSurvivor(id) {
+    return state.survivors.find(function (s) {
+      return s.id === id;
+    });
+  }
+  // Facilities with work in progress.
+  function inProgress() {
+    return state.facilities.filter(function (f) {
+      return f.building;
+    });
+  }
+  // Survivors heading to a location today.
+  function headingTo(locId) {
+    return alive().filter(function (s) {
+      return s.task === "Scavenge" && s.target === locId;
+    });
+  }
+  function traderHere() {
+    return state.trader.leaves > 0;
+  }
+  // Food the group eats at dusk (also used by the dusk itself).
+  function foodNeeded() {
+    var need = alive().reduce(function (sum, s) {
+      return sum + (s.trait === "Big eater" ? 2 : 1);
+    }, 0);
+    if (onTask("Cook", "Cook")) need = Math.max(0, need - 1);
+    return need;
+  }
+  // Who Heal would treat: the most hurt survivor, if anyone is hurt.
+  function patient() {
+    var p = alive()
+      .slice()
+      .sort(function (a, b) {
+        return a.health - b.health;
+      })[0];
+    return p && p.health < 100 ? p : null;
+  }
+
+  // What a survivor's task will actually do today.
+  // Returns { text, level, fix }:
+  //   level is "" (fine), "info" (does nothing useful) or "bad" (needs fixing)
+  //   fix is an optional link { label, goto (tab), who (survivor id) } to where it can be fixed
+  function taskInfo(s) {
+    var tired = s.fatigue >= TIRED;
+    if (s.task === "Rest") {
+      return {
+        text:
+          "Recovers fatigue and morale" +
+          (s.trait === "Quick healer" && s.health < 100 ? ", +10 health" : "") +
+          ".",
+        level: "",
+      };
+    }
+    if (s.task === "Scavenge") {
+      if (tired) return { text: "Too tired to scavenge. Will stay home.", level: "bad" };
+      if (!s.target) {
+        return {
+          text: "No destination picked.",
+          level: "bad",
+          fix: { label: "Choose destination", goto: "map", who: s.id },
+        };
+      }
+      var loc = findLoc(s.target);
+      return {
+        text:
+          "Heading to the " +
+          loc.name +
+          " (" +
+          DANGER_LABELS[loc.danger].toLowerCase() +
+          " danger).",
+        level: "",
+        fix: { label: "Change", goto: "map", who: s.id },
+      };
+    }
+    if (s.task === "Build") {
+      if (tired) return { text: "Too tired to build. Work won't move forward.", level: "bad" };
+      var extra = s.skill === "Mechanic" ? " Also salvages 2 materials." : "";
+      var jobs = inProgress();
+      if (!jobs.length) {
+        return {
+          text: "Nothing is being built." + extra,
+          level: extra ? "" : "info",
+          fix: { label: "Pick an upgrade", goto: "base" },
+        };
+      }
+      return {
+        text:
+          "Working on " +
+          jobs
+            .map(function (f) {
+              return f.name + " (" + plural(f.building, "day") + " left)";
+            })
+            .join(", ") +
+          "." +
+          extra,
+        level: "",
+      };
+    }
+    if (s.task === "Guard") {
+      if (tired) return { text: "Too tired to guard. Adds no defense.", level: "bad" };
+      if (s.trait === "Coward") return { text: "Cowards add no defense on Guard.", level: "info" };
+      return {
+        text:
+          "+" +
+          guardPower(s) +
+          " defense tonight" +
+          (s.skill === "Sharpshooter" ? ", and ammo counts double" : "") +
+          ".",
+        level: "",
+      };
+    }
+    if (s.task === "Cook") {
+      if (s.skill === "Cook") return { text: "The group eats 1 less food at dusk.", level: "" };
+      return { text: "Only a Cook saves food. No effect.", level: "info" };
+    }
+    if (s.task === "Heal") {
+      var p = patient();
+      if (!p) return { text: "Everyone is at full health. No effect.", level: "info" };
+      var meds = state.resources.medicine > 0;
+      var amount = meds ? (s.skill === "Medic" ? 30 : 10) : s.skill === "Medic" ? 10 : 0;
+      if (!amount) return { text: "No medicine left. No effect.", level: "info" };
+      return {
+        text:
+          "Treats " +
+          (p === s ? "themself" : p.name) +
+          " (+" +
+          amount +
+          " health" +
+          (meds ? ", uses 1 medicine" : "") +
+          ").",
+        level: "",
+      };
+    }
+    return { text: "", level: "" };
+  }
+
+  // What dusk will do to food and water, before anything scavengers bring home.
+  function duskForecast() {
+    var food = {
+      have: state.resources.food,
+      made: facility("kitchen").level,
+      need: foodNeeded(),
+    };
+    var water = {
+      have: state.resources.water,
+      made: facility("water").level * 2,
+      need: alive().length,
+    };
+    [food, water].forEach(function (r) {
+      r.after = r.have + r.made - r.need;
+    });
+    return { food: food, water: water };
+  }
+
+  // Night defense against tonight's horde. The real horde is up to 3 bigger or smaller.
+  function tonightOdds() {
+    var def = nightDefense(),
+      threat = threatTonight();
+    var level = def >= threat + 3 ? "good" : def >= threat - 3 ? "info" : "bad";
+    return {
+      def: def,
+      threat: threat,
+      level: level,
+      label: {
+        good: "Walls should hold",
+        info: "Could go either way",
+        bad: "Likely breach",
+      }[level],
+    };
+  }
+
+  // Everything worth fixing before the day ends. These show in the Today
+  // panel, and End day asks "end anyway?" while any are left.
+  function planWarnings() {
+    var list = [];
+    alive().forEach(function (s) {
+      var info = taskInfo(s);
+      if (info.level === "bad") {
+        list.push({ text: s.name + ": " + info.text, fix: info.fix });
+      }
+    });
+    if (!builders().length) {
+      inProgress().forEach(function (f) {
+        list.push({
+          text: f.name + " won't progress. No one rested is on Build.",
+          fix: { label: "Assign someone", goto: "survivors" },
+        });
+      });
+    }
+    var fc = duskForecast();
+    [
+      ["Food", fc.food],
+      ["Water", fc.water],
+    ].forEach(function (pair) {
+      if (pair[1].after < 0) {
+        list.push({
+          text: pair[0] + " will run short at dusk by " + -pair[1].after + ".",
+          fix: traderHere()
+            ? { label: "Trade", goto: "trade" }
+            : { label: "Scavenge", goto: "map" },
+        });
+      }
+    });
+    var odds = tonightOdds();
+    if (odds.level === "bad") {
+      list.push({
+        text:
+          "Night defense " + odds.def + " is well below the horde (about " + odds.threat + ").",
+        fix: { label: "Add guards", goto: "survivors" },
+      });
+    }
+    return list;
+  }
+
+  // A small "fix it" link that jumps to the right tab (see the data-goto handler).
+  function fixLink(fix) {
+    return (
+      '<button type="button" class="link-btn" data-goto="' +
+      fix.goto +
+      '"' +
+      (fix.who ? ' data-who="' + fix.who + '"' : "") +
+      ">" +
+      fix.label +
+      " →</button>"
+    );
+  }
+  function warnItem(w) {
+    return (
+      '<li class="warn"><span>' + esc(w.text) + "</span>" + (w.fix ? fixLink(w.fix) : "") + "</li>"
+    );
+  }
+
+  /* 
+=============================================================== 
 ---------- Header ----------
 =============================================================== 
 */
@@ -582,13 +840,118 @@ are marked TODO.
 =============================================================== 
 */
   function renderSide() {
+    // Who is doing what, and what it will actually do.
     $("today-list").innerHTML = alive()
       .map(function (s) {
-        return "<dt>" + esc(s.name) + "</dt><dd>" + s.task + "</dd>";
+        var info = taskInfo(s);
+        return (
+          '<li class="plan-row' +
+          (info.level ? " " + info.level : "") +
+          '"><span class="plan-name">' +
+          esc(s.name) +
+          '</span><span class="task-tag">' +
+          s.task +
+          '</span><span class="plan-detail">' +
+          esc(info.text) +
+          "</span></li>"
+        );
       })
       .join("");
-    $("guards").textContent = guards();
-    $("defense").textContent = pad(nightDefense());
+
+    // Food and water at dusk: have + made − eaten → left.
+    var fc = duskForecast();
+    function row(label, r) {
+      return (
+        "<dt>" +
+        label +
+        '</dt><dd class="' +
+        (r.after < 0 ? "bad" : "") +
+        '"><span class="calc">' +
+        r.have +
+        (r.made ? " + " + r.made : "") +
+        " − " +
+        r.need +
+        "</span> → <strong>" +
+        (r.after < 0 ? "short " + -r.after : pad(r.after)) +
+        "</strong></dd>"
+      );
+    }
+    $("dusk-forecast").innerHTML =
+      '<dl class="forecast">' +
+      row("Food", fc.food) +
+      row("Water", fc.water) +
+      "</dl>" +
+      '<p class="small muted forecast-note">Have + made − eaten. Scavengers may bring more.</p>';
+
+    // Defense against tonight's horde.
+    var odds = tonightOdds();
+    $("tonight").innerHTML =
+      '<div class="odds"><span><strong>' +
+      pad(odds.def) +
+      "</strong> defense</span>" +
+      '<span class="muted">vs</span><span><strong>~' +
+      pad(odds.threat) +
+      "</strong> horde</span></div>" +
+      '<p class="odds-label ' +
+      odds.level +
+      '">' +
+      odds.label +
+      ' <span class="muted">· ' +
+      plural(guards(), "guard") +
+      "</span></p>";
+
+    // Things to fix before ending the day.
+    $("warnings").innerHTML = planWarnings().map(warnItem).join("");
+  }
+
+  /* 
+=============================================================== 
+---------- Tab badges ----------
+=============================================================== 
+Small counts on the tabs show where something needs a look.
+*/
+  function setBadge(id, text, srText, tone) {
+    var b = $("badge-" + id);
+    b.hidden = !text;
+    b.className = "tab-badge" + (tone ? " " + tone : "");
+    b.innerHTML = text
+      ? esc(String(text)) + '<span class="visually-hidden"> ' + srText + "</span>"
+      : "";
+  }
+
+  function renderBadges() {
+    var needs = alive().filter(function (s) {
+      return taskInfo(s).level === "bad" || s.status === "Injured";
+    }).length;
+    setBadge(
+      "survivors",
+      needs,
+      needs === 1 ? "survivor needs attention" : "survivors need attention",
+      "alert",
+    );
+
+    var lost = alive().filter(function (s) {
+      return s.task === "Scavenge" && !s.target;
+    }).length;
+    setBadge(
+      "map",
+      lost,
+      lost === 1 ? "scavenger needs a destination" : "scavengers need a destination",
+      "alert",
+    );
+
+    $("tab-trade").classList.toggle("quiet", !traderHere());
+    setBadge(
+      "trade",
+      traderHere() ? state.trader.leaves + "d" : "",
+      "trader leaves in " + plural(state.trader.leaves, "day"),
+    );
+
+    if ($("tab-log").getAttribute("aria-selected") === "true") {
+      state.logSeen = state.log.length;
+    }
+    var unseen = state.log.length - state.logSeen;
+    setBadge("log", unseen > 0 ? unseen : "", unseen === 1 ? "new entry" : "new entries");
   }
 
   /* 
@@ -628,6 +991,23 @@ are marked TODO.
         .map(function (f) {
           var built = f.level > 0,
             maxed = f.level >= 3;
+          var short = upgradeCost(f) - state.resources.materials;
+          // A line under the button says why it can't be used, or what happens next.
+          var note = "",
+            noteTone = "";
+          if (f.building) {
+            if (builders().length) {
+              note = plural(f.building, "more day") + " of work left.";
+            } else {
+              note = "Stalled. Put someone rested on Build.";
+              noteTone = "bad";
+            }
+          } else if (!maxed && short > 0) {
+            note = "Need " + short + " more materials.";
+            noteTone = "bad";
+          } else if (!maxed && !builders().length) {
+            note = "You'll pick who builds it.";
+          }
           var action = f.building
             ? "Building · " + f.building + " day" + (f.building > 1 ? "s" : "")
             : !built
@@ -659,7 +1039,7 @@ are marked TODO.
             '<button class="btn btn-sm" type="button" data-upgrade="' +
             f.id +
             '"' +
-            (maxed || f.building ? " disabled" : "") +
+            (maxed || f.building || short > 0 ? " disabled" : "") +
             ' aria-label="' +
             action +
             " " +
@@ -667,6 +1047,7 @@ are marked TODO.
             '">' +
             action +
             "</button></div>" +
+            (note ? '<p class="fac-note ' + noteTone + '">' + note + "</p>" : "") +
             "</article>"
           );
         })
@@ -674,29 +1055,78 @@ are marked TODO.
       "</div>";
   }
 
+  // Upgrade buttons start work straight away if someone is on Build;
+  // otherwise they open a picker to choose who builds it.
   $("panel-base").addEventListener("click", function (e) {
     var btn = e.target.closest("[data-upgrade]");
     if (!btn) return;
     var f = facility(btn.dataset.upgrade);
+    if (builders().length) startWork(f);
+    else openBuildPicker(f);
+  });
+
+  // Materials are paid now; the work finishes after f.days days with someone on Build.
+  function startWork(f) {
     var cost = upgradeCost(f);
-    if (state.resources.materials < cost) {
-      toast("Not enough materials for " + f.name + ".");
-      return;
-    }
-    if (f.building) {
-      toast(f.name + " is already being worked on.");
-      return;
-    }
-    if (!builders().length) {
-      toast("Put a rested survivor on Build first.");
-      return;
-    }
-    // Materials are paid now; the work finishes after f.days days with someone on Build.
+    if (f.building || state.resources.materials < cost) return;
     state.resources.materials -= cost;
     f.building = f.days;
-    addLog("base", "Work started on " + f.name + " (" + f.days + " day" + (f.days > 1 ? "s" : "") + ").");
+    addLog("base", "Work started on " + f.name + " (" + plural(f.days, "day") + ").");
     toast("Work started on " + f.name + ".");
     renderAll();
+  }
+
+  // ---------- Builder picker ----------
+  var buildFor = null;
+  function openBuildPicker(f) {
+    buildFor = f;
+    $("build-title").textContent = "Who works on the " + f.name + "?";
+    $("build-text").textContent =
+      "It takes " +
+      plural(f.days, "day") +
+      " with someone on Build each day. Whoever you pick switches to Build now.";
+    $("build-choices").innerHTML = alive()
+      .map(function (s) {
+        var tired = s.fatigue >= TIRED;
+        var now =
+          s.task + (s.task === "Scavenge" && s.target ? " (" + findLoc(s.target).name + ")" : "");
+        var perk =
+          s.skill === "Builder"
+            ? " · Builder: costs 2 fewer materials"
+            : s.skill === "Mechanic"
+              ? " · Mechanic: also salvages 2 materials"
+              : "";
+        return (
+          '<button type="button" class="event-choice" data-builder="' +
+          s.id +
+          '"' +
+          (tired ? " disabled" : "") +
+          "><strong>" +
+          esc(s.name) +
+          " · " +
+          s.skill +
+          "</strong><span>" +
+          (tired ? "Too tired to build" : "Now on " + esc(now) + perk) +
+          "</span></button>"
+        );
+      })
+      .join("");
+    $("build-dialog").showModal();
+  }
+
+  $("build-choices").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-builder]");
+    if (!b || !buildFor) return;
+    var s = findSurvivor(b.dataset.builder);
+    s.task = "Build";
+    s.target = null;
+    $("build-dialog").close();
+    startWork(buildFor);
+    buildFor = null;
+  });
+  $("build-cancel").addEventListener("click", function () {
+    buildFor = null;
+    $("build-dialog").close();
   });
 
   /* 
@@ -704,11 +1134,17 @@ are marked TODO.
 ---------- Survivors Tab ----------
 =============================================================== 
 */
-  function statRow(label, value) {
+  // One stat bar. Every bar reads "full is good"; low values turn amber, then red.
+  function statRow(label, value, tip) {
+    var tone = value < 30 ? " low" : value < 60 ? " mid" : "";
     return (
-      "<span>" +
+      '<span title="' +
+      tip +
+      '">' +
       label +
-      '</span><span class="meter" aria-hidden="true"><span style="width:' +
+      '</span><span class="meter' +
+      tone +
+      '" aria-hidden="true"><span style="width:' +
       value +
       '%"></span></span>' +
       '<output aria-label="' +
@@ -719,24 +1155,32 @@ are marked TODO.
     );
   }
 
+  // Short hints shown when hovering a task button.
+  var TASK_HINTS = {
+    Rest: "Recover fatigue and morale",
+    Scavenge: "Search a location on the map",
+    Build: "Work on a facility",
+    Guard: "Add night defense",
+    Cook: "A Cook saves 1 food at dusk",
+    Heal: "Treat the most hurt survivor",
+  };
+
   function renderSurvivors() {
     var list = alive();
     var free = bedCount() - list.length;
     var p = $("panel-survivors");
     p.innerHTML =
       '<div class="panel-head"><h2>Survivors</h2><p class="muted">' +
-      list.length +
-      " survivor" +
-      (list.length === 1 ? "" : "s") +
+      plural(list.length, "survivor") +
       " · " +
-      free +
-      " free bed" +
-      (free === 1 ? "" : "s") +
+      plural(free, "free bed") +
       "</p></div>" +
       '<div class="grid-3">' +
       list
         .map(function (s) {
           var injured = s.status !== "Healthy";
+          var tired = s.fatigue >= TIRED;
+          var info = taskInfo(s);
           return (
             '<article class="card survivor">' +
             '<div class="top"><img class="avatar portrait" src="assets/images/png/survivor-' +
@@ -754,34 +1198,49 @@ are marked TODO.
             s.trait +
             "</span></div></div>" +
             '<span class="status' +
-            (injured ? " injured" : "") +
+            (injured || tired ? " injured" : "") +
             '">' +
             s.status +
+            (tired ? "<br>Too tired" : "") +
             "</span></div>" +
             '<div class="stats">' +
-            statRow("Health", s.health) +
-            statRow("Hunger", s.hunger) +
-            statRow("Fatigue", s.fatigue) +
-            statRow("Morale", s.morale) +
+            statRow("Health", s.health, "At 0 they die.") +
+            statRow("Fed", 100 - s.hunger, "Drops when food runs short. Near empty, they starve.") +
+            statRow(
+              "Rested",
+              100 - s.fatigue,
+              "Drops with work. Below 20, they can't scavenge, guard or build.",
+            ) +
+            statRow("Morale", s.morale, "At 0 they leave the group.") +
             "</div>" +
-            '<label class="small" for="task-' +
+            '<p class="task-label" id="task-label-' +
             s.id +
-            '">Task today</label>' +
-            '<select id="task-' +
-            s.id +
-            '" data-task="' +
+            '">Task today</p>' +
+            '<div class="task-picker" role="group" aria-labelledby="task-label-' +
             s.id +
             '">' +
             TASKS.map(function (t) {
               return (
-                "<option" +
-                (t === s.task ? " selected" : "") +
-                ">" +
+                '<button type="button" class="task-btn" data-who="' +
+                s.id +
+                '" data-set-task="' +
                 t +
-                "</option>"
+                '" aria-pressed="' +
+                (t === s.task) +
+                '" title="' +
+                TASK_HINTS[t] +
+                '">' +
+                t +
+                "</button>"
               );
             }).join("") +
-            "</select></article>"
+            "</div>" +
+            '<p class="task-desc ' +
+            info.level +
+            '" aria-live="polite">' +
+            esc(info.text) +
+            (info.fix ? " " + fixLink(info.fix) : "") +
+            "</p></article>"
           );
         })
         .join("") +
@@ -793,16 +1252,17 @@ are marked TODO.
       "</div>";
   }
 
-  $("panel-survivors").addEventListener("change", function (e) {
-    var sel = e.target.closest("[data-task]");
-    if (!sel) return;
-    var s = state.survivors.find(function (x) {
-      return x.id === sel.dataset.task;
-    });
-    s.task = sel.value;
+  $("panel-survivors").addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-set-task]");
+    if (!btn) return;
+    var s = findSurvivor(btn.dataset.who);
+    s.task = btn.dataset.setTask;
     if (s.task !== "Scavenge") s.target = null;
-    renderSide();
-    renderBase();
+    renderAll();
+    var again = $("panel-survivors").querySelector(
+      '[data-who="' + s.id + '"][data-set-task="' + s.task + '"]',
+    );
+    if (again) again.focus();
   });
 
   /* 
@@ -810,16 +1270,35 @@ are marked TODO.
 ---------- Map Tab ----------
 =============================================================== 
 */
-  function renderMap() {
-    var loc = LOCATIONS.find(function (l) {
-      return l.id === state.selectedLocation;
+  // The survivor preselected in the Send list: whoever a "Choose destination"
+  // link picked, else a scavenger with nowhere to go, else the first one rested.
+  function defaultSender() {
+    var rested = alive().filter(function (s) {
+      return s.fatigue < TIRED;
     });
+    var picked = rested.find(function (s) {
+      return s.id === state.sendWho;
+    });
+    return (
+      picked ||
+      rested.find(function (s) {
+        return s.task === "Scavenge" && !s.target;
+      }) ||
+      rested[0]
+    );
+  }
+
+  function renderMap() {
+    var loc = findLoc(state.selectedLocation);
     var visits = state.explored.filter(function (id) {
       return id === loc.id;
     }).length;
     var explored = LOCATIONS.filter(function (l) {
       return state.explored.indexOf(l.id) !== -1;
     }).length;
+    var going = headingTo(loc.id);
+    var sender = defaultSender();
+    var risk = Math.round(Math.min(1, D.scavRisk * loc.danger) * 100);
     var p = $("panel-map");
     p.innerHTML =
       '<div class="panel-head"><h2>Map</h2><p class="muted">Explored ' +
@@ -827,7 +1306,7 @@ are marked TODO.
       " of " +
       LOCATIONS.length +
       " locations</p></div>" +
-      '<div class="map-wrap">' +
+      '<div class="map-wrap"><div class="map-col">' +
       '<div class="map-area" role="group" aria-label="Map of locations">' +
       '<span class="loc home" style="left:' +
       SHELTER_POS.x +
@@ -838,9 +1317,24 @@ are marked TODO.
       "</span>" +
       LOCATIONS.map(function (l) {
         var seen = state.explored.indexOf(l.id) !== -1;
+        var who = headingTo(l.id);
+        // Screen readers get the same facts the markers show.
+        var sr =
+          (seen ? ", explored" : ", not explored yet") +
+          (l.locked ? ", locked" : "") +
+          (who.length
+            ? ", " +
+              who
+                .map(function (s) {
+                  return s.name;
+                })
+                .join(" and ") +
+              " heading here"
+            : "");
         return (
           '<button type="button" class="loc' +
           (l.locked ? " locked" : "") +
+          (seen ? "" : " unseen") +
           '" data-loc="' +
           l.id +
           '" style="left:' +
@@ -851,11 +1345,30 @@ are marked TODO.
           ' aria-pressed="' +
           (l.id === loc.id) +
           '">' +
+          (l.locked ? '<span aria-hidden="true">🔒</span> ' : "") +
           l.name +
-          (seen ? ' <span class="seen" aria-label="explored">✓</span>' : "") +
-          "</button>"
+          (seen ? ' <span class="seen" aria-hidden="true">✓</span>' : "") +
+          who
+            .map(function (s) {
+              return (
+                '<span class="pin-who" aria-hidden="true" title="' +
+                esc(s.name) +
+                ' is heading here">' +
+                esc(s.name.charAt(0)) +
+                "</span>"
+              );
+            })
+            .join("") +
+          '<span class="visually-hidden">' +
+          esc(sr) +
+          "</span></button>"
         );
       }).join("") +
+      "</div>" +
+      '<p class="map-legend small muted"><span><span class="seen">✓</span> Explored</span>' +
+      '<span><span class="legend-unseen">Faded</span> Not explored yet</span>' +
+      "<span>🔒 Locked</span>" +
+      '<span><span class="pin-who">E</span> Survivor heading there</span></p>' +
       "</div>" +
       '<div class="card loc-detail" aria-live="polite">' +
       '<p class="eyebrow">Selected location</p><h3>' +
@@ -864,25 +1377,38 @@ are marked TODO.
       '<img class="loc-art" src="assets/images/png/' +
       (loc.img || loc.id) +
       '.png" alt="">' +
-      '<dl><dt>Danger</dt><dd><span class="danger" role="img" aria-label="' +
-      loc.danger +
-      ' of 3">' +
+      '<dl><dt>Danger</dt><dd><span class="danger-label">' +
+      DANGER_LABELS[loc.danger] +
+      '</span> <span class="danger" aria-hidden="true">' +
       [1, 2, 3]
         .map(function (n) {
           return '<span class="' + (n <= loc.danger ? "on" : "") + '"></span>';
         })
         .join("") +
       "</span></dd>" +
+      "<dt>Injury risk</dt><dd>" +
+      risk +
+      "%</dd>" +
       "<dt>Travel</dt><dd>" +
-      loc.travel +
-      " day" +
-      (loc.travel > 1 ? "s" : "") +
-      "</dd>" +
+      plural(loc.travel, "day") +
+      ' <span class="muted">(+' +
+      20 * loc.travel +
+      " fatigue)</span></dd>" +
       "<dt>Likely finds</dt><dd>" +
       loc.finds +
       "</dd>" +
       "<dt>Visits</dt><dd>" +
       visits +
+      (visits ? ' <span class="muted">(less left each time)</span>' : "") +
+      "</dd>" +
+      "<dt>Heading here</dt><dd>" +
+      (going.length
+        ? going
+            .map(function (s) {
+              return esc(s.name);
+            })
+            .join(", ")
+        : '<span class="muted">No one</span>') +
       "</dd></dl>" +
       (loc.locked
         ? '<p class="small muted">Locked. Find a way through the checkpoint first.</p>' // TODO: unlock condition
@@ -890,20 +1416,37 @@ are marked TODO.
           '<select id="send-who">' +
           alive()
             .map(function (s) {
+              var tired = s.fatigue >= TIRED;
+              // Only mention what matters here: too tired, or already going somewhere.
+              var now = tired
+                ? " (too tired)"
+                : s.task === "Scavenge" && s.target
+                  ? " (→ " + findLoc(s.target).name + ")"
+                  : "";
               return (
                 '<option value="' +
                 s.id +
-                '">' +
+                '"' +
+                (sender && s.id === sender.id ? " selected" : "") +
+                (tired ? " disabled" : "") +
+                ">" +
                 esc(s.name) +
                 " · " +
                 s.skill +
+                now +
                 "</option>"
               );
             })
             .join("") +
           "</select>" +
-          '<button class="btn btn-primary btn-block" type="button" id="send-btn" style="margin-top:.75rem">Send to scavenge</button>' +
-          '<p class="small muted" style="margin-top:.5rem">May trigger an event or a mini-game.</p>') +
+          '<button class="btn btn-primary btn-block" type="button" id="send-btn" style="margin-top:.75rem"' +
+          (sender ? "" : " disabled") +
+          ">Send here to scavenge</button>" +
+          '<p class="small muted" style="margin-top:.5rem">' +
+          (sender
+            ? "They switch to Scavenge. May trigger an event or a mini-game."
+            : "Everyone is too tired. Let someone rest first.") +
+          "</p>") +
       "</div></div>";
   }
 
@@ -911,6 +1454,8 @@ are marked TODO.
     var locBtn = e.target.closest("[data-loc]");
     if (locBtn) {
       state.selectedLocation = locBtn.dataset.loc;
+      // Keep whoever is picked in the Send list when switching locations.
+      if ($("send-who")) state.sendWho = $("send-who").value;
       renderMap();
       var again = $("panel-map").querySelector(
         '[data-loc="' + state.selectedLocation + '"]',
@@ -919,17 +1464,14 @@ are marked TODO.
       return;
     }
     if (e.target.id === "send-btn") {
-      var s = state.survivors.find(function (x) {
-        return x.id === $("send-who").value;
-      });
-      var loc = LOCATIONS.find(function (l) {
-        return l.id === state.selectedLocation;
-      });
+      var s = findSurvivor($("send-who").value);
+      var loc = findLoc(state.selectedLocation);
       s.task = "Scavenge";
       s.target = loc.id;
+      state.sendWho = null;
       toast(s.name + " will scavenge the " + loc.name + " today.");
-      renderSide();
-      renderSurvivors();
+      renderAll();
+      $("send-btn").focus();
     }
   });
 
@@ -950,24 +1492,56 @@ are marked TODO.
   }
 
   function renderTrade() {
+    // No trader around: say so instead of showing an empty trade screen.
+    if (!traderHere()) {
+      $("panel-trade").innerHTML =
+        '<div class="panel-head"><h2>Trade</h2></div>' +
+        '<div class="card trade-empty"><h3>No trader nearby</h3><p class="muted">' +
+        esc(state.trader.name) +
+        " has moved on. There is no one to trade with right now.</p></div>";
+      return;
+    }
     var give = tradeValue("give"),
       get = tradeValue("get");
+    var need = Math.ceil(get * tradeNeed());
     var share = give + get === 0 ? 0 : Math.round((give / (give + get)) * 100);
-    function column(side, title) {
+
+    // Plain-language status of the offer.
+    var msg,
+      ok = false;
+    if (!get) {
+      msg = "Pick what you want from her side.";
+    } else if (give < need) {
+      msg = "She wants " + (need - give) + " more value. Add more to your side.";
+    } else {
+      ok = true;
+      msg =
+        "She'll accept this trade." +
+        (give > need ? " You're offering " + (give - need) + " more value than she needs." : "");
+    }
+    if (hasSkill("Negotiator")) msg += " Your negotiator gets you a better deal.";
+
+    function column(side, title, haveLabel) {
       return (
         '<div class="card"><h3 class="eyebrow">' +
         title +
         "</h3>" +
+        '<div class="trade-row trade-head small muted"><span>Item</span><span>' +
+        haveLabel +
+        "</span><span></span><span>Pick</span><span></span></div>" +
         RESOURCES.map(function (r) {
           var n = state.trade[side][r.id] || 0;
-          var max = side === "give" ? state.resources[r.id] : 20;
+          var have = side === "give" ? state.resources[r.id] : state.trader.stock[r.id];
           return (
             '<div class="trade-row"><span class="res-name"><img src="assets/icons/ingame/' +
             r.id +
             '.png" alt="" width="20" height="20">' +
             r.label +
+            '<span class="worth">worth ' +
+            TRADE_VALUE[r.id] +
+            "</span>" +
             '</span><span class="have">' +
-            pad(state.resources[r.id]) +
+            pad(have) +
             "</span>" +
             '<button class="stepper" type="button" data-side="' +
             side +
@@ -992,7 +1566,7 @@ are marked TODO.
             '" data-res="' +
             r.id +
             '" data-delta="1"' +
-            (n >= max ? " disabled" : "") +
+            (n >= have ? " disabled" : "") +
             ' aria-label="' +
             (side === "give" ? "Give" : "Get") +
             " one more " +
@@ -1009,18 +1583,16 @@ are marked TODO.
       state.trader.name +
       "</h3>" +
       '<p class="small muted">Wandering trader · leaves in ' +
-      state.trader.leaves +
-      " day" +
-      (state.trader.leaves === 1 ? "" : "s") +
+      plural(state.trader.leaves, "day") +
       "</p></div></div>" +
       '<div class="trade-cols">' +
-      column("give", "You give") +
-      column("get", "You get") +
+      column("give", "You give · from your stores", "You have") +
+      column("get", "You get · from her stock", "She has") +
       "</div>" +
       '<div class="card trade-bar"><div>' +
       '<div class="labels"><span>Your offer · value ' +
       pad(give) +
-      "</span><span>Their offer · value " +
+      "</span><span>Her offer · value " +
       pad(get) +
       "</span></div>" +
       '<div class="balance" style="--accept:' +
@@ -1030,15 +1602,16 @@ are marked TODO.
       '" aria-label="Your share of the trade"><span style="width:' +
       share +
       '%"></span></div>' +
-      '<p class="small muted">The trader accepts when your side reaches the red line.' +
-      (hasSkill("Negotiator")
-        ? " Your negotiator gets you a better deal."
-        : "") +
+      '<p class="trade-msg ' +
+      (ok ? "good" : get ? "bad" : "") +
+      '" aria-live="polite">' +
+      msg +
       "</p></div>" +
       '<div class="choices"><button class="btn btn-quiet" type="button" id="trade-clear">Clear</button>' +
-      '<button class="btn btn-primary" type="button" id="trade-propose">Propose trade</button></div></div>';
+      '<button class="btn btn-primary" type="button" id="trade-propose"' +
+      (ok ? "" : " disabled") +
+      ">Propose trade</button></div></div>";
   }
-
   $("panel-trade").addEventListener("click", function (e) {
     var step = e.target.closest("[data-delta]");
     if (step) {
@@ -1076,8 +1649,10 @@ are marked TODO.
         return;
       }
       RESOURCES.forEach(function (r) {
-        state.resources[r.id] +=
-          (state.trade.get[r.id] || 0) - (state.trade.give[r.id] || 0);
+        var gave = state.trade.give[r.id] || 0,
+          got = state.trade.get[r.id] || 0;
+        state.resources[r.id] += got - gave;
+        state.trader.stock[r.id] += gave - got;
       });
       addLog(
         "trade",
@@ -1118,8 +1693,11 @@ are marked TODO.
         }
         group.items.push(l);
       });
+    // Each day folds open. Today (or the latest day shown) starts open,
+    // older days start closed, and the player's own choices are remembered.
     $("panel-log").innerHTML =
       '<div class="panel-head"><h2>Log</h2></div>' +
+      '<p class="small muted log-intro">The full history of this run. Dawn and dusk reports show each day as it happens.</p>' +
       '<div class="filters" role="group" aria-label="Filter the log">' +
       LOG_FILTERS.map(function (f) {
         return (
@@ -1136,15 +1714,25 @@ are marked TODO.
       (days.length === 0
         ? '<p class="card empty">Nothing here yet.</p>'
         : days
-            .map(function (d) {
+            .map(function (d, i) {
+              var open = d.day in state.logOpen ? state.logOpen[d.day] : i === 0;
               return (
-                '<section class="log-day"><h3 class="eyebrow">Day ' +
+                '<details class="log-day" data-day="' +
+                d.day +
+                '"' +
+                (open ? " open" : "") +
+                '><summary><span class="eyebrow">Day ' +
                 pad(d.day) +
-                "</h3><ol>" +
+                '</span><span class="small muted">' +
+                d.items.length +
+                (d.items.length === 1 ? " entry" : " entries") +
+                "</span></summary><ol>" +
                 d.items
                   .map(function (l) {
                     return (
-                      '<li><span class="chip">' +
+                      '<li class="' +
+                      l.tone +
+                      '"><span class="chip">' +
                       LOG_LABELS[l.cat] +
                       "</span><span>" +
                       esc(l.text) +
@@ -1152,13 +1740,21 @@ are marked TODO.
                     );
                   })
                   .join("") +
-                "</ol></section>"
+                "</ol></details>"
               );
             })
             .join(""));
   }
 
   $("panel-log").addEventListener("click", function (e) {
+    // Remember which days the player opens or closes. (The click lands
+    // before the day folds, so the new state is the opposite of now.)
+    var sum = e.target.closest("summary");
+    if (sum) {
+      var d = sum.parentElement;
+      state.logOpen[d.dataset.day] = !d.open;
+      return;
+    }
     var f = e.target.closest("[data-filter]");
     if (!f) return;
     state.logFilter = f.dataset.filter;
@@ -1184,6 +1780,8 @@ are marked TODO.
       t.tabIndex = on ? 0 : -1;
       $(t.getAttribute("aria-controls")).hidden = !on;
     });
+    if (tab.id === "tab-log") state.logSeen = state.log.length;
+    renderBadges();
     if (focus) tab.focus();
   }
 
@@ -1204,15 +1802,44 @@ are marked TODO.
     });
   });
 
+  // Links that jump to another tab. data-who preselects that survivor on the Map.
+  // Used inside pop-ups too (End day check), so close the pop-up first.
   document.addEventListener("click", function (e) {
     var go = e.target.closest("[data-goto]");
-    if (go) selectTab($("tab-" + go.dataset.goto), true);
+    if (!go) return;
+    if (go.dataset.who) {
+      state.sendWho = go.dataset.who;
+      renderMap();
+    }
+    var dlg = go.closest("dialog");
+    if (dlg) dlg.close();
+    selectTab($("tab-" + go.dataset.goto), true);
   });
 
   /* 
 ---------- End day → dusk → night event → (mini-game) → dawn ----------
 */
+  // End day checks the plan first. If anything won't work, it lists the
+  // problems and lets the player go back or end the day anyway.
   $("end-day").addEventListener("click", function () {
+    var problems = planWarnings();
+    if (!problems.length) {
+      endDay();
+      return;
+    }
+    $("confirm-list").innerHTML = problems.map(warnItem).join("");
+    $("confirm-dialog").showModal();
+    $("confirm-back").focus();
+  });
+  $("confirm-back").addEventListener("click", function () {
+    $("confirm-dialog").close();
+  });
+  $("confirm-end").addEventListener("click", function () {
+    $("confirm-dialog").close();
+    endDay();
+  });
+
+  function endDay() {
     // Everything logged from here on goes into the Dusk report pop-up.
     var duskMark = state.log.length;
     // This is dusk where the results come in.
@@ -1346,10 +1973,7 @@ are marked TODO.
       }
     });
 
-    var needFood = alive().reduce(function (sum, s) {
-      return sum + (s.trait === "Big eater" ? 2 : 1);
-    }, 0);
-    if (onTask("Cook", "Cook")) needFood = Math.max(0, needFood - 1);
+    var needFood = foodNeeded();
     var eaten = Math.min(state.resources.food, needFood);
     var drunk = Math.min(state.resources.water, alive().length);
     state.resources.food -= eaten;
@@ -1402,7 +2026,7 @@ are marked TODO.
         openEvent(pool[Math.floor(rng() * pool.length)]);
       },
     });
-  });
+  }
 
   // ---------- Report pop-up ----------
   // Shows a list of log entries and waits for Continue before running opts.next.
@@ -1708,6 +2332,10 @@ are marked TODO.
 
     state.day += 1;
     state.phase = "dawn";
+    if (state.trader.leaves === 1) {
+      addLog("trade", state.trader.name + " packed up and moved on.");
+      state.trade = { give: {}, get: {} };
+    }
     state.trader.leaves = Math.max(0, state.trader.leaves - 1);
     // [WORK IN PROGRESS] implement trader behavior
     alive().forEach(function (s) {
@@ -1814,6 +2442,7 @@ are marked TODO.
     renderMap();
     renderTrade();
     renderLog();
+    renderBadges();
   }
 
   // Tells the CSS how tall the sticky header is, so the side panel and
@@ -1829,5 +2458,6 @@ are marked TODO.
   }
 
   addLog("base", "The group settled into " + state.shelter + ".");
+  state.logSeen = state.log.length; // the opening line doesn't count as news
   renderAll();
 })();

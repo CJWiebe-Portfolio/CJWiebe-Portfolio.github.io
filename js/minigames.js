@@ -107,12 +107,19 @@ DESCRIPTION:
   function Defense(o) {
     var LANES = 4;
     var total = byDifficulty(o.difficulty, 15, 25, 50);
-    var crossMs = byDifficulty(o.difficulty, 7500, 6000, 4800);
-    var spawnMs = byDifficulty(o.difficulty, 1600, 1300, 1000); // This
+    var crossMs = byDifficulty(o.difficulty, 4750, 3000, 2400);
+    var spawnMs = byDifficulty(o.difficulty, 800, 700, 500);
     var hitDamage = byDifficulty(o.difficulty, 25, 35, 45);
     var wallMax = 100;
     var wall = Math.min(wallMax, 40 + (o.wallLevel || 0) * 30);
     var WALL_X = 6; // percent: where a zombie hits the wall
+    // Missing a shot (clicking empty space, or a lane key with no zombie in that lane)
+    // jams the gun for missJamMs and chips missDamage off the wall.
+    var missJamMs = byDifficulty(o.difficulty, 200, 300, 400);
+    var missDamage = byDifficulty(o.difficulty, 0, 5, 10);
+    var jammedUntil = 0,
+      jamTimer = null,
+      misses = 0;
     // State variable for the zombies, including their position, speed, and lane.
     // The game loop updates these values and checks for collisions with the wall.
     var zombies = [],
@@ -142,7 +149,7 @@ DESCRIPTION:
         .join("") +
       '<p class="mg-hint">Click a zombie to take it down, or press <kbd>1</kbd>–<kbd>' +
       LANES +
-      "</kbd> to shoot the closest one in that lane.</p>";
+      "</kbd> to shoot the closest one in that lane. Missing jams your gun for a moment.</p>";
 
     // This function updates the UI with the current number of zombies left and the wall's health percentage.
     function stats() {
@@ -191,9 +198,37 @@ DESCRIPTION:
       cleared += 1;
     }
 
+    function jammed() {
+      return performance.now() < jammedUntil;
+    }
+
+    // This function handles a missed shot: it jams the gun, damages the wall,
+    // and marks the arena as jammed so the player can see it.
+    function miss() {
+      if (!running || jammed()) return; // a press during a jam does nothing and doesn't stack
+      misses += 1;
+      jammedUntil = performance.now() + missJamMs;
+      wall -= missDamage;
+      o.arena.classList.add("jammed"); // red border and greyed lane keys until the jam clears
+      clearTimeout(jamTimer);
+      jamTimer = setTimeout(function () {
+        o.arena.classList.remove("jammed");
+      }, missJamMs);
+      stats();
+      if (wall <= 0) finish(false);
+    }
+
+    // A click or tap in the arena that doesn't land on a zombie is a miss.
+    // Zombies already going down count as hits, so a late tap isn't punished.
+    function onArenaClick(e) {
+      if (e.target.closest(".mg-zombie")) return;
+      miss();
+    }
+
     // This function handles the logic for killing a zombie, updating the game state, and removing the zombie from the UI.
     function kill(z) {
       if (!running || zombies.indexOf(z) === -1) return;
+      if (jammed()) return; // can't shoot until the jam clears
       remove(z);
       killed += 1;
       z.el.classList.add("down");
@@ -242,6 +277,7 @@ DESCRIPTION:
           return a.x - b.x;
         })[0];
       if (front) kill(front);
+      else miss(); // nothing in that lane
     }
 
     // This function stops the game, cancels timers and event listeners, and cleans up the game state.
@@ -251,6 +287,9 @@ DESCRIPTION:
       clearTimeout(spawnTimer);
       cancelAnimationFrame(raf);
       document.removeEventListener("keydown", onKey);
+      o.arena.removeEventListener("pointerdown", onArenaClick);
+      clearTimeout(jamTimer);
+      o.arena.classList.remove("jammed");
     }
 
     // This function finishes the game, showing a banner with the result and calling the done callback with the outcome.
@@ -265,8 +304,10 @@ DESCRIPTION:
           killed +
           " of " +
           total +
-          " zombies."
-        : "The wall broke. Someone got hurt pushing them back.";
+          " zombies." +
+          (misses ? " Missed shots: " + misses + "." : "")
+        : "The wall broke. Someone got hurt pushing them back." +
+          (misses ? " Missed shots: " + misses + "." : "");
       showBanner(o.arena, won, summary);
       o.done({ won: won, summary: summary, reward: {} });
     }
@@ -277,6 +318,7 @@ DESCRIPTION:
         running = true;
         last = performance.now();
         document.addEventListener("keydown", onKey);
+        o.arena.addEventListener("pointerdown", onArenaClick);
         o.arena.querySelector(".mg-hint").classList.add("faded");
         clock.start();
         spawn();

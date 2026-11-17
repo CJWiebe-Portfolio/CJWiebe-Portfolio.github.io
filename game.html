@@ -125,7 +125,7 @@ It provides the interface for playing the game.
           aria-selected="false"
           tabindex="-1"
         >
-          Survivors</button
+          Survivors<span class="tab-badge" id="badge-survivors" hidden></span></button
         ><!-- Brings players to the Survivors section -->
         <button
           class="tab"
@@ -135,7 +135,7 @@ It provides the interface for playing the game.
           aria-selected="false"
           tabindex="-1"
         >
-          Map</button
+          Map<span class="tab-badge" id="badge-map" hidden></span></button
         ><!-- Brings players to the Map section -->
         <button
           class="tab"
@@ -145,7 +145,7 @@ It provides the interface for playing the game.
           aria-selected="false"
           tabindex="-1"
         >
-          Trade
+          Trade<span class="tab-badge" id="badge-trade" hidden></span>
         </button>
         <button
           class="tab"
@@ -155,7 +155,7 @@ It provides the interface for playing the game.
           aria-selected="false"
           tabindex="-1"
         >
-          Log</button
+          Log<span class="tab-badge" id="badge-log" hidden></span></button
         ><!-- Brings players to the Log section -->
       </nav>
       </div>
@@ -207,19 +207,20 @@ It provides the interface for playing the game.
       ---------- Consistent block that appears on all sections and allows for the end of the game day ----------
       -->
 
-        <aside class="card side" aria-label="Today and tonight">
+        <aside class="card side" aria-label="Today's plan">
+          <!-- Who is doing what today, with a warning next to anything that won't work -->
           <h2 class="eyebrow">Today</h2>
-          <dl id="today-list"></dl>
+          <ul id="today-list" class="plan-list"></ul>
           <hr />
-          <!-- Lists all current survivors and their actions -->
+          <!-- What the group will eat and drink at dusk -->
+          <h2 class="eyebrow">At dusk</h2>
+          <div id="dusk-forecast"></div>
+          <hr />
+          <!-- Night defense against tonight's horde -->
           <h2 class="eyebrow">Tonight</h2>
-          <!-- Lists all the night information -->
-          <dl class="tonight">
-            <dt>Guards</dt>
-            <dd id="guards">0</dd>
-            <dt>Night defense</dt>
-            <dd id="defense">00</dd>
-          </dl>
+          <div id="tonight" class="tonight"></div>
+          <!-- Anything that needs fixing before the day ends -->
+          <ul id="warnings" class="warn-list" aria-live="polite"></ul>
           <button class="btn btn-primary btn-block" type="button" id="end-day">
             End day</button
           ><!-- Ends the day -->
@@ -294,6 +295,32 @@ It provides the interface for playing the game.
               Start
             </button>
           </div>
+        </div>
+      </dialog>
+
+      <!-- 
+      ---------- Overlay for picking who builds a facility ----------
+      -->
+      <dialog id="build-dialog" aria-labelledby="build-title">
+        <p class="eyebrow">Needs a builder</p>
+        <h2 id="build-title">Who builds this?</h2>
+        <p class="small muted" id="build-text"></p>
+        <div class="event-choices" id="build-choices"></div>
+        <button class="btn btn-quiet btn-block" type="button" id="build-cancel" style="margin-top: 0.75rem">
+          Cancel
+        </button>
+      </dialog>
+
+      <!-- 
+      ---------- Overlay that checks the plan before the day ends ----------
+      -->
+      <dialog id="confirm-dialog" aria-labelledby="confirm-title">
+        <p class="eyebrow">Before night falls</p>
+        <h2 id="confirm-title">Some things need attention</h2>
+        <ul class="warn-list" id="confirm-list"></ul>
+        <div class="confirm-actions">
+          <button class="btn" type="button" id="confirm-back">Go back</button>
+          <button class="btn btn-primary" type="button" id="confirm-end">End day anyway</button>
         </div>
       </dialog>
 
