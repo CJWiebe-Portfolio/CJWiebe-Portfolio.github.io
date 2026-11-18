@@ -7,7 +7,7 @@ DATE: December 2026
 COURSE: INFS 634 - McGill University
 =========================================================
 DESCRIPTION:
-This is the title screen fort the game Another Tally. 
+This is the title screen for the game Another Tally. 
 It is a turn-based zombie survival game played in the browser.
 =========================================================
 -->
@@ -45,47 +45,85 @@ It is a turn-based zombie survival game played in the browser.
   <!-- Body of the Page -->
   <body>
     <main class="title-screen">
-      <!-- Left column panel of the title screen -->
+      <!-- Left column panel of the title screen: title and menu at the top,
+           profile links and the warning at the bottom -->
       <section class="title-menu" aria-labelledby="game-title">
-        <img
-          class="logo"
-          src="assets/icons/anothertally_icon.png"
-          alt="Another Tally logo"
-        />
-        <!-- Site logo -->
-        <h1 id="game-title">Another Tally</h1>
-        <!-- Site title -->
-        <p class="tagline">
-          This is a turn-based zombie survival game played in the browser. See
-          how far you can make it! Will the zombies overwhelm you?
-        </p>
-        <!-- Sub-title -->
+        <div class="title-top">
+          <img class="logo" src="assets/icons/anothertally_icon.png" alt="" />
+          <!-- Site logo (decorative, the title says the name) -->
+          <h1 id="game-title">Another Tally</h1>
+          <!-- Site title -->
+          <p class="tagline">
+            This is a turn-based zombie survival game played in the browser. See
+            how far you can make it! Will the zombies overwhelm you?
+          </p>
+          <!-- Sub-title -->
 
-        <nav id="menu" aria-label="Main menu">
-          <a class="btn btn-primary" data-sound="click" href="new-game.html"
-            >Begin the Next Zombie Outbreak!</a
-          >
-          <a class="btn" data-sound="click" href="options.html" title="Options"
-            >Options</a
-          >
-          <a
-            class="btn"
-            data-sound="click"
-            href="how-to-play.html"
-            title="How to play"
-            >How to play</a
-          >
-          <a class="btn" data-sound="click" href="credits.html" title="Credits"
-            >Credits</a
-          >
-        </nav>
-        <!-- Navigation menu -->
+          <nav class="title-nav" aria-label="Main menu">
+            <a class="btn btn-primary" data-sound="click" href="new-game.html"
+              >Begin the Next Zombie Outbreak!</a
+            >
+            <a class="btn" data-sound="click" href="options.html"
+              >Options <span aria-hidden="true">↗</span></a
+            >
+            <a class="btn" data-sound="click" href="how-to-play.html"
+              >How to play <span aria-hidden="true">↗</span></a
+            >
+            <a class="btn" data-sound="click" href="credits.html"
+              >Credits <span aria-hidden="true">↗</span></a
+            >
+          </nav>
+          <!-- Navigation menu -->
+        </div>
 
-        <p class="footnote small muted">
-          <strong>WARNING!!!</strong> This game exists only in your current
-          browser and will reset when the page is refreshed or closed.
-        </p>
-        <!-- Alert message of the game existing only in the browser -->
+        <footer class="title-foot">
+          <p class="eyebrow">Made by Cygnus J. Wiebe</p>
+          <!-- Links to the creator's profiles. They open in a new tab so the game stays open. -->
+          <nav class="social-links" aria-label="Cygnus J. Wiebe online">
+            <a
+              class="btn btn-sm social social-github"
+              href="https://github.com/CJWiebe-Portfolio"
+              target="_blank"
+              rel="noopener noreferrer"
+              >GitHub<span class="visually-hidden">
+                (opens in a new tab)</span
+              ></a
+            >
+            <a
+              class="btn btn-sm social social-linkedin"
+              href="https://www.linkedin.com/in/cygnus-j-wiebe"
+              target="_blank"
+              rel="noopener noreferrer"
+              >LinkedIn<span class="visually-hidden">
+                (opens in a new tab)</span
+              ></a
+            >
+            <a
+              class="btn btn-sm social social-portfolio"
+              href="https://projects.cjpwiebe-portfolio.ca/"
+              target="_blank"
+              rel="noopener noreferrer"
+              >Portfolio<span class="visually-hidden">
+                website (opens in a new tab)</span
+              ></a
+            >
+            <a
+              class="btn btn-sm social social-instagram"
+              href="https://www.instagram.com/c.j.wiebe/"
+              target="_blank"
+              rel="noopener noreferrer"
+              >Instagram<span class="visually-hidden">
+                (opens in a new tab)</span
+              ></a
+            >
+          </nav>
+
+          <p class="title-note">
+            <strong>WARNING!!!</strong> This game exists only in your current
+            browser and will reset when the page is refreshed or closed.
+          </p>
+          <!-- Alert message of the game existing only in the browser -->
+        </footer>
       </section>
     </main>
     <!-- Background music is handled in js/common.js so it plays on every page. -->

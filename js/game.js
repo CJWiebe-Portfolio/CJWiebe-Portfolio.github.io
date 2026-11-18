@@ -4073,14 +4073,23 @@ Small counts on the tabs show where something needs a look.
     return document.querySelector("dialog[open]") !== null;
   }
 
-  // The Pause button and the Esc key open the pause menu.
-  $("pause-btn").addEventListener("click", function () {
+  // Opens the pause menu, with the day and shelter name under "Paused".
+  function openPause() {
+    $("pause-sub").textContent =
+      (state.phase === "night" ? "Night " : "Day ") +
+      pad(state.day) +
+      " of " +
+      state.length +
+      " · " +
+      state.shelter;
     pauseDialog.showModal();
-  });
+  }
+  // The Pause button and the Esc key open the pause menu.
+  $("pause-btn").addEventListener("click", openPause);
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape" && !anyDialogOpen()) {
       e.preventDefault();
-      pauseDialog.showModal();
+      openPause();
     }
   });
   // Resume closes the pause menu.

@@ -421,6 +421,53 @@ a {
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
+/* Credits page: links to the creator's profiles, on the right of the header.
+   Brand colours, darkened where needed so the text stays readable.
+   High contrast mode drops the colours and uses the normal buttons. */
+.social-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+.btn.social {
+  border-color: transparent;
+  color: #fff8e7;
+}
+.btn.social:hover {
+  filter: brightness(0.88);
+}
+.btn.social-github {
+  background: #24292d;
+}
+.btn.social-linkedin {
+  background: #0d66c2;
+}
+.btn.social-portfolio {
+  background: #f8b442;
+  color: #23211c;
+}
+.btn.social-instagram {
+  background: #d6006a;
+}
+html[data-contrast="high"] .btn.social {
+  background: var(--surface);
+  border-color: var(--ink);
+  color: var(--ink);
+  filter: none;
+}
+@media (max-width: 760px) {
+  /* On phones the links drop to their own row under the title. */
+  .page-head:has(.social-links) {
+    flex-wrap: wrap;
+  }
+  .social-links {
+    flex-basis: 100%;
+    justify-content: flex-start;
+    margin-left: 0;
+  }
+}
 .page-actions {
   display: flex;
   justify-content: flex-end;
@@ -776,16 +823,76 @@ dialog .ph.art {
   margin: 0.75rem 0 1rem;
 }
 
+/* Pause menu: Resume on top, the two pages that open in a new tab side by
+   side, Quit set apart as a warning, and the creator's links as a footer. */
 .pause {
   text-align: center;
-  width: min(400px, calc(100vw - 2rem));
+  width: min(440px, calc(100vw - 2rem));
+  padding: 1.75rem 1.5rem 1.25rem;
 }
 .pause h2 {
   font-size: 1.8rem;
-  margin-bottom: 1rem;
 }
-.pause .btn {
+.pause-sub {
+  margin: 0.15rem 0 1.25rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.pause-resume {
+  min-height: 3.25rem;
+  font-size: 1.05rem;
+}
+.pause-pages {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin-top: 0.6rem;
+}
+.pause-hint {
+  margin: 0.4rem 0 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.pause-quit {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+}
+/* A warning-coloured outline button for actions that throw something away. */
+.btn-danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+.btn-danger:hover {
+  background: var(--danger);
+  color: var(--surface);
+}
+.pause-foot {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+.pause-foot .eyebrow {
   margin-bottom: 0.6rem;
+}
+.pause-foot .social-links {
+  justify-content: center;
+  margin-left: 0;
+  gap: 0.4rem;
+}
+.pause-foot .social {
+  padding: 0.3rem 0.7rem;
+}
+.pause-pages .btn {
+  padding-inline: 0.6rem;
+  white-space: nowrap;
+}
+@media (max-width: 480px) {
+  /* Phones: the four links sit in two even rows instead of 3 + 1. */
+  .pause-foot .social-links {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 /* ---------- 7g. Toast ---------- */
@@ -850,54 +957,110 @@ dialog img.art {
 ===============================================================
 */
 
-/* ---------- 8a. Title screen (index.html) ---------- */
+/* ---------- 8a. Title screen (index.html) ----------
+   A solid panel on the left over the title art. The title and menu sit at
+   the top; the profile links and the warning sit at the bottom. On phones
+   the art becomes a banner at the top and the panel slides up over it. */
 .title-screen {
   background: url("../assets/images/png/title_screen.png") center / cover
     no-repeat;
   display: grid;
-  grid-template-columns: minmax(300px, 30%) 1fr;
+  grid-template-columns: minmax(380px, 32%) 1fr;
   min-height: 100vh;
 }
 .title-menu {
-  padding: 4rem 3rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 2.5rem;
+  padding: 3rem clamp(1.75rem, 3vw, 2.75rem) 2rem;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  border-right: 3px solid var(--ink);
+  box-shadow: 10px 0 40px rgb(0 0 0 / 0.18);
+}
+.title-top {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  background: var(--title_screen);
 }
 .title-menu .logo {
-  width: 80px;
-  height: 80px;
+  width: 72px;
+  height: 72px;
   object-fit: contain;
-  margin-bottom: 1rem;
+  border-radius: 12px;
+  margin-bottom: 0.25rem;
 }
 .title-menu h1 {
-  font-size: 3.5rem;
+  font-size: clamp(2.6rem, 3.8vw, 3.75rem);
+  line-height: 1.05;
 }
 .title-menu .tagline {
   color: var(--muted);
-  font-size: 1.15rem;
-  margin-bottom: 1.5rem;
+  font-size: 1.1rem;
+  max-width: 34ch;
+  margin-bottom: 1rem;
 }
-.title-menu nav {
+
+/* Main menu: the start button is the biggest thing on the page. */
+.title-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-width: 340px;
+}
+.title-nav .btn {
+  text-align: center;
+}
+.title-nav .btn-primary {
+  min-height: 3.4rem;
+  margin-bottom: 0.4rem;
+  font-size: 1.05rem;
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--accent) 55%, black);
+}
+.title-nav .btn-primary:active {
+  box-shadow: none;
+  transform: translateY(3px);
+}
+
+/* Bottom of the panel: who made it, profile links, and the warning. */
+.title-foot {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  max-width: 280px;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
 }
-.title-menu .footnote {
-  margin-top: 2rem;
-  max-width: 260px;
+.title-foot .social-links {
+  justify-content: flex-start;
+  margin-left: 0;
+}
+.title-note {
+  max-width: 40ch;
+  padding: 0.6rem 0.8rem;
+  border-left: 4px solid var(--accent-2);
+  border-radius: 0 6px 6px 0;
+  background: color-mix(in srgb, var(--accent-2) 12%, var(--surface));
+  font-size: 0.85rem;
 }
 
 @media (max-width: 760px) {
   .title-screen {
     grid-template-columns: 1fr;
+    padding-top: 30vh;
+    background-color: var(--bg);
+    background-size: auto 48vh;
+    background-position: center top;
   }
   .title-menu {
-    padding: 2.5rem 1.25rem;
+    padding: 2rem 1.25rem 1.5rem;
+    border-right: 0;
+    border-top: 3px solid var(--ink);
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -10px 30px rgb(0 0 0 / 0.18);
   }
-  .title-menu nav {
+  .title-nav {
     max-width: none;
   }
   .key-art {

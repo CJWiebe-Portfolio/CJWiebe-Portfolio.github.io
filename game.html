@@ -370,36 +370,89 @@ It provides the interface for playing the game.
       -->
       <dialog id="pause-dialog" class="pause" aria-labelledby="pause-title">
         <h2 id="pause-title">Paused</h2>
+        <p class="pause-sub" id="pause-sub"></p>
+        <!-- Day and shelter name, filled in by js/game.js when the menu opens -->
+
         <button
-          class="btn btn-primary btn-block"
+          class="btn btn-primary btn-block pause-resume"
           data-sound="menu"
           type="button"
           id="resume"
         >
           Resume
         </button>
-        <button
-          class="btn btn-block"
-          data-sound="menu"
-          type="button"
-          data-open="options.html"
-        >
-          Options
-        </button>
-        <button
-          class="btn btn-block"
-          type="button"
-          data-open="how-to-play.html"
-        >
-          How to play
-        </button>
-        <button class="btn btn-block" data-sound="menu" type="button" id="quit">
-          Quit to title
-        </button>
-        <p class="small muted">
-          Options and How to play open in a new tab so this run keeps going.
-          Quitting ends this run. Progress isn't saved.
+
+        <!-- Options and How to play open in a new tab so the run keeps going -->
+        <div class="pause-pages">
+          <button
+            class="btn"
+            data-sound="menu"
+            type="button"
+            data-open="options.html"
+          >
+            Options <span aria-hidden="true">↗</span>
+          </button>
+          <button
+            class="btn"
+            data-sound="menu"
+            type="button"
+            data-open="how-to-play.html"
+          >
+            How to play <span aria-hidden="true">↗</span>
+          </button>
+        </div>
+        <p class="pause-hint">
+          These open in a new tab, so this run keeps going.
         </p>
+
+        <!-- Quitting ends the run, so it sits apart and is coloured as a warning -->
+        <div class="pause-quit">
+          <button class="btn btn-danger btn-block" data-sound="menu" type="button" id="quit">
+            Quit to title
+          </button>
+          <p class="pause-hint">Ends this run. Progress isn't saved.</p>
+        </div>
+
+        <!-- Links to the creator's profiles -->
+        <footer class="pause-foot">
+          <p class="eyebrow">Made by Cygnus J. Wiebe</p>
+          <nav class="social-links" aria-label="Cygnus J. Wiebe online">
+            <a
+              class="btn btn-sm social social-github"
+              href="https://github.com/CJWiebe-Portfolio"
+              target="_blank"
+              rel="noopener noreferrer"
+              >GitHub<span class="visually-hidden"> (opens in a new tab)</span></a
+            >
+            <a
+              class="btn btn-sm social social-linkedin"
+              href="https://www.linkedin.com/in/cygnus-j-wiebe"
+              target="_blank"
+              rel="noopener noreferrer"
+              >LinkedIn<span class="visually-hidden">
+                (opens in a new tab)</span
+              ></a
+            >
+            <a
+              class="btn btn-sm social social-portfolio"
+              href="https://projects.cjpwiebe-portfolio.ca/"
+              target="_blank"
+              rel="noopener noreferrer"
+              >Portfolio<span class="visually-hidden">
+                website (opens in a new tab)</span
+              ></a
+            >
+            <a
+              class="btn btn-sm social social-instagram"
+              href="https://www.instagram.com/c.j.wiebe/"
+              target="_blank"
+              rel="noopener noreferrer"
+              >Instagram<span class="visually-hidden">
+                (opens in a new tab)</span
+              ></a
+            >
+          </nav>
+        </footer>
       </dialog>
 
       <div
