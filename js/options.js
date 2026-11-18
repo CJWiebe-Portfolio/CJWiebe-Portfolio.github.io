@@ -8,6 +8,10 @@ COURSE: INFS 634 - McGill University
 =========================================================
 DESCRIPTION:
   This is the options screen JavaScript file for Another Tally.
+  It fills the form on options.html from the saved settings and saves every
+  change straight away through AT.save() in common.js, which also applies the
+  display and sound settings to the page. Moving the Volume slider or turning
+  Sound on plays a click so the player can hear the new level.
 =========================================================
 */
 
@@ -24,6 +28,7 @@ DESCRIPTION:
   var form = document.getElementById("options-form");
   var msg = document.getElementById("saved-msg");
 
+  // Puts saved settings into the form controls.
   function fill(s) {
     Array.prototype.forEach.call(form.elements, function (el) {
       if (!el.name || !(el.name in s)) return;
@@ -34,6 +39,7 @@ DESCRIPTION:
     form.elements.volume.disabled = !s.sound;
   }
 
+  // Reads the form back into a settings object.
   function read() {
     var s = AT.load();
     var data = new FormData(form);
@@ -50,6 +56,7 @@ DESCRIPTION:
     return s;
   }
 
+  // Saves every change straight away (there is no Save button).
   function onChange(e) {
     var s = read();
     AT.save(s);
@@ -61,6 +68,7 @@ DESCRIPTION:
     }
   }
 
+  // Any change in the form saves; Enter in a field must not reload the page.
   form.addEventListener("change", onChange);
   form.addEventListener("submit", function (e) {
     e.preventDefault();

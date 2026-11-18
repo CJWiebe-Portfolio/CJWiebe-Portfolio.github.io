@@ -51,6 +51,8 @@ It explains the rules and mechanics of the game.
           <a href="#resources">Resources</a>
           <a href="#survivors">Survivors and base</a>
           <a href="#scavenging">Scavenging</a>
+          <a href="#newcomers">New survivors</a>
+          <a href="#events">Events</a>
           <a href="#night-raids">Night raids</a>
           <a href="#trading">Trading</a>
           <a href="#difficulty">Difficulty</a>
@@ -100,7 +102,8 @@ It explains the rules and mechanics of the game.
                 <h3>The Dawn Report</h3>
                 <p class="small muted" style="margin-top: 0.4rem">
                   In this window, you'll see the results of the previous night's
-                  events.
+                  events. Some mornings, something happens before the day starts
+                  and you'll have one more choice to make.
                 </p>
               </li>
               <li class="card" data-phase="day">
@@ -114,9 +117,10 @@ It explains the rules and mechanics of the game.
               <li class="card" data-phase="dusk">
                 <h3>Dusk</h3>
                 <p class="small muted" style="margin-top: 0.4rem">
-                  At dusk, scavengers come home with what they found, the base
-                  produces food and water, construction moves forward, and the
-                  group eats and drinks. Going without food or water hurts.
+                  At dusk, scavengers come home with what they found (unless
+                  they're on a 2-day trip), the base produces food and water,
+                  construction moves forward, and the group eats and drinks.
+                  Going without food or water hurts.
                 </p>
               </li>
               <li class="card" data-phase="night">
@@ -485,7 +489,57 @@ It explains the rules and mechanics of the game.
                 <strong>Trips are tiring.</strong> Every day of travel adds 20
                 fatigue.
               </li>
+              <li>
+                <strong>Long trips keep people away.</strong> The farm and the
+                military checkpoint are 2 days away. A survivor sent there leaves
+                at dusk and comes back at dusk the next day with 2 extra supplies.
+                While they're away they can't be given a task, don't eat or drink
+                from your stores, and are safe from whatever hits the shelter.
+              </li>
+              <li>
+                <strong>The military checkpoint starts locked.</strong> Select it
+                on the Map to cut through the fence with materials (half price with
+                a Builder or Mechanic at the shelter), or keep scavenging: an event
+                near the checkpoint can turn up a keycard.
+              </li>
             </ul>
+          </section>
+
+          <section id="newcomers" aria-labelledby="newcomers-h">
+            <!-- Explains how new survivors join the group -->
+            <h2 id="newcomers-h">New survivors</h2>
+            <p>
+              Your group can grow. Scavengers sometimes meet someone who wants to
+              join, more often in places where people hide (the farm, the suburb
+              and the school). Some events also bring people to your gate.
+            </p>
+            <p>
+              Every newcomer needs a free bed. You start with exactly enough beds
+              for your group, so build the Beds facility to make room. Without a
+              free bed, the stranger moves on. Newcomers arrive tired and a little
+              hurt, with their own skill and trait, and everyone's morale rises a
+              little when someone new joins.
+            </p>
+          </section>
+
+          <section id="events" aria-labelledby="events-h">
+            <!-- Explains night and morning events -->
+            <h2 id="events-h">Events</h2>
+            <p>
+              Every night brings one event, such as a stranger at the gate, a
+              storm, raiders, or a fever in the shelter. Some only happen in the
+              right situation: after someone came home from scavenging, while you
+              have a free bed, or while the checkpoint is still locked. The same
+              event never comes twice in a row.
+            </p>
+            <p>
+              Each event gives you a few choices. A choice can need a rested
+              survivor with a certain skill, cost supplies, or start a mini-game.
+              The line under each choice tells you what it needs and what it
+              does: whether it's risky, brings supplies, changes morale, or lets
+              someone join. Some mornings bring a smaller event before the day
+              starts.
+            </p>
           </section>
 
           <section id="night-raids" aria-labelledby="night-raids-h">
@@ -779,6 +833,11 @@ It explains the rules and mechanics of the game.
                   <td>Pause</td>
                   <td>Pause button</td>
                   <td>Esc</td>
+                </tr>
+                <tr>
+                  <td>Show text that's still typing</td>
+                  <td>Click the text</td>
+                  <td>—</td>
                 </tr>
               </tbody>
             </table>

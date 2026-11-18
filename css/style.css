@@ -381,6 +381,17 @@ a {
   color: var(--muted);
 }
 
+/* Text speed: letters not typed yet keep their space but stay invisible,
+   so typed text never makes a dialog jump (see typeText in common.js). */
+.untyped {
+  visibility: hidden;
+}
+
+/* Small warning text, e.g. "Need 3 more materials" under the fence button on the Map. */
+.bad-text {
+  color: var(--danger);
+}
+
 .plain-list {
   list-style: none;
   padding: 0;
@@ -1533,6 +1544,11 @@ fieldset.setup-step > legend.step-title + * {
   color: var(--danger);
   font-weight: 700;
 }
+/* Away on a 2-day scavenging trip: their tasks are locked until they're back. */
+.survivor .status.away {
+  color: var(--accent-2);
+  font-weight: 700;
+}
 .survivor label {
   display: block;
   margin-bottom: 0.3rem;
@@ -2096,6 +2112,11 @@ dialog .warn-list {
 }
 .task-btn:hover {
   border-color: var(--ink);
+}
+/* Locked while the survivor is away on a trip. */
+.task-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 .task-btn[aria-pressed="true"] {
   background: var(--ink);

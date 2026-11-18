@@ -30,6 +30,7 @@ It displays the results of the game.
       type="image/png"
       href="assets/icons/anothertally_icon.png"
     />
+    <!-- common.js applies the settings and plays the music; end.js fills in the summary. -->
     <script src="js/common.js"></script>
     <script src="js/end.js" defer></script>
   </head>
@@ -38,6 +39,7 @@ It displays the results of the game.
   <body>
     <!-- The body contains the a summary of the game run and allows the user to play again or go back to the title screen. -->
     <main class="end">
+      <!-- Win or lose picture, swapped in by end.js -->
       <img
         class="end-art"
         id="end-art"
@@ -48,13 +50,16 @@ It displays the results of the game.
       <h1 id="end-title">No run to show</h1>
       <p class="muted" id="end-sub">Finish a run to see its summary here.</p>
 
+      <!-- One card per stat (days survived, survivors found, and so on), built by end.js -->
       <div class="stat-grid" id="stats"></div>
 
+      <!-- Everyone who was in the group and what happened to them (hidden until there's a run to show) -->
       <section class="card group" id="group" aria-labelledby="group-h" hidden>
         <h2 id="group-h" class="eyebrow">Your group</h2>
         <ul id="group-list"></ul>
       </section>
 
+      <!-- Next steps -->
       <div class="page-actions">
         <a class="btn btn-primary" href="new-game.html">Play again</a>
         <a class="btn" href="index.html">Back to title</a>

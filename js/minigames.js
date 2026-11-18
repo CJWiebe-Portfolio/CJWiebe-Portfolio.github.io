@@ -10,6 +10,18 @@ DESCRIPTION:
   This is the minigames screen JavaScript file for Another Tally. 
   There are three mini-games: Defense, Lockpick, and Search. Each has its own logic and UI.
   The minigames can be played in-game or auto-resolved for a quick outcome, and the results are returned in a consistent format.
+
+  How game.js uses this file:
+    AT.minigames.create(name, opts) builds a game inside opts.arena and returns
+    a controller with start() and stop(). opts also carries the run's seeded
+    rng, the difficulty, the walls level, ui callbacks for the timer and stats,
+    and done(result), which is called with { won, summary, reward } when the
+    game ends (Search adds bites and biteDamage).
+    AT.minigames.autoResult(name, won, rng) rolls a result without playing.
+    AT.minigames.describe(reward) turns { food: 2 } into "2 food".
+
+  Sounds play on the "minigame" channel (see sfx below), so game.js can cut
+  them off when the player leaves the mini-game.
 =========================================================
 */
 
@@ -36,9 +48,11 @@ DESCRIPTION:
   function pick(rng, arr) {
     return arr[Math.floor(rng() * arr.length)];
   }
+  // A whole number from min to max (both included).
   function randInt(rng, min, max) {
     return min + Math.floor(rng() * (max - min + 1));
   }
+  // Returns a shuffled copy of an array (Fisher-Yates), leaving the original alone.
   function shuffle(rng, arr) {
     var a = arr.slice();
     for (var i = a.length - 1; i > 0; i--) {
@@ -49,19 +63,26 @@ DESCRIPTION:
     }
     return a;
   }
+  // Picks the value for the run's difficulty.
   function byDifficulty(difficulty, easy, normal, hard) {
     return difficulty === "easy" ? easy : difficulty === "hard" ? hard : normal;
   }
+  // Adds n of a resource to a reward object, e.g. { food: 2 }.
   function addReward(reward, res, n) {
     reward[res] = (reward[res] || 0) + n;
   }
 
   // Plays a sound from common.js (see SOUNDS there for the names).
+  // Mini-game sounds go on the "minigame" channel unless told otherwise, so
+  // game.js can cut them all off when the player leaves the mini-game.
   // Any random choice about sounds uses Math.random, not the run's seeded
   // rng, so sounds never change how a seeded run plays out.
   function sfx(name, opts) {
+    opts = opts || {};
+    if (!opts.channel) opts.channel = "minigame";
     return window.AT && AT.playSound ? AT.playSound(name, opts) : null;
   }
+  // Fades out and stops a sound that sfx() returned.
   function stopSfx(a, ms) {
     if (a && window.AT && AT.stopSound) AT.stopSound(a, ms);
   }
@@ -71,6 +92,7 @@ DESCRIPTION:
     var endAt = 0,
       id = null,
       shown = -1;
+    // Runs every 100 ms: updates the timer when the second changes, and ends the game at zero.
     function tick() {
       var left = Math.max(0, Math.ceil((endAt - performance.now()) / 1000));
       if (left !== shown) {
@@ -82,11 +104,13 @@ DESCRIPTION:
         onEnd();
       }
     }
+    // Stops the countdown.
     function stop() {
       clearInterval(id);
       id = null;
     }
     ui.timer(seconds);
+    // start() begins the countdown; stop() halts it early.
     return {
       start: function () {
         endAt = performance.now() + seconds * 1000;
@@ -191,13 +215,15 @@ DESCRIPTION:
         x: 100,
         speed: (100 - WALL_X) / (crossMs * (0.85 + o.rng() * 0.3)),
       };
+      // Pressing on a zombie shoots it (pointerdown reacts faster than click).
       el.addEventListener("pointerdown", function (e) {
         e.preventDefault();
         kill(z);
       });
+      // Enter or Space also shoots, if a screen reader moves focus onto a zombie.
       el.addEventListener("click", function () {
         kill(z);
-      }); // Enter/Space if a screen reader moves focus here
+      });
       zombies.push(z);
       o.arena.appendChild(el);
       spawned += 1;
@@ -207,11 +233,13 @@ DESCRIPTION:
         spawnTimer = setTimeout(spawn, spawnMs * (0.6 + o.rng() * 0.8));
     }
 
+    // Takes a zombie out of play (shot, or it reached the wall).
     function remove(z) {
       zombies.splice(zombies.indexOf(z), 1);
       cleared += 1;
     }
 
+    // True while the gun is jammed after a miss.
     function jammed() {
       return performance.now() < jammedUntil;
     }
@@ -452,6 +480,7 @@ DESCRIPTION:
       var b = e.target.closest("[data-pin]");
       if (b) tryPin(Number(b.dataset.pin));
     });
+    // Number keys 1 to 6 try that pin.
     function onKey(e) {
       var i = Number(e.key) - 1;
       if (i >= 0 && i < count) {
@@ -505,6 +534,8 @@ DESCRIPTION:
       o.done({ won: won, summary: summary, reward: reward });
     }
 
+    // The controller game.js uses: start() when the player presses Start,
+    // stop() if they auto-resolve instead.
     return {
       start: function () {
         running = true;
@@ -556,8 +587,7 @@ DESCRIPTION:
     });
     var found = [],
       bitten = [],
-      running = false,
-      lastRummage = null; // cut off when the next spot is searched
+      running = false;
     // What finding each supply sounds like (stacked on the rummaging).
     var LOOT_SOUNDS = {
       food: "canJiggle",
@@ -665,8 +695,6 @@ DESCRIPTION:
       if (t.classList.contains("open")) return;
       searches -= 1;
       t.classList.add("open");
-      stopSfx(lastRummage, 150);
-      lastRummage = null;
       var where = t.getAttribute("aria-label").replace(", not searched", "");
       if (zombieAt[i]) {
         bitten.push(i);
@@ -688,7 +716,7 @@ DESCRIPTION:
       } else if (loot[i]) {
         found.push(i);
         t.classList.add("loot");
-        lastRummage = sfx("rummage");
+        rummage();
         sfx(LOOT_SOUNDS[loot[i]], { delay: 300 });
         t.innerHTML =
           '<img src="assets/icons/ingame/' +
@@ -699,7 +727,7 @@ DESCRIPTION:
         // Numbers count supplies still hidden, so refresh the open empty tiles.
         relabel();
       } else {
-        lastRummage = sfx("rummage");
+        rummage();
         label(i);
         var n = nearby(i),
           nz = nearbyZombies(i);
@@ -717,6 +745,11 @@ DESCRIPTION:
       }
       stats();
       if (found.length === hidden || searches === 0) finish();
+    }
+
+    // Searching a new spot cuts off the last spot's rummaging instead of stacking it.
+    function rummage() {
+      sfx("rummage", { channel: "searching", replace: true, fade: 150 });
     }
 
     // This function updates the label and text content of a tile to show how many hidden supplies are adjacent to it.
@@ -746,7 +779,7 @@ DESCRIPTION:
       if (b) searchTile(Number(b.dataset.tile));
     });
 
-    // This function handles keyboard input for the Search minigame, allowing players to search tiles using number keys.
+    // Stops the clock and locks every tile.
     function stop() {
       running = false;
       clock.stop();
@@ -799,6 +832,8 @@ DESCRIPTION:
       });
     }
 
+    // The controller game.js uses: start() when the player presses Start,
+    // stop() if they auto-resolve instead.
     return {
       start: function () {
         running = true;

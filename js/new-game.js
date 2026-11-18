@@ -27,109 +27,9 @@ and rolling starting survivors.
 (function () {
   "use strict";
 
-  // Define constants for survivor names.
-  var NAMES = [
-    "Liam",
-    "Olivia",
-    "Noah",
-    "Emma",
-    "Oliver",
-    "Amelia",
-    "Theodore",
-    "Charlotte",
-    "James",
-    "Mia",
-    "Henry",
-    "Sophia",
-    "Mateo",
-    "Isabella",
-    "Elijah",
-    "Evelyn",
-    "Lucas",
-    "Ava",
-    "William",
-    "Sofia",
-    "Benjamin",
-    "Camila",
-    "Levi",
-    "Harper",
-    "Ezra",
-    "Luna",
-    "Sebastian",
-    "Eleanor",
-    "Jack",
-    "Violet",
-    "Daniel",
-    "Aurora",
-    "Samuel",
-    "Elizabeth",
-    "Michael",
-    "Eliana",
-    "Grayson",
-    "Hazel",
-    "Ethan",
-    "Chloe",
-    "Asher",
-    "Ellie",
-    "John",
-    "Nora",
-    "Hudson",
-    "Gianna",
-    "Luca",
-    "Lily",
-    "Leo",
-    "Emily",
-    "Elias",
-    "Aria",
-    "Kai",
-    "Scarlett",
-    "Theo",
-    "Willow",
-    "Owen",
-    "Penelope",
-    "Alexander",
-    "Zoe",
-    "Dylan",
-    "Ella",
-    "Gabriel",
-    "Avery",
-    "Santiago",
-    "Elena",
-    "Mason",
-    "Abigail",
-    "Julian",
-    "Mila",
-    "David",
-    "Lucy",
-    "Joseph",
-    "Isla",
-    "Carter",
-    "Ivy",
-    "Matthew",
-    "Layla",
-    "Luke",
-    "Delilah",
-    "Aiden",
-    "Riley",
-    "Jackson",
-    "Lainey",
-    "Maverick",
-    "Nova",
-    "Miles",
-    "Grace",
-    "Wyatt",
-    "Goldie",
-    "Thomas",
-    "Winter",
-    "Isaac",
-    "Arabella",
-    "Josiah",
-    "Anastasia",
-    "Hugo",
-    "Myla",
-    "Arthur",
-    "Leah",
-  ];
+  // Survivor names come from common.js, so recruits found later in the game
+  // (game.js) draw from the same list.
+  var NAMES = AT.NAMES;
 
   // Define constants for skills and traits as defined in common.js.
   var SKILLS = Object.keys(AT.SKILLS);
@@ -177,8 +77,8 @@ and rolling starting survivors.
     "Abandoned city hall",
   ];
 
-  // Define constants for avatars corresponding to survivor image file names.
-  var AVATARS = [1, 2, 3, 4, 5, 6]; // assets/images/png/survivor-N.png
+  // Portrait numbers (assets/images/png/survivor-N.png), shared through common.js.
+  var AVATARS = AT.AVATARS;
 
   // Load settings, create a random number generator, and set up the new game form.
   var settings = AT.load();
@@ -258,6 +158,8 @@ and rolling starting survivors.
 
   document.getElementById("reroll").addEventListener("click", roll);
 
+  // Start game: hands the setup to game.html through sessionStorage and goes there.
+  // A blank shelter name uses the suggested one.
   form.addEventListener("submit", function (e) {
     e.preventDefault();
     var data = new FormData(form);

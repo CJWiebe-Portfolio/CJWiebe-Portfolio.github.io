@@ -31,9 +31,9 @@ This site was built with plain HTML, CSS and JavaScript. There is no frameworks,
 Each turn within the game counts as one day, and each day is played in four phases, Day, Dusk, Night, Dawn.:
 
 1. **Day:** This is were the primary gameplay takes place. Here, you can give each survivor a task (Rest, Scavenge, Build, Guard, Cook or Heal), send scavengers to places on the map, start upgrades and trade.
-2. **Dusk:** Here, any scavengers that are sent out return to the make. The base also makes food and water, building continue in the progress, and the group of survivors eat and drink. This information will be displayed in the **Dusk report** which will pop-up and show what happened .
+2. **Dusk:** Here, any scavengers that are sent out return to the base (except on 2-day trips, which come back the next dusk). The base also makes food and water, building continue in the progress, and the group of survivors eat and drink. This information will be displayed in the **Dusk report** which will pop-up and show what happened .
 3. **Night:** In this phase, a random event will take place that will asks you to choose between 3 chooses: use a survivor's skill, pay a cost, or play a mini-game. After this is complete, the horde will attack, and your defense will be tested. The resources that will determine your success will be walls, guards and ammo.
-4. **Dawn:** Finally, a **Dawn report** will pop-up to provide the summaries of the night before and as the next day starts.
+4. **Dawn:** Finally, a **Dawn report** will pop-up to provide the summaries of the night before and as the next day starts. Some mornings bring a smaller event before the day begins.
 
 **WINNING CONDITIONS:** The game can be won by keeping at least one survivor alive to the end of the run.
 **LOSING CONDITIONS:** The game will be lost when all the survivors are dead.
@@ -45,14 +45,16 @@ The full rules are on the in-game **How to play** page.
 
 - Three difficulties and three run lengths, chosen on the New Game page
 - Randomly rolled survivors, each with one skill and one trait that change the rules for them
-- Eight map locations with different loot, danger and travel time
+- Eight map locations with different loot, danger and travel time. 2-day trips keep a survivor away overnight for a bigger haul, and the Military checkpoint starts locked (cut the fence or find a keycard)
+- New survivors join from scavenging trips and events, if there's a free bed
 - Six base facilities, each with three named tiers, all built from scratch on every difficulty
-- Night events with skill, cost and mini-game choices
+- 11 night events and 3 morning events with skill, cost and mini-game choices, offered only when they fit the situation and never twice in a row
 - Four wandering traders who come and go, each with their own stock and wants
 - Three mini-games (Defense, Lockpick, Search), with an option to auto-resolve them
 - Dusk and Dawn report pop-ups, plus a filterable log of everything that happened
 - A seed option in Options for repeatable runs
-- Accessibility options: text size, high contrast and reduce motion. The whole game can be played with the keyboard.
+- Sound: background music, looping ambience for each phase, and stacked sound effects for actions, events, mini-games and the night raid
+- Accessibility options: text size, text speed, high contrast and reduce motion. The whole game can be played with the keyboard, and screen readers get typed-out text in full straight away.
 
 ## Running it locally
 
@@ -68,15 +70,15 @@ VS Code's Live Server extension works too. Note that refreshing the game page en
 
 ## Pages
 
-| #   | File               | Purpose                                                                                                                         |
-| --- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | `index.html`       | Title screen and main menu                                                                                                      |
-| 2   | `options.html`     | Difficulty, game length, mini-games, seed, text size, high contrast, reduce motion, sound                                       |
-| 3   | `how-to-play.html` | Goal, turn order, resources, tasks, scavenging, night raids, difficulty, skills and traits, mini-games, controls                |
-| 4   | `new-game.html`    | Shelter name, difficulty, length, 3 starting survivors (reroll)                                                                 |
-| 5   | `game.html`        | The game: top bar, 5 tabs (Base, Survivors, Map, Trade, Log), side panel, and pop-ups for reports, events, mini-games and pause |
-| 6   | `end.html`         | Run summary; Play again or Back to title                                                                                        |
-| 7   | `credits.html`     | Credits, assets, contact, accessibility notes                                                                                   |
+| #   | File               | Purpose                                                                                                                                 |
+| --- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `index.html`       | Title screen and main menu                                                                                                              |
+| 2   | `options.html`     | Difficulty, game length, mini-games, seed, text size, text speed, high contrast, reduce motion, sound                                   |
+| 3   | `how-to-play.html` | Goal, turn order, resources, tasks, scavenging, new survivors, events, night raids, difficulty, skills and traits, mini-games, controls |
+| 4   | `new-game.html`    | Shelter name, difficulty, length, 3 starting survivors (reroll)                                                                         |
+| 5   | `game.html`        | The game: top bar, 5 tabs (Base, Survivors, Map, Trade, Log), side panel, and pop-ups for reports, events, mini-games and pause         |
+| 6   | `end.html`         | Run summary; Play again or Back to title                                                                                                |
+| 7   | `credits.html`     | Credits, assets, contact, accessibility notes                                                                                           |
 
 ## Project structure
 
@@ -86,13 +88,15 @@ VS Code's Live Server extension works too. Note that refreshing the game page en
 ├── css/
 │   └── style.css        # all styles, including the dawn/day/dusk/night colour themes
 ├── js/
-│   ├── common.js        # loaded on every page: settings, page hand-off, seeded RNG, skills and traits
+│   ├── common.js        # loaded on every page: settings, page hand-off, seeded RNG, skills, traits and
+│   │                    #   names, music, ambience, sound effects and text speed
 │   ├── new-game.js      # rolls the starting survivors and hands the setup to the game
 │   ├── game.js          # the game: state, rules, tabs, events, reports
 │   ├── minigames.js     # Defense, Lockpick and Search
 │   ├── options.js
 │   └── end.js
 └── assets/
+    ├── audio/           # music, ambience and sound effects (named in SOUNDS in common.js)
     ├── icons/           # site icon and resource icons
     └── images/          # survivors, locations, facilities, events, title and end art
 ```
@@ -110,24 +114,27 @@ The game itself stays on `game.html`, so a run lives only in that browser tab's 
 
 All the numbers for each difficulty are in the `DIFFICULTY` and `START_RESOURCES` tables near the top of `js/game.js`:
 
-| Setting      | Easy | Normal | Hard | What it does                                      |
-| ------------ | ---- | ------ | ---- | ------------------------------------------------- |
-| `yield`      | 95%  | 85%    | 80%  | Share of a scavenged haul that makes it home      |
-| `threatBase` | 9    | 8      | 7    | Horde strength on night 1                         |
-| `threatPeak` | 18   | 22     | 23   | Added by the last night, spread over the run      |
-| `starveDmg`  | 10   | 15     | 20   | Health lost per day while starving or dehydrated  |
-| `scavRisk`   | 10%  | 15%    | 20%  | Chance of attack per danger level when scavenging |
-| `autoWin`    | 70%  | 55%    | 40%  | Chance an auto-resolved mini-game is won          |
-| `moraleLoss` | 10   | 15     | 20   | Morale everyone loses when a survivor dies        |
-| `tradeMarkup` | 1.0 | 1.15   | 1.3  | How much more value traders ask than they give    |
-| `traderGap`  | 2–3  | 3–4    | 4–6  | Days with no trader between visits                |
+| Setting       | Easy | Normal | Hard | What it does                                      |
+| ------------- | ---- | ------ | ---- | ------------------------------------------------- |
+| `yield`       | 95%  | 85%    | 80%  | Share of a scavenged haul that makes it home      |
+| `threatBase`  | 9    | 8      | 7    | Horde strength on night 1                         |
+| `threatPeak`  | 18   | 22     | 23   | Added by the last night, spread over the run      |
+| `starveDmg`   | 10   | 15     | 20   | Health lost per day while starving or dehydrated  |
+| `scavRisk`    | 10%  | 15%    | 20%  | Chance of attack per danger level when scavenging |
+| `autoWin`     | 70%  | 55%    | 40%  | Chance an auto-resolved mini-game is won          |
+| `moraleLoss`  | 10   | 15     | 20   | Morale everyone loses when a survivor dies        |
+| `tradeMarkup` | 1.0  | 1.15   | 1.3  | How much more value traders ask than they give    |
+| `traderGap`   | 2–3  | 3–4    | 4–6  | Days with no trader between visits                |
 
 The main rules and where to find them in `game.js`:
 
 - **Facilities:** `FACILITIES` holds each facility's three tiers (name, effect text, cost, days) and what the base does without it. `FX` holds the numbers each level gives (level 0 = not built), so the rules and the descriptions stay in one place. `fx(id, key)` reads the current value, and `upgradeCost()` / `buildDays()` apply the Builder and Workshop discounts.
 - **Night defense:** `nightDefense()`. Walls give 0/10/20/30 by tier, 5 per guard (10 for a Fighter, +3 each with the tier 3 walls), plus up to 10 ammo. The horde's random part is rolled at dawn (`state.hordeRoll`) so the Palisade and Lookout can show the exact size.
 - **Night raid:** `nightRaid()`. The horde is compared with your defense, and a breach injures survivors and can lower the walls.
-- **Dusk:** the End day click handler. Scavenging, base production, construction, healing, fatigue, eating and drinking.
+- **Dusk:** `endDay()`. Scavenging (including 2-day trips, which set `away` on the survivor), base production, construction, healing, fatigue, eating and drinking. `home()` is everyone at the shelter; survivors who are away don't work, eat or get hurt there.
+- **New survivors:** `recruit()` and `newSurvivor()`. Each location's `people` value is the chance a scavenger meets someone. A newcomer needs a free bed (`freeBeds()`).
+- **Events:** `EVENTS` (the comment above it lists every field a choice can use), `REWARDS` for what choices bring in, `pickEvent()` to choose one that fits, and `applyChoice()` to carry it out. `MORNING_EVENT_CHANCE` sets how often mornings bring one.
+- **Locked places:** `isLocked()` and `unlock()`. `CHECKPOINT_CUT` sets the fence cost.
 - **Damage and death:** `hurt()` and `changeMorale()`.
 - **Traders:** the `TRADERS` list holds each trader's stock, wants and length of stay. `traderDawn()` runs the schedule each dawn, `buyValue()` adds the 50% bonus (`WANT_BONUS`) for wanted items, and `tradeNeed()` applies the markup and the Negotiator discount. One trade per day stops players from trading the same goods back and forth for profit.
 
@@ -148,14 +155,13 @@ Losing a mini-game injures one survivor for 30 health (15 if they're Tough).
 ## Known limitations and next steps
 
 - No saves or accounts yet. The disabled Continue button and the Options entries are reserved for them.
-- There's no way to find new survivors yet, so free beds don't matter (the Beds tiers still make Rest recover more).
 - The Workshop doesn't craft items yet. It makes building cheaper and faster.
-- The Military checkpoint is locked and can't be unlocked yet.
-- Only four night events exist, so they repeat on longer runs.
+- The balance numbers marked `[TUNE THESE]` in `game.js` need another round of playtesting now that survivors can join, trips can last 2 days, and there are more events.
 
 ## Credits
 
 - **Design, code, art and sound:** Cygnus J. Wiebe
+- **Sounds from Freesound:** "Zombie attack" (#213509) by soykevin, and "Zombie eating a carcass" (#636147, the background music) by emilybbarrios
 - **Font:** [Special Elite](https://fonts.google.com/specimen/Special+Elite) via Google Fonts, SIL Open Font License
 - **Inspired by:** _This War of Mine_ (11 bit studios) and _State of Decay_ (Undead Labs)
 

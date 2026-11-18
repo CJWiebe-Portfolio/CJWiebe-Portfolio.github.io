@@ -52,7 +52,7 @@ It contains the logic for displaying the game results and run summary.
 
   // Provide a summary of the player's performance in the game,
   // including days survived, survivors alive, survivors lost,
-  // supplies gathered, locations explored, and events faced.
+  // supplies gathered, locations explored, events faced and survivors found.
   var stats = [
     ["Days survived", pad(r.daysSurvived)],
     ["Survivors alive", r.alive],
@@ -60,6 +60,7 @@ It contains the logic for displaying the game results and run summary.
     ["Supplies gathered", pad(r.supplies)],
     ["Locations explored", r.explored + " of " + r.locations],
     ["Events faced", pad(r.events)],
+    ["Survivors found", pad(r.found || 0)],
   ];
 
   // Display the run summary statistics and the list of survivors

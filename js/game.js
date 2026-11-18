@@ -1,16 +1,35 @@
 /*
 =========================================================
-FILE: new-game.js
+FILE: game.js
 PROJECT: Another Tally - A zombie survival game
 AUTHOR: Cygnus J. Wiebe
 DATE: December 14th, 2026
 COURSE: INFS 634 - McGill University
 =========================================================
 DESCRIPTION:
-Everything about a run lives in the `state` object below, in this tab's memory only.
-This file wires up the five tabs, the side panel, End day and the three overlays
-(event, mini-game, pause) with placeholder data. Spots where real game rules go
-are marked TODO.
+The game screen (game.html). Everything about a run lives in the `state`
+object below, in this tab's memory only, so a refresh ends the run.
+
+How a turn flows:
+  Day   - the player gives each survivor a task, builds, trades and sends
+          scavengers out (Base, Survivors, Map, Trade and Log tabs).
+  Dusk  - End day resolves the tasks: scavengers come home (or keep travelling
+          on a 2-day trip), the base makes food and water, building moves
+          forward and the group eats. The Dusk report shows what happened.
+  Night - one event (sometimes a mini-game from minigames.js), then the horde
+          tests the night defense. The Dawn report shows the night.
+  Dawn  - sometimes a morning event, then the next day starts.
+
+How this file is laid out:
+  1. Static game data (resources, difficulty, facilities, map, events, sounds)
+  2. Run state
+  3. Helpers (survivors, facilities, recruiting, plan checks)
+  4. Rendering for the header, side panel and each tab
+  5. End day, reports, events, mini-games and the night raid
+  6. Leaving the page, pause menu and start-up
+
+Lines marked [TUNE THESE] or [WORK IN PROGRESS NEEDS TUNING] are balance
+numbers to adjust after playtesting.
 =========================================================
 */
 
@@ -361,6 +380,7 @@ are in the FX table below so the rules and the descriptions stay together.
   var LOCATIONS = [
     {
       id: "gas",
+      people: 0.08, // chance a scavenger meets someone who wants to join
       img: "gas_station",
       name: "Gas station",
       x: 13,
@@ -372,6 +392,7 @@ are in the FX table below so the rules and the descriptions stay together.
     },
     {
       id: "hospital",
+      people: 0.15, // chance a scavenger meets someone who wants to join
       name: "Hospital",
       x: 42,
       y: 8,
@@ -382,6 +403,7 @@ are in the FX table below so the rules and the descriptions stay together.
     },
     {
       id: "police",
+      people: 0.1, // chance a scavenger meets someone who wants to join
       img: "police_station",
       name: "Police station",
       x: 69,
@@ -393,6 +415,7 @@ are in the FX table below so the rules and the descriptions stay together.
     },
     {
       id: "farm",
+      people: 0.25, // chance a scavenger meets someone who wants to join
       name: "Farm",
       x: 11,
       y: 38,
@@ -403,6 +426,7 @@ are in the FX table below so the rules and the descriptions stay together.
     },
     {
       id: "supermarket",
+      people: 0.12, // chance a scavenger meets someone who wants to join
       name: "Supermarket",
       x: 69,
       y: 55,
@@ -413,6 +437,7 @@ are in the FX table below so the rules and the descriptions stay together.
     },
     {
       id: "suburb",
+      people: 0.2, // chance a scavenger meets someone who wants to join
       name: "Suburb",
       x: 10,
       y: 72,
@@ -423,6 +448,7 @@ are in the FX table below so the rules and the descriptions stay together.
     },
     {
       id: "school",
+      people: 0.2, // chance a scavenger meets someone who wants to join
       name: "School",
       x: 38,
       y: 68,
@@ -433,6 +459,7 @@ are in the FX table below so the rules and the descriptions stay together.
     },
     {
       id: "military",
+      people: 0.15, // chance a scavenger meets someone who wants to join
       img: "military_checkpoint",
       name: "Military checkpoint",
       x: 58,
@@ -441,24 +468,53 @@ are in the FX table below so the rules and the descriptions stay together.
       travel: 2,
       finds: "Ammo, medicine",
       loot: ["ammo", "medicine"],
-      locked: true,
+      locked: true, // starts locked: cut the fence (Map) or find a keycard (event)
     },
   ];
   var SHELTER_POS = { x: 41, y: 45 };
 
   /* 
 ---------- Events [WORK IN PROGRESS NEEDS TUNING] ----------
+One event happens every night, and some mornings (MORNING_EVENT_CHANCE).
+
+Each event has:
+  title, text     what the player reads
+  art             a picture name from assets/images/png/
+  time            "night" (default) or "morning"
+  sounds          played stacked when the event opens (names are in common.js;
+                  [name, ms] starts that one a little later)
+  needsScavenging only offered after someone came home from scavenging tonight
+  needsFreeBed    only offered when there is a free bed (events that bring someone in)
+  needsLocked     only offered while that map location is still locked
+  from            for events that bring someone in: where they came from
+  choices         the options, usually three
+
+Each choice has a kind:
+  "skill"    needs a rested survivor with that skill
+  "minigame" plays a mini-game (game: "Defense", "Lockpick" or "Search")
+  "cost"     anyone can pick it, if the group can pay the cost
+
+and any of these (all optional):
+  cost     resources paid, e.g. { food: 3 }; the choice is greyed out if you can't pay
+  lose     resources taken, as much as you have (never greyed out)
+  fatigue  added to the survivor with the skill
+  injure   health the survivor with the skill loses
+  hurtOne  health one random survivor at the shelter loses (Cowards are spared)
+  morale   added to everyone (can be negative)
+  reward   a name from REWARDS below: supplies the choice brings in
+  recruit  true: a newcomer joins if there is a free bed
+  unlock   a location id to unlock on the map
+  win      for minigame choices: { recruit, unlock, reward } applied only on a win
+  outcome  the line written to the log
+  sounds   played stacked when the choice is picked
 */
-  // Any choice can also have: cost (resources), fatigue (added to the survivor with the skill),
-  // injure (health the skill survivor loses) and morale (added to everyone, can be negative).
-  // sounds (on the event and on a choice) play stacked when the event opens or the choice is
-  // picked. Names are listed in common.js; [name, ms] starts that one a little later.
-  // All event choices have a three options types: 'skills' (require a survivor with a specific skill), the 'minigame' is a challenge of the player, or 'cost' which requires a resource cost. [WORK IN PROGRESS NEEDS TUNING]
   var EVENTS = [
+    // ---------- Night events ----------
     {
       title: "Knocking at the gate",
       art: "event_gate",
       text: "Someone is pounding on the gate, begging to be let in. Behind them, shapes shuffle out of the dark.",
+      from: "at the gate", // finishes "X joined the group ..." for recruits
       sounds: ["knockSoft", ["knockHard", 1500], ["zombieGroan", 2600]],
       choices: [
         {
@@ -466,11 +522,16 @@ are in the FX table below so the rules and the descriptions stay together.
           kind: "skill",
           skill: "Medic",
           cost: { medicine: 1 },
-          outcome:
-            "You checked the stranger for bites and let them sleep in the yard.",
+          recruit: true,
+          outcome: "Your medic checked the stranger for bites and opened the gate.",
           sounds: ["doorOpen", ["pillCap", 600], ["closeJar", 1400]],
         },
-        { label: "Clear the street first", kind: "minigame", game: "Defense" },
+        {
+          label: "Clear the street first",
+          kind: "minigame",
+          game: "Defense",
+          win: { recruit: true },
+        },
         {
           label: "Pay them to move on",
           kind: "cost",
@@ -491,7 +552,8 @@ are in the FX table below so the rules and the descriptions stay together.
           kind: "skill",
           skill: "Builder",
           fatigue: 20,
-          outcome: "The crate gave way. (Loot is a placeholder.)",
+          reward: "crate",
+          outcome: "Your builder forced the lid off the crate.",
           sounds: ["woodSplitting", ["rustyHinges", 500], ["cardboardBox", 1100]],
         },
         { label: "Pick the lock", kind: "minigame", game: "Lockpick" },
@@ -539,7 +601,7 @@ are in the FX table below so the rules and the descriptions stay together.
       title: "A house worth searching",
       art: "event_house",
       text: "On the way back, your scavenger spotted a house with the door hanging open. The dead can't be far.",
-      needsScavenging: true, // only offered on nights after someone went scavenging
+      needsScavenging: true,
       sounds: ["rustyDoor", ["glassSteps", 900]],
       choices: [
         { label: "Search it room by room", kind: "minigame", game: "Search" },
@@ -548,6 +610,7 @@ are in the FX table below so the rules and the descriptions stay together.
           kind: "skill",
           skill: "Scavenger",
           fatigue: 20,
+          reward: "pantry",
           outcome:
             "Your scavenger went straight for the pantry and slipped out quietly.",
           sounds: ["carefulWalking", ["drawer", 700], ["searchDesk", 1400]],
@@ -561,7 +624,367 @@ are in the FX table below so the rules and the descriptions stay together.
         },
       ],
     },
+    {
+      title: "A voice on the radio",
+      art: "school",
+      text: "The old radio crackles to life. Someone is hiding in the school gym, out of food, asking if anyone can hear them.",
+      from: "from the school gym",
+      needsFreeBed: true,
+      sounds: ["lightSwitch", ["zombieGroan", 1400]],
+      choices: [
+        {
+          label: "Send your fighter",
+          kind: "skill",
+          skill: "Fighter",
+          fatigue: 30,
+          injure: 10,
+          recruit: true,
+          outcome: "Your fighter cut a path to the school and brought them back.",
+          sounds: ["doorOpen", ["swing", 700], ["swing", 1100], ["doorClose", 2000]],
+        },
+        {
+          label: "Cover them as they run",
+          kind: "minigame",
+          game: "Defense",
+          win: { recruit: true },
+        },
+        {
+          label: "Turn the radio off",
+          kind: "cost",
+          cost: {},
+          morale: -5,
+          outcome: "You turned the radio off. Nobody slept well.",
+          sounds: ["lightSwitch"],
+        },
+      ],
+    },
+    {
+      title: "A fallen soldier",
+      art: "military_checkpoint",
+      text: "Near the checkpoint, your scavenger found a soldier slumped against the fence. A keycard hangs from his belt.",
+      needsScavenging: true,
+      needsLocked: "military",
+      sounds: ["glassSteps", ["rustyMetal", 900]],
+      choices: [
+        {
+          label: "Let the expert check him",
+          kind: "skill",
+          skill: "Scavenger",
+          fatigue: 10,
+          reward: "soldier",
+          unlock: "military",
+          outcome: "Your scavenger took the keycard and everything useful on him.",
+          sounds: ["carefulWalking", ["pillCap", 700], ["reload", 1200]],
+        },
+        {
+          label: "Grab the keycard and run",
+          kind: "cost",
+          cost: {},
+          hurtOne: 10,
+          unlock: "military",
+          outcome: "You snatched the keycard as the dead closed in.",
+          sounds: ["footsteps", ["zombieShout", 500], ["doorClose", 1400]],
+        },
+        {
+          label: "Leave him be",
+          kind: "cost",
+          cost: {},
+          outcome: "You left the soldier where he fell.",
+          sounds: ["footsteps"],
+        },
+      ],
+    },
+    {
+      title: "Rats in the stores",
+      art: "kitchen",
+      text: "Something has been chewing through the food sacks. Droppings everywhere.",
+      sounds: ["rubbish", ["cardboardBox", 700]],
+      choices: [
+        {
+          label: "Hunt them down",
+          kind: "skill",
+          skill: "Hunter",
+          fatigue: 10,
+          reward: "rats",
+          outcome: "Your hunter cleared the rats out. Not much meat, but it's food.",
+          sounds: ["swing", ["swing", 400], ["stove", 1200]],
+        },
+        {
+          label: "Set traps",
+          kind: "cost",
+          cost: { materials: 2 },
+          outcome: "You built traps from scrap. The food is safe.",
+          sounds: ["buildingHammering"],
+        },
+        {
+          label: "Let it be",
+          kind: "cost",
+          cost: {},
+          lose: { food: 3 },
+          outcome: "The rats got into the food.",
+          sounds: ["rubbish"],
+        },
+      ],
+    },
+    {
+      title: "A storm rolls in",
+      art: "watercollector",
+      text: "Rain hammers the roof and water drips through a dozen cracks. The walls are slick, and the dead are quiet for once.",
+      sounds: ["pourWater", ["rustyMetal", 800]],
+      choices: [
+        {
+          label: "Patch the roof",
+          kind: "skill",
+          skill: "Builder",
+          fatigue: 20,
+          cost: { materials: 1 },
+          reward: "rain",
+          morale: 5,
+          outcome: "Your builder patched the roof and rigged it to catch the rain.",
+          sounds: ["buildingHammering", ["pourWater", 900]],
+        },
+        {
+          label: "Put out every pot and pan",
+          kind: "cost",
+          cost: {},
+          reward: "rain",
+          morale: -5,
+          outcome: "You caught the rain, but everyone slept cold and wet.",
+          sounds: ["pourWater", ["canDrop", 500]],
+        },
+        {
+          label: "Sit it out",
+          kind: "cost",
+          cost: {},
+          outcome: "You waited out the storm.",
+          sounds: [],
+        },
+      ],
+    },
+    {
+      title: "Fever in the shelter",
+      art: "infirmary",
+      text: "One of the group is burning up with fever and can barely stand.",
+      sounds: ["footsteps", ["openJar", 900]],
+      choices: [
+        {
+          label: "Have the medic treat them",
+          kind: "skill",
+          skill: "Medic",
+          cost: { medicine: 1 },
+          outcome: "Your medic brought the fever down by morning.",
+          sounds: ["pillCap", ["pourWater", 600]],
+        },
+        {
+          label: "Use the medicine",
+          kind: "cost",
+          cost: { medicine: 2 },
+          outcome: "Two doses of medicine broke the fever.",
+          sounds: ["pillCap", ["closeJar", 700]],
+        },
+        {
+          label: "Let them sweat it out",
+          kind: "cost",
+          cost: {},
+          hurtOne: 20,
+          outcome: "You kept them warm and hoped for the best.",
+          sounds: ["lightSwitch"],
+        },
+      ],
+    },
+    {
+      title: "Raiders at the gate",
+      art: "event_gate",
+      text: "Three armed strangers stand at the gate. They want food and water, or they'll come in and take it.",
+      sounds: ["knockHard", ["cock", 900]],
+      choices: [
+        {
+          label: "Talk them down",
+          kind: "skill",
+          skill: "Negotiator",
+          reward: "raiders",
+          outcome:
+            "Your negotiator talked them into a truce. They even left some ammo.",
+          sounds: ["doorOpen", ["cardboardBox", 900], ["doorClose", 1800]],
+        },
+        { label: "Drive them off", kind: "minigame", game: "Defense" },
+        {
+          label: "Hand over supplies",
+          kind: "cost",
+          cost: { food: 2, water: 2 },
+          outcome: "You handed over food and water. They left you alone.",
+          sounds: ["cardboardBox", ["doorClose", 900]],
+        },
+      ],
+    },
+    {
+      title: "An old guitar",
+      art: "bedroom",
+      text: "Someone found a battered guitar in the rubble. It's out of tune, but it still plays.",
+      sounds: ["cardboardBox"],
+      choices: [
+        {
+          label: "Play quietly by the fire",
+          kind: "cost",
+          cost: {},
+          morale: 10,
+          outcome: "For one night, it almost felt normal.",
+          sounds: ["match"],
+        },
+        {
+          label: "Trade it for parts",
+          kind: "cost",
+          cost: {},
+          reward: "scrap",
+          outcome: "You stripped the guitar for wire and wood.",
+          sounds: ["woodSplitting"],
+        },
+      ],
+    },
+
+    // ---------- Morning events ----------
+    {
+      title: "A stranger on the road",
+      art: "event_gate",
+      time: "morning",
+      text: "At first light, a tired stranger waves from the road, hands raised to show they're unarmed.",
+      from: "from the road",
+      needsFreeBed: true,
+      sounds: ["knockSoft"],
+      choices: [
+        {
+          label: "Let them in",
+          kind: "cost",
+          cost: { food: 1 },
+          recruit: true,
+          outcome: "You shared a meal and opened the gate.",
+          sounds: ["doorOpen", ["footsteps", 500], ["doorClose", 1500]],
+        },
+        {
+          label: "Send them on their way",
+          kind: "cost",
+          cost: {},
+          outcome: "You pointed them down the road.",
+          sounds: ["doorClose"],
+        },
+      ],
+    },
+    {
+      title: "A broken cart",
+      art: "event_crate",
+      time: "morning",
+      text: "A cart lies tipped over in the road outside, one wheel snapped. Its owner is nowhere to be seen.",
+      sounds: ["rustyMetal", ["rustyHinges", 700]],
+      choices: [
+        {
+          label: "Take it apart properly",
+          kind: "skill",
+          skill: "Mechanic",
+          fatigue: 20,
+          reward: "cart",
+          outcome: "Your mechanic stripped the cart down to every useful bolt.",
+          sounds: ["buildingHammering", ["rustyMetal", 600]],
+        },
+        {
+          label: "Grab what you can",
+          kind: "cost",
+          cost: {},
+          reward: "scrap",
+          outcome: "You pulled a few boards and nails off the cart.",
+          sounds: ["woodSplitting", ["rubbish", 600]],
+        },
+        {
+          label: "Leave it",
+          kind: "cost",
+          cost: {},
+          outcome: "You left the cart in the road.",
+          sounds: ["footsteps"],
+        },
+      ],
+    },
+    {
+      title: "Fresh tracks",
+      art: "farm",
+      time: "morning",
+      text: "Muddy tracks lead from the walls toward the treeline. Something circled the shelter last night.",
+      sounds: ["footsteps", ["zombieGroan", 1200]],
+      choices: [
+        {
+          label: "Send the hunter after them",
+          kind: "skill",
+          skill: "Hunter",
+          fatigue: 20,
+          reward: "deer",
+          outcome: "They were a deer's. Your hunter brought it home.",
+          sounds: ["carefulWalking", ["gunshot", 1500]],
+        },
+        {
+          label: "Follow them together",
+          kind: "cost",
+          cost: {},
+          hurtOne: 10,
+          reward: "tracks",
+          outcome: "The tracks led to a lurker, and a few berry bushes behind it.",
+          sounds: ["carefulWalking", ["zombieAttack", 1200], ["swing", 1500]],
+        },
+        {
+          label: "Shore up the gate",
+          kind: "cost",
+          cost: { materials: 1 },
+          morale: 5,
+          outcome: "You braced the gate. Everyone breathed easier.",
+          sounds: ["buildingHammering"],
+        },
+      ],
+    },
   ];
+
+  // Supplies that event choices bring in (see `reward` above). Each one rolls
+  // fresh numbers every time, using the run's seeded rng.
+  var REWARDS = {
+    // A forced crate holds the same as a picked lock.
+    crate: function () {
+      return AT.minigames.autoResult("Lockpick", true, rng).reward;
+    },
+    pantry: function () {
+      return { food: randInt(2, 4), water: randInt(1, 2) };
+    },
+    soldier: function () {
+      return { ammo: randInt(2, 4), medicine: randInt(0, 1) };
+    },
+    rats: function () {
+      return { food: 2 };
+    },
+    // A water collector catches more of the storm.
+    rain: function () {
+      return { water: 2 + fx("water", "water") };
+    },
+    raiders: function () {
+      return { ammo: 2 };
+    },
+    cart: function () {
+      return { materials: randInt(3, 4) };
+    },
+    scrap: function () {
+      return { materials: randInt(1, 2) };
+    },
+    deer: function () {
+      return { food: randInt(3, 5) };
+    },
+    tracks: function () {
+      return { food: randInt(1, 2) };
+    },
+  };
+
+  // Chance (0 to 1) that a morning event happens before a day starts (never on day 1).
+  var MORNING_EVENT_CHANCE = 0.3; // [TUNE THESE]
+
+  // Cutting through the Military checkpoint fence from the Map tab.
+  // Cheaper when a Builder or Mechanic is at the shelter to do the cutting.
+  var CHECKPOINT_CUT = { cost: 8, skilledCost: 4, skills: ["Builder", "Mechanic"] }; // [TUNE THESE]
+
+  // Each extra day of a long trip brings back this many extra supplies.
+  var EXTRA_PER_TRIP_DAY = 2; // [TUNE THESE]
 
   /* 
 ---------- Minigame descriptions ----------
@@ -672,9 +1095,15 @@ stacked on top of each other; [name, ms] starts that one a little later.
         lostOn: null,
         task: ["Scavenge", "Build", "Guard"][i] || "Rest",
         target: i === 0 ? "hospital" : null,
+        away: 0, // days left on a long trip (see endDay); 0 = at the shelter
       };
     }),
     explored: [],
+    unlocked: [], // ids of map locations that started locked and have been opened
+    recruited: 0, // survivors who joined during the run (shown on the end screen)
+    lastEvent: null, // title of the last event, so the same one doesn't come twice in a row
+    eventTime: "night", // "night" or "morning": what happens after the current event
+    currentChoice: null, // the choice picked for the current event (for mini-game wins)
     selectedLocation: "hospital",
     trade: { give: {}, get: {} },
     // The first trader is already here on day 1. See makeTrader() and traderDawn().
@@ -689,13 +1118,140 @@ stacked on top of each other; [name, ms] starts that one a little later.
     logOpen: {}, // which days the player has opened or closed in the Log
     hordeRoll: randInt(-3, 3), // tonight's horde is threatTonight() + this; rolled each dawn
   };
-  var leaving = false;
+  var leaving = false; // true once the run is over, so leaving the page doesn't ask "are you sure?"
 
-  // ---------- Checks if a survivor is alive ----------
+  /*
+=========================================================
+---------- Helpers: survivors ----------
+=========================================================
+*/
+  // Everyone still in the group, including anyone away on a long trip.
   function alive() {
     return state.survivors.filter(function (s) {
       return s.alive;
     });
+  }
+  // Everyone in the group who is at the shelter today. Survivors away on a
+  // 2-day trip can't guard, build, cook, heal or be healed, don't eat from the
+  // stores, and are safe from whatever happens at the shelter.
+  function home() {
+    return alive().filter(function (s) {
+      return !s.away;
+    });
+  }
+  // True while a map location is still closed to scavengers.
+  function isLocked(loc) {
+    return Boolean(loc.locked) && state.unlocked.indexOf(loc.id) === -1;
+  }
+  // Opens a locked map location and logs it.
+  function unlock(id, cat) {
+    var loc = findLoc(id);
+    if (!loc || !isLocked(loc)) return;
+    state.unlocked.push(id);
+    addLog(cat || "exploring", "The " + loc.name + " is open. Scavengers can go there now.", "good");
+  }
+  // Free beds: beds the facility provides minus everyone in the group.
+  function freeBeds() {
+    return bedCount() - alive().length;
+  }
+  // Picks one survivor at the shelter to take a hit, sparing Cowards when
+  // anyone else is there. Returns undefined if no one is home.
+  function pickVictim() {
+    var pool = home().filter(function (s) {
+      return s.trait !== "Coward";
+    });
+    if (!pool.length) pool = home();
+    return pool[Math.floor(rng() * pool.length)];
+  }
+
+  /*
+---------- Recruiting ----------
+New survivors join from scavenging trips (each location's `people` chance) and
+from some events (`recruit` on a choice). They need a free bed: without one
+they can't stay. Names, skills, traits and portraits come from common.js.
+*/
+  // Makes a new survivor with a name nobody in this run has had, and the
+  // portrait used by the fewest people in the group.
+  function newSurvivor() {
+    var taken = state.survivors.map(function (s) {
+      return s.name;
+    });
+    var names = AT.NAMES.filter(function (n) {
+      return taken.indexOf(n) === -1;
+    });
+    if (!names.length) names = AT.NAMES;
+    var skills = Object.keys(AT.SKILLS);
+    var traits = Object.keys(AT.TRAITS);
+    var avatar = AT.AVATARS.slice().sort(function (a, b) {
+      return countAvatar(a) - countAvatar(b);
+    })[0];
+    return {
+      id: "s" + state.survivors.length,
+      name: names[Math.floor(rng() * names.length)],
+      skill: skills[Math.floor(rng() * skills.length)],
+      trait: traits[Math.floor(rng() * traits.length)],
+      avatar: avatar,
+      // Newcomers arrive worn down, so they usually rest on their first day.
+      health: randInt(40, 80),
+      hunger: randInt(30, 60),
+      fatigue: randInt(30, 60),
+      morale: randInt(40, 70),
+      status: "Healthy",
+      alive: true,
+      lostOn: null,
+      task: "Rest",
+      target: null,
+      away: 0,
+    };
+  }
+  // How many people in the group use a portrait.
+  function countAvatar(n) {
+    return alive().filter(function (s) {
+      return s.avatar === n;
+    }).length;
+  }
+
+  // Adds a newcomer if there's a free bed. `cat` is the log category and
+  // `where` finishes the sentence about where they came from. Returns the new
+  // survivor, or null if there was no bed for them.
+  function recruit(cat, where) {
+    if (freeBeds() <= 0) {
+      addLog(
+        cat,
+        "A survivor " + where + " wanted to join, but there was no free bed. Build more beds to take people in.",
+        "bad",
+      );
+      return null;
+    }
+    var s = newSurvivor();
+    if (s.health < 60) s.status = "Injured";
+    state.survivors.push(s);
+    state.recruited += 1;
+    addLog(
+      cat,
+      s.name + " (" + s.skill + ", " + s.trait.toLowerCase() + ") joined the group " + where + ".",
+      "good",
+    );
+    // A new face lifts everyone a little.
+    alive().forEach(function (o) {
+      if (o !== s) changeMorale(o, 5);
+    });
+    cue("knockSoft", 3400); // a knock at the door with the next report
+    return s;
+  }
+
+  // Adds a set of supplies (e.g. { food: 2 }) to the stores and logs it.
+  function gainSupplies(cat, gained) {
+    var total = 0;
+    Object.keys(gained || {}).forEach(function (k) {
+      if (gained[k] > 0) {
+        state.resources[k] += gained[k];
+        total += gained[k];
+      }
+    });
+    if (!total) return;
+    state.suppliesGathered += total;
+    addLog(cat, "Brought back " + AT.minigames.describe(gained) + ".", "good");
   }
   // ---------- Checks the state of a facility ----------
   function facility(id) {
@@ -711,6 +1267,7 @@ stacked on top of each other; [name, ms] starts that one a little later.
   function nextTier(f) {
     return f.tiers[f.level] || null;
   }
+  // The tier the facility has now (null when not built).
   function currentTier(f) {
     return f.level ? f.tiers[f.level - 1] : null;
   }
@@ -720,7 +1277,7 @@ stacked on top of each other; [name, ms] starts that one a little later.
   }
   // ---------- Checks the number of available guards ----------
   function guards() {
-    return alive().filter(function (s) {
+    return home().filter(function (s) {
       return s.task === "Guard";
     }).length;
   }
@@ -740,7 +1297,7 @@ stacked on top of each other; [name, ms] starts that one a little later.
   function nightDefense(ahead) {
     var ammo = Math.min(state.resources.ammo, 10);
     if (onTask("Guard", "Sharpshooter")) ammo *= 2;
-    var guardTotal = alive().reduce(function (sum, s) {
+    var guardTotal = home().reduce(function (sum, s) {
       return sum + guardPower(s);
     }, 0);
     var walls = facility("walls");
@@ -754,14 +1311,14 @@ stacked on top of each other; [name, ms] starts that one a little later.
 
   // Survivors on Build who are rested enough to work.
   function builders() {
-    return alive().filter(function (s) {
+    return home().filter(function (s) {
       return s.task === "Build" && s.fatigue < TIRED;
     });
   }
 
   // Checks if a survivor is on a specific task with a specific skill.
   function onTask(task, skill) {
-    return alive().some(function (s) {
+    return home().some(function (s) {
       return s.task === task && s.skill === skill;
     });
   }
@@ -834,14 +1391,14 @@ stacked on top of each other; [name, ms] starts that one a little later.
   }
   // Checks if any survivor has a specific skill, returning true if at least one survivor possesses that skill.
   function hasSkill(skill) {
-    return alive().some(function (s) {
+    return home().some(function (s) {
       return s.skill === skill;
     });
   }
 
   // The least tired living survivor with a skill (or undefined if none can act).
   function skilled(skill) {
-    return alive()
+    return home()
       .filter(function (s) {
         return s.skill === skill && s.fatigue < TIRED;
       })
@@ -865,13 +1422,31 @@ stacked on top of each other; [name, ms] starts that one a little later.
   // reads what happened (e.g. the rooster at dawn). cue("rooster", 2500)
   // queues a sound to start 2.5 seconds after the report opens.
   var cues = [];
+  // Queues a sound for the next report.
   function cue(name, delay) {
     cues.push([name, delay || 0]);
   }
+  // True if a sound is already queued, so one event doesn't queue it twice.
   function cued(name) {
     return cues.some(function (c) {
       return c[0] === name;
     });
+  }
+
+  // Sounds for the story (reports, night events, the raid) share the "scene"
+  // channel. Clicking on to the next step cuts them off, so sounds from dusk
+  // never drag on into the night, and the night never drags into the day.
+  function sceneSounds(list) {
+    AT.playSounds(list, { channel: "scene" });
+  }
+  // Cuts off the scene's sounds, including any still waiting to start.
+  function endScene() {
+    AT.stopChannel("scene");
+  }
+  // Sounds for the player's own actions (building, sending someone out,
+  // trading). A new action replaces the last one's sound instead of stacking.
+  function actionSounds(list) {
+    AT.playSounds(list, { channel: "action", replace: true, fade: 150 });
   }
 
   // Keeps the ambience matching the phase. Safe to call often:
@@ -891,14 +1466,17 @@ so they always agree with each other.
 */
   var DANGER_LABELS = ["", "Low", "Medium", "High"];
 
+  // "1 day", "2 days": a number with its word, plural when needed.
   function plural(n, word) {
     return n + " " + word + (n === 1 ? "" : "s");
   }
+  // Looks up a map location by its id.
   function findLoc(id) {
     return LOCATIONS.find(function (l) {
       return l.id === id;
     });
   }
+  // Looks up a survivor by id (living or not).
   function findSurvivor(id) {
     return state.survivors.find(function (s) {
       return s.id === id;
@@ -916,6 +1494,7 @@ so they always agree with each other.
       return s.task === "Scavenge" && s.target === locId;
     });
   }
+  // True while a trader is visiting.
   function traderHere() {
     return state.trader.leaves > 0;
   }
@@ -989,8 +1568,9 @@ so they always agree with each other.
     );
   }
   // Food the group eats at dusk (also used by the dusk itself).
+  // Survivors away on a trip live off what they find, so only those at home eat.
   function foodNeeded() {
-    var need = alive().reduce(function (sum, s) {
+    var need = home().reduce(function (sum, s) {
       return sum + (s.trait === "Big eater" ? 2 : 1);
     }, 0);
     if (onTask("Cook", "Cook")) need = Math.max(0, need - 1);
@@ -999,7 +1579,7 @@ so they always agree with each other.
   // Who Heal would treat: the most hurt survivors, as many as the infirmary
   // allows (1, or 2 with a Field Hospital). Empty when no one is hurt.
   function patients() {
-    return alive()
+    return home()
       .filter(function (p) {
         return p.health < 100;
       })
@@ -1031,6 +1611,18 @@ so they always agree with each other.
   //   fix is an optional link { label, goto (tab), who (survivor id) } to where it can be fixed
   function taskInfo(s) {
     var tired = s.fatigue >= TIRED;
+    // Away on a long trip: nothing to decide until they're back.
+    if (s.away) {
+      return {
+        text:
+          "Away at the " +
+          findLoc(s.target).name +
+          ". Back at dusk " +
+          (s.away === 1 ? "today" : "in " + plural(s.away, "day")) +
+          ".",
+        level: "",
+      };
+    }
     if (s.task === "Rest") {
       var restHeal =
         s.health < 100
@@ -1065,7 +1657,12 @@ so they always agree with each other.
           loc.name +
           " (" +
           DANGER_LABELS[loc.danger].toLowerCase() +
-          " danger).",
+          " danger)." +
+          (loc.travel > 1
+            ? " A " + loc.travel + "-day trip: away until dusk " +
+              (loc.travel === 2 ? "tomorrow" : "in " + plural(loc.travel - 1, "day")) +
+              "."
+            : ""),
         level: "",
         fix: { label: "Change", goto: "map", who: s.id },
       };
@@ -1167,7 +1764,7 @@ so they always agree with each other.
     var water = {
       have: state.resources.water,
       made: fx("water", "water"),
-      need: alive().length,
+      need: home().length,
     };
     [food, water].forEach(function (r) {
       r.after = r.have + r.made - r.need;
@@ -1264,6 +1861,7 @@ so they always agree with each other.
       " →</button>"
     );
   }
+  // One warning line, with its fix link if it has one.
   function warnItem(w) {
     return (
       '<li class="warn"><span>' +
@@ -1282,6 +1880,7 @@ so they always agree with each other.
   // Display names for each phase. Their colours live in css/style.css (02. Phase themes).
   var PHASE_LABELS = { dawn: "Dawn", day: "Day", dusk: "Dusk", night: "Night" };
 
+  // The top bar: day, phase, resources and the tab title.
   function renderHeader() {
     var night = state.phase === "night";
     $("day-label").textContent =
@@ -1322,7 +1921,7 @@ so they always agree with each other.
           '"><span class="plan-name">' +
           esc(s.name) +
           '</span><span class="task-tag">' +
-          s.task +
+          (s.away ? "Away" : s.task) +
           '</span><span class="plan-detail">' +
           esc(info.text) +
           "</span></li>"
@@ -1332,6 +1931,7 @@ so they always agree with each other.
 
     // Food and water at dusk: have + made − eaten → left.
     var fc = duskForecast();
+    // One forecast row: have + made − eaten → what's left (or how short).
     function row(label, r) {
       return (
         "<dt>" +
@@ -1401,8 +2001,10 @@ Small counts on the tabs show where something needs a look.
       : "";
   }
 
+  // Updates every tab badge: survivors needing attention, scavengers without a
+  // destination, how long the trader stays, and unread log entries.
   function renderBadges() {
-    var needs = alive().filter(function (s) {
+    var needs = home().filter(function (s) {
       return taskInfo(s).level === "bad" || s.status === "Injured";
     }).length;
     setBadge(
@@ -1579,6 +2181,7 @@ Small counts on the tabs show where something needs a look.
     );
   }
 
+  // The Base tab: shelter summary and one card per facility.
   function renderBase() {
     var p = $("panel-base");
     var builtCount = state.facilities.filter(function (f) {
@@ -1615,7 +2218,7 @@ Small counts on the tabs show where something needs a look.
     var f = facility(btn.dataset.upgrade);
     if (builders().length) startWork(f);
     else {
-      AT.playSound("menu");
+      actionSounds(["menu"]);
       openBuildPicker(f);
     }
   });
@@ -1626,7 +2229,7 @@ Small counts on the tabs show where something needs a look.
     if (f.building || state.resources.materials < cost) return;
     state.resources.materials -= cost;
     // Hammering, stacked with a sound for what is being built.
-    AT.playSounds(["buildingHammering", [f.sound, 250]]);
+    actionSounds(["buildingHammering", [f.sound, 250]]);
     var tier = nextTier(f);
     f.building = f.buildTotal = buildDays(f);
     addLog(
@@ -1643,6 +2246,7 @@ Small counts on the tabs show where something needs a look.
 
   // ---------- Builder picker ----------
   var buildFor = null;
+  // Opens the "Who builds this?" pop-up for a facility when nobody is on Build.
   function openBuildPicker(f) {
     buildFor = f;
     $("build-title").textContent = "Who builds the " + nextTier(f).name + "?";
@@ -1653,7 +2257,7 @@ Small counts on the tabs show where something needs a look.
       " of 3. It takes " +
       plural(buildDays(f), "day") +
       " with someone on Build each day. Whoever you pick switches to Build now.";
-    $("build-choices").innerHTML = alive()
+    $("build-choices").innerHTML = home()
       .map(function (s) {
         var tired = s.fatigue >= TIRED;
         var now =
@@ -1685,6 +2289,7 @@ Small counts on the tabs show where something needs a look.
     $("build-dialog").showModal();
   }
 
+  // Picking a builder puts them on Build and starts the work.
   $("build-choices").addEventListener("click", function (e) {
     var b = e.target.closest("[data-builder]");
     if (!b || !buildFor) return;
@@ -1695,6 +2300,7 @@ Small counts on the tabs show where something needs a look.
     startWork(buildFor);
     buildFor = null;
   });
+  // Cancel closes the picker without building.
   $("build-cancel").addEventListener("click", function () {
     buildFor = null;
     $("build-dialog").close();
@@ -1736,6 +2342,8 @@ Small counts on the tabs show where something needs a look.
     Heal: "Treat the most hurt survivor",
   };
 
+  // The Survivors tab: a card per survivor with their stats, task buttons and
+  // what their task will do, plus a "Free bed" card when there's room.
   function renderSurvivors() {
     var list = alive();
     var free = bedCount() - list.length;
@@ -1770,9 +2378,11 @@ Small counts on the tabs show where something needs a look.
             "</span></div></div>" +
             '<span class="status' +
             (injured || tired ? " injured" : "") +
+            (s.away ? " away" : "") +
             '">' +
             s.status +
             (tired ? "<br>Too tired" : "") +
+            (s.away ? "<br>Away" : "") +
             "</span></div>" +
             '<div class="stats">' +
             statRow("Health", s.health, "At 0 they die.") +
@@ -1804,7 +2414,10 @@ Small counts on the tabs show where something needs a look.
                 TASK_SOUNDS[t] +
                 '" aria-pressed="' +
                 (t === s.task) +
-                '" title="' +
+                '"' +
+                // Tasks are locked while the survivor is away on a trip.
+                (s.away ? " disabled" : "") +
+                ' title="' +
                 TASK_HINTS[t] +
                 '">' +
                 t +
@@ -1823,16 +2436,18 @@ Small counts on the tabs show where something needs a look.
         .join("") +
       (free > 0
         ? '<div class="card free-bed"><img class="avatar portrait" src="assets/images/png/free-bed.png" alt=""><h3>Free bed</h3>' +
-          '<p class="small muted">Find survivors while exploring the map</p>' +
+          '<p class="small muted">Scavengers sometimes meet survivors who want to join, and so do some events.</p>' +
           '<button class="btn btn-sm" type="button" data-goto="map">Go to map</button></div>'
         : "") +
       "</div>";
   }
 
+  // Clicking a task button gives the survivor that task (not while they're away).
   $("panel-survivors").addEventListener("click", function (e) {
     var btn = e.target.closest("[data-set-task]");
-    if (!btn) return;
+    if (!btn || btn.disabled) return;
     var s = findSurvivor(btn.dataset.who);
+    if (s.away) return;
     s.task = btn.dataset.setTask;
     if (s.task !== "Scavenge") s.target = null;
     renderAll();
@@ -1850,7 +2465,7 @@ Small counts on the tabs show where something needs a look.
   // The survivor preselected in the Send list: whoever a "Choose destination"
   // link picked, else a scavenger with nowhere to go, else the first one rested.
   function defaultSender() {
-    var rested = alive().filter(function (s) {
+    var rested = home().filter(function (s) {
       return s.fatigue < TIRED;
     });
     var picked = rested.find(function (s) {
@@ -1865,6 +2480,8 @@ Small counts on the tabs show where something needs a look.
     );
   }
 
+  // The Map tab: the location buttons, and details for the selected one with
+  // the Send controls (or the fence controls while it's locked).
   function renderMap() {
     var loc = findLoc(state.selectedLocation);
     var visits = state.explored.filter(function (id) {
@@ -1898,7 +2515,7 @@ Small counts on the tabs show where something needs a look.
         // Screen readers get the same facts the markers show.
         var sr =
           (seen ? ", explored" : ", not explored yet") +
-          (l.locked ? ", locked" : "") +
+          (isLocked(l) ? ", locked" : "") +
           (who.length
             ? ", " +
               who
@@ -1910,12 +2527,12 @@ Small counts on the tabs show where something needs a look.
             : "");
         return (
           '<button type="button" class="loc' +
-          (l.locked ? " locked" : "") +
+          (isLocked(l) ? " locked" : "") +
           (seen ? "" : " unseen") +
           '" data-loc="' +
           l.id +
           '"' +
-          (l.locked ? ' data-sound="rustyDoor"' : "") +
+          (isLocked(l) ? ' data-sound="rustyDoor"' : "") +
           ' style="left:' +
           l.x +
           "%;top:" +
@@ -1924,7 +2541,7 @@ Small counts on the tabs show where something needs a look.
           ' aria-pressed="' +
           (l.id === loc.id) +
           '">' +
-          (l.locked ? '<span aria-hidden="true">🔒</span> ' : "") +
+          (isLocked(l) ? '<span aria-hidden="true">🔒</span> ' : "") +
           l.name +
           (seen ? ' <span class="seen" aria-hidden="true">✓</span>' : "") +
           who
@@ -1972,7 +2589,9 @@ Small counts on the tabs show where something needs a look.
       plural(loc.travel, "day") +
       ' <span class="muted">(+' +
       20 * loc.travel +
-      " fatigue)</span></dd>" +
+      " fatigue" +
+      (loc.travel > 1 ? ", away overnight, +" + EXTRA_PER_TRIP_DAY * (loc.travel - 1) + " supplies" : "") +
+      ")</span></dd>" +
       "<dt>Likely finds</dt><dd>" +
       loc.finds +
       "</dd>" +
@@ -1984,30 +2603,32 @@ Small counts on the tabs show where something needs a look.
       (going.length
         ? going
             .map(function (s) {
-              return esc(s.name);
+              return esc(s.name) + (s.away ? " (away)" : "");
             })
             .join(", ")
         : '<span class="muted">No one</span>') +
       "</dd></dl>" +
-      (loc.locked
-        ? '<p class="small muted">Locked. Find a way through the checkpoint first.</p>' // TODO: unlock condition
+      (isLocked(loc)
+        ? fenceControls()
         : '<label class="small" for="send-who">Send</label>' +
           '<select id="send-who">' +
           alive()
             .map(function (s) {
               var tired = s.fatigue >= TIRED;
-              // Only mention what matters here: too tired, or already going somewhere.
-              var now = tired
-                ? " (too tired)"
-                : s.task === "Scavenge" && s.target
-                  ? " (→ " + findLoc(s.target).name + ")"
-                  : "";
+              // Only mention what matters here: away, too tired, or already going somewhere.
+              var now = s.away
+                ? " (away)"
+                : tired
+                  ? " (too tired)"
+                  : s.task === "Scavenge" && s.target
+                    ? " (→ " + findLoc(s.target).name + ")"
+                    : "";
               return (
                 '<option value="' +
                 s.id +
                 '"' +
                 (sender && s.id === sender.id ? " selected" : "") +
-                (tired ? " disabled" : "") +
+                (tired || s.away ? " disabled" : "") +
                 ">" +
                 esc(s.name) +
                 " · " +
@@ -2023,13 +2644,60 @@ Small counts on the tabs show where something needs a look.
           ">Send here to scavenge</button>" +
           '<p class="small muted" style="margin-top:.5rem">' +
           (sender
-            ? "They switch to Scavenge. May trigger an event or a mini-game."
-            : "Everyone is too tired. Let someone rest first.") +
+            ? "They switch to Scavenge. May trigger an event or a mini-game." +
+              (loc.travel > 1 ? " This trip keeps them away until tomorrow's dusk." : "")
+            : "Everyone at the shelter is too tired. Let someone rest first.") +
           "</p>") +
       "</div></div>";
   }
 
+  // Materials it takes to cut through a locked location's fence: less with a
+  // Builder or Mechanic at the shelter (see CHECKPOINT_CUT).
+  function fenceCost() {
+    var handy = home().some(function (s) {
+      return CHECKPOINT_CUT.skills.indexOf(s.skill) !== -1;
+    });
+    return handy ? CHECKPOINT_CUT.skilledCost : CHECKPOINT_CUT.cost;
+  }
+  // What the location panel shows for a locked place: how to get in, and a
+  // button to cut the fence (greyed out without enough materials).
+  function fenceControls() {
+    var cost = fenceCost();
+    var short = cost - state.resources.materials;
+    return (
+      '<p class="small muted">Locked. Cut through the fence, or keep scavenging nearby: someone may turn up a way in.</p>' +
+      '<button class="btn btn-block" type="button" id="cut-fence" data-sound="none"' +
+      (short > 0 ? " disabled" : "") +
+      ">Cut the fence · " +
+      plural(cost, "material") +
+      "</button>" +
+      '<p class="small ' +
+      (short > 0 ? "bad-text" : "muted") +
+      '" style="margin-top:.5rem">' +
+      (short > 0
+        ? "Need " + short + " more materials."
+        : cost === CHECKPOINT_CUT.skilledCost
+          ? "Your " + CHECKPOINT_CUT.skills.join(" or ") + " makes quick work of it."
+          : "A " + CHECKPOINT_CUT.skills.join(" or ") + " at the shelter would need only " + CHECKPOINT_CUT.skilledCost + ".") +
+      "</p>"
+    );
+  }
+
+  // Map clicks: cut the fence, select a location, or send someone to scavenge.
   $("panel-map").addEventListener("click", function (e) {
+    // Cut the fence on a locked location.
+    if (e.target.id === "cut-fence") {
+      var place = findLoc(state.selectedLocation);
+      var cost = fenceCost();
+      if (!isLocked(place) || state.resources.materials < cost) return;
+      state.resources.materials -= cost;
+      unlock(place.id, "exploring");
+      actionSounds(["rustyMetal", ["woodSplitting", 400], ["rustyHinges", 900]]);
+      toast("The fence is down. The " + place.name + " is open.");
+      renderAll();
+      if ($("send-btn")) $("send-btn").focus();
+      return;
+    }
     var locBtn = e.target.closest("[data-loc]");
     if (locBtn) {
       state.selectedLocation = locBtn.dataset.loc;
@@ -2045,11 +2713,12 @@ Small counts on the tabs show where something needs a look.
     if (e.target.id === "send-btn") {
       var s = findSurvivor($("send-who").value);
       var loc = findLoc(state.selectedLocation);
+      if (!s || s.away || isLocked(loc)) return;
       s.task = "Scavenge";
       s.target = loc.id;
       state.sendWho = null;
       // Out the door, then footsteps that get quieter the more dangerous the place.
-      AT.playSounds(["doorOpen", [SCAVENGE_STEPS[loc.danger], 300]]);
+      actionSounds(["doorOpen", [SCAVENGE_STEPS[loc.danger], 300]]);
       toast(s.name + " will scavenge the " + loc.name + " today.");
       renderAll();
       $("send-btn").focus();
@@ -2076,6 +2745,7 @@ Small counts on the tabs show where something needs a look.
     return D.tradeMarkup * (hasSkill("Negotiator") ? 0.75 : 1);
   }
 
+  // The Trade tab: the trader, both sides of the offer, and whether they'll accept.
   function renderTrade() {
     // No trader around: say so instead of showing an empty trade screen.
     var t = state.trader;
@@ -2131,6 +2801,7 @@ Small counts on the tabs show where something needs a look.
     if (hasSkill("Negotiator") && !t.tradedToday)
       msg += " Your negotiator gets you a better deal.";
 
+    // One side of the trade: a row per resource with − and + steppers.
     function column(side, title, haveLabel) {
       return (
         '<div class="card"><h3 class="eyebrow">' +
@@ -2236,6 +2907,7 @@ Small counts on the tabs show where something needs a look.
       (ok ? "" : " disabled") +
       ">Propose trade</button></div></div>";
   }
+  // Trade clicks: the steppers, Clear, and Propose trade.
   $("panel-trade").addEventListener("click", function (e) {
     var step = e.target.closest("[data-delta]");
     if (step) {
@@ -2302,7 +2974,7 @@ Small counts on the tabs show where something needs a look.
         "good",
       );
       toast("Trade accepted.");
-      AT.playSounds(["cardboardBox", ["canJiggle", 350]]);
+      actionSounds(["cardboardBox", ["canJiggle", 350]]);
       state.trade = { give: {}, get: {} };
       renderAll();
     }
@@ -2385,6 +3057,7 @@ Small counts on the tabs show where something needs a look.
             .join(""));
   }
 
+  // Log clicks: opening or closing a day, and the category filters.
   $("panel-log").addEventListener("click", function (e) {
     // Remember which days the player opens or closes. (The click lands
     // before the day folds, so the new state is the opposite of now.)
@@ -2392,7 +3065,7 @@ Small counts on the tabs show where something needs a look.
     if (sum) {
       var d = sum.parentElement;
       state.logOpen[d.dataset.day] = !d.open;
-      AT.playSound("turnPage");
+      actionSounds(["turnPage"]);
       return;
     }
     var f = e.target.closest("[data-filter]");
@@ -2419,9 +3092,14 @@ Small counts on the tabs show where something needs a look.
     var t = state.trader;
     if (!traderHere() || t.greeted) return;
     t.greeted = true;
-    AT.playSounds(["shopBell"].concat(t.greet ? [[t.greet, 700]] : []));
+    AT.playSounds(["shopBell"].concat(t.greet ? [[t.greet, 700]] : []), {
+      channel: "trader",
+      replace: true,
+    });
   }
 
+  // Shows one tab's panel and hides the rest. Opening the Log marks it read;
+  // opening Trade rings the shop bell (once a day).
   function selectTab(tab, focus) {
     tabs.forEach(function (t) {
       var on = t === tab;
@@ -2436,9 +3114,11 @@ Small counts on the tabs show where something needs a look.
   }
 
   tabs.forEach(function (tab, i) {
+    // Each tab opens on click.
     tab.addEventListener("click", function () {
       selectTab(tab);
     });
+    // Arrow keys, Home and End move between tabs (the ARIA tabs pattern).
     tab.addEventListener("keydown", function (e) {
       var next = {
         ArrowRight: i + 1,
@@ -2477,45 +3157,75 @@ Small counts on the tabs show where something needs a look.
       endDay();
       return;
     }
-    AT.playSound("menu");
+    actionSounds(["menu"]);
     $("confirm-list").innerHTML = problems.map(warnItem).join("");
     $("confirm-dialog").showModal();
     $("confirm-back").focus();
   });
+  // "Go back" closes the check so the player can fix things.
   $("confirm-back").addEventListener("click", function () {
     $("confirm-dialog").close();
   });
+  // "End day anyway" goes ahead despite the warnings.
   $("confirm-end").addEventListener("click", function () {
     $("confirm-dialog").close();
     endDay();
   });
 
+  // Dusk: works out everything the day's tasks did, then shows the Dusk report.
+  // Continue on the report moves on to the night event.
   function endDay() {
     // A match is struck as the light goes. The rest of dusk's sounds are cued
     // below and play with the Dusk report.
-    AT.playSound("match");
+    endScene();
+    sceneSounds(["match"]);
     // Everything logged from here on goes into the Dusk report pop-up.
     var duskMark = state.log.length;
     // This is dusk where the results come in.
     // Skill and trait effects are listed in common.js.
-    var scavenged = false;
+    var scavenged = false; // true if anyone came home tonight (some events need it)
     var scavengers = alive().filter(function (s) {
       return s.task === "Scavenge" && s.target;
     });
     scavengers.forEach(function (s) {
-      var loc = LOCATIONS.find(function (l) {
-        return l.id === s.target;
-      });
-      if (s.fatigue >= TIRED) {
-        addLog(
-          "exploring",
-          s.name + " was too tired to scavenge and stayed home.",
-        );
-        return;
+      var loc = findLoc(s.target);
+
+      // Already away on a long trip: one day closer to home. They only bring
+      // their haul back on the day the trip ends (away reaches 0).
+      if (s.away) {
+        s.away -= 1;
+        if (s.away > 0) {
+          addLog("exploring", s.name + " is still out at the " + loc.name + ".");
+          return;
+        }
+      } else {
+        if (s.fatigue >= TIRED) {
+          addLog(
+            "exploring",
+            s.name + " was too tired to scavenge and stayed home.",
+          );
+          return;
+        }
+        // Setting out on a long trip: away from tonight until dusk on the last day.
+        if (loc.travel > 1) {
+          s.away = loc.travel - 1;
+          addLog(
+            "exploring",
+            s.name +
+              " set out for the " +
+              loc.name +
+              ". Back at dusk " +
+              (s.away === 1 ? "tomorrow" : "in " + plural(s.away, "day")) +
+              ".",
+          );
+          return;
+        }
       }
       scavenged = true;
-      // Riskier places hold more, but every trip wears survivors out.
-      var found = randInt(1, 4) + (loc.danger - 1);
+      // Riskier places hold more, and longer trips bring back more, but every
+      // trip wears survivors out.
+      var found =
+        randInt(1, 4) + (loc.danger - 1) + EXTRA_PER_TRIP_DAY * (loc.travel - 1);
       if (s.trait === "Lucky")
         found = Math.max(found, randInt(1, 4) + (loc.danger - 1));
       if (s.skill === "Scavenger") found += 2;
@@ -2558,6 +3268,10 @@ Small counts on the tabs show where something needs a look.
           "exploring",
           "was attacked at the " + loc.name,
         );
+      }
+      // Sometimes they meet someone out there who wants to join (needs a free bed).
+      if (s.alive && rng() < (loc.people || 0)) {
+        recruit("exploring", "that " + s.name + " met at the " + loc.name);
       }
     });
 
@@ -2620,7 +3334,8 @@ Small counts on the tabs show where something needs a look.
       }
     });
 
-    alive().forEach(function (s) {
+    // Each survivor at the shelter does their task.
+    home().forEach(function (s) {
       if (s.task === "Build" && s.skill === "Mechanic" && s.fatigue < TIRED) {
         state.resources.materials += salvageAmount();
         addLog("base", s.name + " salvaged " + salvageAmount() + " materials.");
@@ -2675,9 +3390,10 @@ Small counts on the tabs show where something needs a look.
       }
     });
 
+    // Dinner. Anyone away on a trip lives off the land and isn't counted.
     var needFood = foodNeeded();
     var eaten = Math.min(state.resources.food, needFood);
-    var drunk = Math.min(state.resources.water, alive().length);
+    var drunk = Math.min(state.resources.water, home().length);
     state.resources.food -= eaten;
     state.resources.water -= drunk;
     // Dinner: the old fridge, a can cracked open, then water poured out.
@@ -2693,12 +3409,12 @@ Small counts on the tabs show where something needs a look.
 
     // Going short on food builds hunger; going short on water hurts right away.
     var shortFood = needFood - eaten;
-    var shortWater = alive().length - drunk;
+    var shortWater = home().length - drunk;
     if (shortFood > 0)
       addLog("base", "There was not enough food for everyone.", "bad");
     if (shortWater > 0)
       addLog("base", "There was not enough water for everyone.", "bad");
-    alive().forEach(function (s) {
+    home().forEach(function (s) {
       s.hunger = Math.max(
         0,
         Math.min(100, s.hunger + (shortFood > 0 ? 25 : -15)),
@@ -2726,9 +3442,7 @@ Small counts on the tabs show where something needs a look.
       });
       return;
     }
-    var pool = EVENTS.filter(function (ev) {
-      return !ev.needsScavenging || scavenged;
-    });
+    var tonight = pickEvent("night", scavenged);
     showReport({
       kicker: "Dusk · Day " + pad(state.day),
       title: "Dusk report",
@@ -2737,7 +3451,12 @@ Small counts on the tabs show where something needs a look.
       next: function () {
         state.phase = "night";
         renderAll();
-        openEvent(pool[Math.floor(rng() * pool.length)]);
+        if (tonight) openEvent(tonight, "night");
+        else {
+          eventMark = state.log.length;
+          state.eventTime = "night";
+          finishNight();
+        }
       },
     });
   }
@@ -2746,6 +3465,7 @@ Small counts on the tabs show where something needs a look.
   // Shows a list of log entries and waits for Continue before running opts.next.
   // opts = { kicker, title, entries, art (optional image name), button, next }
   var reportNext = null;
+  // Fills in and opens the report pop-up.
   function showReport(opts) {
     $("report-kicker").textContent = opts.kicker;
     $("report-title").textContent = opts.title;
@@ -2760,7 +3480,7 @@ Small counts on the tabs show where something needs a look.
               l.tone +
               '"><span class="chip">' +
               LOG_LABELS[l.cat] +
-              "</span><span>" +
+              '</span><span class="line-text">' +
               esc(l.text) +
               "</span></li>"
             );
@@ -2771,57 +3491,129 @@ Small counts on the tabs show where something needs a look.
     reportNext = opts.next;
     $("report-dialog").showModal();
     $("report-continue").focus();
+    // Type the lines out at the Text speed setting (click the list to skip).
+    var lines = Array.prototype.slice.call(
+      $("report-list").querySelectorAll(".line-text"),
+    );
+    skipTyping = AT.typeLines(
+      lines,
+      lines.map(function (el) {
+        return el.textContent;
+      }),
+    );
     // Paper for the report, with everything cued since the last one stacked on top.
-    AT.playSounds(["turnPage"].concat(cues));
+    sceneSounds(["turnPage"].concat(cues));
     cues = [];
   }
 
+  // Continue closes the report and runs whatever comes next (opts.next).
   $("report-continue").addEventListener("click", function () {
     var next = reportNext;
     reportNext = null;
+    // Moving on: cut off whatever this report was still playing (or about to
+    // play), and finish any text still being typed.
+    endScene();
+    skipTyping();
     $("report-dialog").close();
     if (next) next();
   });
 
+  // ---------- Typing ----------
+  // Skips whatever text is still being typed (see AT.typeText in common.js).
+  // Replaced each time new text starts typing.
+  var skipTyping = function () {};
+  // Clicking the text being typed shows it all at once.
+  $("report-list").addEventListener("click", function () {
+    skipTyping();
+  });
+  $("event-text").addEventListener("click", function () {
+    skipTyping();
+  });
+
   // ---------- Event overlay ----------
-  // Everything logged from the night event on goes into the Dawn report pop-up.
-  var nightMark = 0;
-  function openEvent(ev) {
-    nightMark = state.log.length;
+  // Picks an event for "night" or "morning" that fits the run right now
+  // (see the needs... fields on EVENTS), avoiding the last one shown.
+  // Returns null when nothing fits.
+  function pickEvent(time, scavenged) {
+    var pool = EVENTS.filter(function (ev) {
+      return (
+        (ev.time || "night") === time &&
+        (!ev.needsScavenging || scavenged) &&
+        (!ev.needsFreeBed || freeBeds() > 0) &&
+        (!ev.needsLocked || isLocked(findLoc(ev.needsLocked)))
+      );
+    });
+    var fresh = pool.filter(function (ev) {
+      return ev.title !== state.lastEvent;
+    });
+    if (fresh.length) pool = fresh;
+    return pool.length ? pool[Math.floor(rng() * pool.length)] : null;
+  }
+
+  // The small grey line under each choice: what it needs and what it does.
+  function choiceNote(c) {
+    var cost = c.cost || {};
+    var costParts = Object.keys(cost).map(function (k) {
+      return cost[k] + " " + k;
+    });
+    var parts = [];
+    if (c.kind === "skill") parts.push("Requires: " + c.skill);
+    if (c.kind === "minigame") parts.push("Starts a mini-game");
+    if (costParts.length) parts.push("Costs: " + costParts.join(", "));
+    else if (c.kind === "cost") parts.push("No cost");
+    if (c.lose)
+      parts.push(
+        "Lose " +
+          Object.keys(c.lose)
+            .map(function (k) {
+              return c.lose[k] + " " + k;
+            })
+            .join(", "),
+      );
+    if (c.fatigue) parts.push("Tiring");
+    if (c.injure || c.hurtOne) parts.push("Risky");
+    if (c.morale) parts.push(c.morale < 0 ? "Hurts morale" : "Lifts morale");
+    if (c.reward) parts.push("Brings supplies");
+    if (c.recruit || (c.win && c.win.recruit))
+      parts.push(freeBeds() > 0 ? "They join you" : "No free bed for them");
+    if (c.unlock || (c.win && c.win.unlock))
+      parts.push("Opens the " + findLoc(c.unlock || c.win.unlock).name);
+    return parts.join(" · ");
+  }
+
+  // Can the group pick this choice right now? Skill choices need a rested
+  // survivor with that skill at the shelter; anything with a cost needs the supplies.
+  function choiceOk(c) {
+    var cost = c.cost || {};
+    var affordable = Object.keys(cost).every(function (k) {
+      return state.resources[k] >= cost[k];
+    });
+    if (c.kind === "skill") return Boolean(skilled(c.skill)) && affordable;
+    return affordable;
+  }
+
+  // Everything logged from the event on goes into the next report pop-up.
+  var eventMark = 0;
+  // Shows an event. time is "night" or "morning" and decides what comes after
+  // it: the night raid and Dawn report, or the Morning report and the day.
+  function openEvent(ev, time) {
+    eventMark = state.log.length;
     state.currentEvent = ev;
+    state.currentChoice = null;
+    state.eventTime = time || "night";
+    state.lastEvent = ev.title;
     state.eventsFaced += 1;
-    $("event-kicker").textContent = "Night " + pad(state.day) + " · Event";
+    $("event-kicker").textContent =
+      state.eventTime === "morning"
+        ? "Day " + pad(state.day) + " · Morning"
+        : "Night " + pad(state.day) + " · Event";
     $("event-title").textContent = ev.title;
     // Event pictures live in assets/images/png/; events without `art` use the generic one.
     $("event-art").src =
       "assets/images/png/" + (ev.art || "event_generic") + ".png";
-    $("event-text").textContent = ev.text;
     $("event-choices").innerHTML = ev.choices
       .map(function (c, i) {
-        var note,
-          ok = true;
-        var cost = c.cost || {};
-        var costParts = Object.keys(cost).map(function (k) {
-          return cost[k] + " " + k;
-        });
-        var affordable = Object.keys(cost).every(function (k) {
-          return state.resources[k] >= cost[k];
-        });
-        if (c.kind === "skill") {
-          note = "Requires: " + c.skill;
-          if (costParts.length) note += " · Costs: " + costParts.join(", ");
-          if (c.fatigue) note += " · Tiring";
-          if (c.injure) note += " · Risky";
-          ok = !!skilled(c.skill) && affordable;
-        } else if (c.kind === "minigame") {
-          note = "Starts a mini-game";
-        } else {
-          note = costParts.length
-            ? "Costs: " + costParts.join(", ")
-            : "No cost";
-          if (c.morale) note += " · Hurts morale";
-          ok = affordable;
-        }
+        var ok = choiceOk(c);
         return (
           '<button class="event-choice" type="button" data-choice="' +
           i +
@@ -2832,43 +3624,85 @@ Small counts on the tabs show where something needs a look.
           "<strong>" +
           c.label +
           "</strong><span>" +
-          note +
+          choiceNote(c) +
           (ok ? "" : " — not available") +
           "</span></button>"
         );
       })
       .join("");
     $("event-dialog").showModal();
-    AT.playSounds(ev.sounds);
+    // The story text types out at the Text speed setting.
+    skipTyping = AT.typeText($("event-text"), ev.text);
+    sceneSounds(ev.sounds);
   }
 
+  // Picking a choice: mini-game choices open the mini-game (or auto-resolve it),
+  // every other choice is carried out straight away.
   $("event-choices").addEventListener("click", function (e) {
     var btn = e.target.closest("[data-choice]");
-    if (!btn) return;
+    if (!btn || btn.disabled) return;
     var ev = state.currentEvent;
     var c = ev.choices[Number(btn.dataset.choice)];
+    skipTyping();
     $("event-dialog").close();
-    AT.playSounds(c.sounds);
+    // The event's own sounds stop; the choice's sounds take over.
+    endScene();
+    sceneSounds(c.sounds);
     if (c.kind === "minigame") {
+      state.currentChoice = c; // its `win` effects apply in resolveMinigame()
       if (AT.load().minigames === "auto") autoResolve(c.game);
       else openMinigame(c.game);
       return;
     }
+    applyChoice(ev, c);
+    afterEvent();
+  });
+
+  // Carries out a picked choice: pays its cost, writes the outcome to the log,
+  // then applies each of its effects (see the list above EVENTS).
+  function applyChoice(ev, c) {
+    // Who does the work for a skill choice (read before costs change anything).
+    var who = c.kind === "skill" ? skilled(c.skill) : null;
     Object.keys(c.cost || {}).forEach(function (k) {
       state.resources[k] -= c.cost[k];
     });
     addLog("event", ev.title + ": " + c.outcome);
-    var who = c.kind === "skill" ? skilled(c.skill) : null;
     if (who && c.fatigue) tire(who, c.fatigue);
     if (who && c.injure) hurt(who, c.injure, "event", "was hurt");
+    // Losses take as much as there is.
+    if (c.lose) {
+      var lost = {};
+      Object.keys(c.lose).forEach(function (k) {
+        lost[k] = Math.min(state.resources[k], c.lose[k]);
+        state.resources[k] -= lost[k];
+      });
+      addLog("event", "Lost " + AT.minigames.describe(lost) + ".", "bad");
+    }
+    if (c.reward) gainSupplies("event", REWARDS[c.reward]());
+    if (c.recruit) recruit("event", ev.from || "after the " + ev.title.toLowerCase());
+    if (c.unlock) unlock(c.unlock, "event");
     if (c.morale) {
       alive().forEach(function (s) {
         changeMorale(s, c.morale);
       });
-      addLog("event", "Morale dropped (" + c.morale + ").");
+      addLog(
+        "event",
+        (c.morale < 0 ? "Morale dropped (" : "Morale rose (+") + c.morale + ").",
+        c.morale < 0 ? "bad" : "good",
+      );
     }
-    finishNight();
-  });
+    if (c.hurtOne) {
+      var victim = pickVictim();
+      if (victim) hurt(victim, c.hurtOne, "event", "was hurt");
+    }
+  }
+
+  // After an event (and any mini-game): the night raid for night events, or
+  // the Morning report for morning events.
+  function afterEvent() {
+    if (state.eventTime === "morning") finishMorning();
+    else finishNight();
+  }
 
   //Mini-game overlay. The games themselves live in js/minigames.js.
   // mg = { name, game (controller), phase: 'ready' | 'playing' | 'done', result }
@@ -2916,6 +3750,8 @@ Small counts on the tabs show where something needs a look.
     $("mg-start").focus();
   }
 
+  // The mini-game's main button: Start begins the game; once it's over the
+  // same button reads Continue and applies the result.
   $("mg-start").addEventListener("click", function () {
     if (!mg) return;
     if (mg.phase === "ready") {
@@ -2935,6 +3771,7 @@ Small counts on the tabs show where something needs a look.
       );
     }
   });
+  // Auto-resolve skips the mini-game and rolls the result instead.
   $("mg-auto").addEventListener("click", function () {
     if (!mg || mg.phase !== "ready") return;
     mg.game.stop();
@@ -2946,14 +3783,18 @@ Small counts on the tabs show where something needs a look.
   function autoResolve(name) {
     var r = AT.minigames.autoResult(name, rng() < D.autoWin, rng);
     var sounds = AUTO_SOUNDS[name];
-    if (sounds) AT.playSounds(r.won ? sounds.won : sounds.lost);
+    if (sounds) sceneSounds(r.won ? sounds.won : sounds.lost);
     resolveMinigame(name, r.won, true, r.reward);
   }
 
-  // Close the mini-game overlay, log the result, apply any reward, and finish the night.
+  // Close the mini-game overlay, log the result, apply any reward, then carry on
+  // to the night raid (or the Morning report for a morning event).
   // result is the mini-game's full result (optional). Search adds bites and biteDamage.
   function resolveMinigame(name, won, auto, reward, result) {
     if ($("minigame-dialog").open) $("minigame-dialog").close();
+    // Leaving the mini-game cuts off its sounds (see minigames.js).
+    AT.stopChannel("minigame");
+    AT.stopChannel("searching");
     var how = auto ? " (auto-resolved)" : "";
     var cat =
       name === "Defense" ? "night" : name === "Search" ? "exploring" : "event";
@@ -2977,13 +3818,21 @@ Small counts on the tabs show where something needs a look.
         "good",
       );
     }
+    // A won mini-game can carry extra effects from the event choice
+    // (e.g. covering a newcomer as they run in means they join).
+    var choice = state.currentChoice;
+    state.currentChoice = null;
+    if (won && choice && choice.win) {
+      var ev = state.currentEvent || {};
+      if (choice.win.reward) gainSupplies(cat, REWARDS[choice.win.reward]());
+      if (choice.win.recruit) {
+        recruit(cat, ev.from || "after the " + (ev.title || "fight").toLowerCase());
+      }
+      if (choice.win.unlock) unlock(choice.win.unlock, cat);
+    }
     // Zombie bites from the Search mini-game all land on one survivor (Cowards are spared if possible).
     if (result && result.bites) {
-      var biteable = alive().filter(function (s) {
-        return s.trait !== "Coward";
-      });
-      if (!biteable.length) biteable = alive();
-      var bittenOne = biteable[Math.floor(rng() * biteable.length)];
+      var bittenOne = pickVictim();
       hurt(
         bittenOne,
         result.bites * result.biteDamage,
@@ -2994,16 +3843,11 @@ Small counts on the tabs show where something needs a look.
       );
     }
     if (!won) {
-      // A loss injures one survivor (Cowards are spared if anyone else is around).
-      // Tough survivors take half damage inside hurt().
-      var pool = alive().filter(function (s) {
-        return s.trait !== "Coward";
-      });
-      if (!pool.length) pool = alive();
-      var victim = pool[Math.floor(rng() * pool.length)];
-      hurt(victim, 30, cat, "was injured");
+      // A loss injures one survivor at the shelter (Cowards are spared if
+      // anyone else is around). Tough survivors take half damage inside hurt().
+      hurt(pickVictim(), 30, cat, "was injured");
     }
-    finishNight();
+    afterEvent();
   }
 
   // The horde grows over the run. It starts at threatBase and reaches
@@ -3029,7 +3873,7 @@ Small counts on the tabs show where something needs a look.
     for (var shot = 0; shot < Math.min(shots, 4); shot++) {
       cue("gunshot", 1500 + shot * 350);
     }
-    alive().forEach(function (s) {
+    home().forEach(function (s) {
       if (s.task === "Guard") tire(s, 15);
     });
     if (def >= threat) {
@@ -3055,10 +3899,10 @@ Small counts on the tabs show where something needs a look.
       "The horde broke through (defense " + def + " vs " + threat + ").",
       "bad",
     );
-    // Bigger breaches catch more people.
+    // Bigger breaches catch more people. Anyone away on a trip is safe.
     var hits = breach >= 15 ? 2 : 1;
-    for (var i = 0; i < hits && alive().length; i++) {
-      var list = alive();
+    for (var i = 0; i < hits && home().length; i++) {
+      var list = home();
       var v = list[Math.floor(rng() * list.length)];
       hurt(
         v,
@@ -3094,7 +3938,7 @@ Small counts on the tabs show where something needs a look.
         kicker: kicker,
         title: "No one survived the night",
         art: "end_lose",
-        entries: state.log.slice(nightMark),
+        entries: state.log.slice(eventMark),
         button: "See how it ended",
         next: function () {
           endRun(false);
@@ -3110,7 +3954,7 @@ Small counts on the tabs show where something needs a look.
         kicker: kicker,
         title: "You made it",
         art: "end_win",
-        entries: state.log.slice(nightMark),
+        entries: state.log.slice(eventMark),
         button: "See how it ended",
         next: function () {
           endRun(true);
@@ -3138,16 +3982,52 @@ Small counts on the tabs show where something needs a look.
         " made it through the night.",
     );
     renderAll();
+    // Some mornings bring an event before the day starts (decided now so the
+    // button can say what comes next).
+    var morning = rng() < MORNING_EVENT_CHANCE ? pickEvent("morning") : null;
     showReport({
       kicker: "Dawn · Day " + pad(state.day),
       title: "Dawn report",
-      entries: state.log.slice(nightMark),
-      button: "Start day " + state.day,
+      entries: state.log.slice(eventMark),
+      button: morning ? "Continue" : "Start day " + state.day,
       next: function () {
-        state.phase = "day";
-        renderAll();
+        if (morning) openEvent(morning, "morning");
+        else startDay();
       },
     });
+  }
+
+  // Runs after a morning event: shows what it led to, then starts the day.
+  function finishMorning() {
+    state.currentEvent = null;
+    renderAll();
+    var entries = state.log.slice(eventMark);
+    if (!alive().length) {
+      showReport({
+        kicker: "Day " + pad(state.day) + " · Morning",
+        title: "No one is left",
+        art: "end_lose",
+        entries: entries,
+        button: "See how it ended",
+        next: function () {
+          endRun(false);
+        },
+      });
+      return;
+    }
+    showReport({
+      kicker: "Day " + pad(state.day) + " · Morning",
+      title: "This morning",
+      entries: entries,
+      button: "Start day " + state.day,
+      next: startDay,
+    });
+  }
+
+  // The day begins: the player can plan again.
+  function startDay() {
+    state.phase = "day";
+    renderAll();
   }
 
   // ---------- Leaving the page ----------
@@ -3172,6 +4052,7 @@ Small counts on the tabs show where something needs a look.
       }).length,
       locations: LOCATIONS.length,
       events: state.eventsFaced,
+      found: state.recruited,
       group: group,
     });
     leaving = true;
@@ -3187,10 +4068,12 @@ Small counts on the tabs show where something needs a look.
 
   // ---------- Pause menu ----------
   var pauseDialog = $("pause-dialog");
+  // True if any pop-up is open (Esc only pauses when none is).
   function anyDialogOpen() {
     return document.querySelector("dialog[open]") !== null;
   }
 
+  // The Pause button and the Esc key open the pause menu.
   $("pause-btn").addEventListener("click", function () {
     pauseDialog.showModal();
   });
@@ -3200,13 +4083,16 @@ Small counts on the tabs show where something needs a look.
       pauseDialog.showModal();
     }
   });
+  // Resume closes the pause menu.
   $("resume").addEventListener("click", function () {
     pauseDialog.close();
   });
+  // Options and How to play open in a new tab so the run keeps going here.
   pauseDialog.addEventListener("click", function (e) {
     var open = e.target.closest("[data-open]");
     if (open) window.open(open.dataset.open + "?from=game", "_blank");
   });
+  // Quit to title ends the run without the "are you sure?" warning.
   $("quit").addEventListener("click", function () {
     leaving = true;
     location.href = "index.html";
@@ -3246,8 +4132,14 @@ Small counts on the tabs show where something needs a look.
 
   addLog("base", "The group settled into " + state.shelter + ".");
   state.logSeen = state.log.length; // the opening line doesn't count as news
-  // Load the game's sounds now so the first gunshot or footstep isn't late.
+  // Load the game's sounds now so the first gunshot or footstep isn't late,
+  // and start loading the ambience so each phase can switch in straight away.
   AT.preloadSounds();
+  AT.preloadAmbience(
+    Object.keys(PHASE_SOUNDS).map(function (p) {
+      return PHASE_SOUNDS[p].ambience;
+    }),
+  );
   renderAll();
   // The door shuts behind the group as they settle in.
   AT.playSound("doorClose");

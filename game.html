@@ -30,6 +30,8 @@ It provides the interface for playing the game.
       type="image/png"
       href="assets/icons/anothertally_icon.png"
     />
+    <!-- common.js (settings, sound, text speed) runs first; minigames.js must load
+         before game.js, which uses AT.minigames. -->
     <script src="js/common.js"></script>
     <script src="js/minigames.js" defer></script>
     <script src="js/game.js" defer></script>
@@ -246,7 +248,9 @@ It provides the interface for playing the game.
       </div>
 
       <!-- 
-      ---------- Overlay for the day and night events ----------
+      ---------- Overlay for the night and morning events ----------
+      The text types out at the Text speed setting (click it to skip), and the
+      choices are built by openEvent() in game.js.
       -->
       <dialog id="event-dialog" aria-labelledby="event-title">
         <p class="eyebrow" id="event-kicker">Night 01 · Event</p>
@@ -262,7 +266,8 @@ It provides the interface for playing the game.
       </dialog>
 
       <!-- 
-      ---------- Overlay for the mini-games ----------
+      ---------- Overlay for the Dusk, Dawn and Morning reports ----------
+      Lists what happened since the last report. Continue moves the turn on.
       -->
       <dialog id="report-dialog" aria-labelledby="report-title">
         <p class="eyebrow" id="report-kicker">Dusk · Day 01</p>
@@ -277,6 +282,11 @@ It provides the interface for playing the game.
           Continue
         </button>
       </dialog>
+
+      <!-- 
+      ---------- Overlay for the mini-games ----------
+      minigames.js draws the game inside #mg-canvas and updates the timer and stats.
+      -->
       <dialog id="minigame-dialog" class="wide" aria-labelledby="mg-title">
         <div class="mg-head">
           <div>

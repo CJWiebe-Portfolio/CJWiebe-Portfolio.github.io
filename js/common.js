@@ -15,6 +15,18 @@ The code includes functions for loading, saving, and resetting settings,
 as well as applying display settings to the HTML document. 
 It also includes a seeded random number generator and utility functions 
 for escaping HTML and managing survivor skills and traits.
+
+What's in here, in order:
+  Game settings ........ load, save and reset the Options (localStorage)
+  Display settings ..... text size, contrast and motion as data-attributes on <html>
+  Page hand-off ........ the run setup and result passed between pages (sessionStorage)
+  Seed generator ....... repeatable random numbers when a seed is set
+  Game attributes ...... skills, traits, survivor names and portraits
+  Background music ..... one looping track that carries on from page to page
+  Ambience ............. the looping sound for each phase, with occasional extras
+  Text speed ........... types story text out one letter at a time
+  Game logistics ....... the AT object every other script uses
+  Sound effects ........ every sound by name, stacking, channels and button sounds
 =========================================================
 */
 
@@ -104,6 +116,8 @@ for escaping HTML and managing survivor skills and traits.
       // storage blocked
     }
   }
+  // Reads a value from sessionStorage. With remove = true it is deleted after
+  // reading, so the hand-off only works once (a refresh can't reuse it).
   function read(key, remove) {
     try {
       var raw = sessionStorage.getItem(key);
@@ -185,6 +199,114 @@ for escaping HTML and managing survivor skills and traits.
     Hoarder: "Also brings back 1 material when scavenging.",
   };
 
+  // Names for survivors. new-game.js picks the starting group from this list,
+  // and game.js picks from it again for anyone recruited during a run.
+  var NAMES = [
+    "Liam",
+    "Olivia",
+    "Noah",
+    "Emma",
+    "Oliver",
+    "Amelia",
+    "Theodore",
+    "Charlotte",
+    "James",
+    "Mia",
+    "Henry",
+    "Sophia",
+    "Mateo",
+    "Isabella",
+    "Elijah",
+    "Evelyn",
+    "Lucas",
+    "Ava",
+    "William",
+    "Sofia",
+    "Benjamin",
+    "Camila",
+    "Levi",
+    "Harper",
+    "Ezra",
+    "Luna",
+    "Sebastian",
+    "Eleanor",
+    "Jack",
+    "Violet",
+    "Daniel",
+    "Aurora",
+    "Samuel",
+    "Elizabeth",
+    "Michael",
+    "Eliana",
+    "Grayson",
+    "Hazel",
+    "Ethan",
+    "Chloe",
+    "Asher",
+    "Ellie",
+    "John",
+    "Nora",
+    "Hudson",
+    "Gianna",
+    "Luca",
+    "Lily",
+    "Leo",
+    "Emily",
+    "Elias",
+    "Aria",
+    "Kai",
+    "Scarlett",
+    "Theo",
+    "Willow",
+    "Owen",
+    "Penelope",
+    "Alexander",
+    "Zoe",
+    "Dylan",
+    "Ella",
+    "Gabriel",
+    "Avery",
+    "Santiago",
+    "Elena",
+    "Mason",
+    "Abigail",
+    "Julian",
+    "Mila",
+    "David",
+    "Lucy",
+    "Joseph",
+    "Isla",
+    "Carter",
+    "Ivy",
+    "Matthew",
+    "Layla",
+    "Luke",
+    "Delilah",
+    "Aiden",
+    "Riley",
+    "Jackson",
+    "Lainey",
+    "Maverick",
+    "Nova",
+    "Miles",
+    "Grace",
+    "Wyatt",
+    "Goldie",
+    "Thomas",
+    "Winter",
+    "Isaac",
+    "Arabella",
+    "Josiah",
+    "Anastasia",
+    "Hugo",
+    "Myla",
+    "Arthur",
+    "Leah",
+  ];
+
+  // Portrait numbers: assets/images/png/survivor-1.png to survivor-6.png.
+  var AVATARS = [1, 2, 3, 4, 5, 6];
+
   /*
 ===============================================================
 ---------- Background Music ----------
@@ -244,9 +366,11 @@ for escaping HTML and managing survivor skills and traits.
 
   // Browsers block sound until the player clicks or presses a key on the page.
   function waitForInteraction() {
+    // Try again on the first click or key press (each listener runs once).
     document.addEventListener("pointerdown", resumeAudio, { once: true });
     document.addEventListener("keydown", resumeAudio, { once: true });
   }
+  // Restarts the music and ambience once the browser allows sound.
   function resumeAudio() {
     var s = load();
     syncMusic(s);
@@ -260,28 +384,51 @@ for escaping HTML and managing survivor skills and traits.
 */
 
   // One looping background track at a time (morning, day, evening, night),
-  // layered on top of the music. Changing it fades the old track out and the
-  // new one in. game.js picks the track with AT.setAmbience("ambDay").
+  // layered on top of the music. Changing it fades the old track out quickly and
+  // the new one in. game.js picks the track with AT.setAmbience("ambDay").
   // extras (optional) = { sounds: [names], every: [min, max] seconds }: one-off
   // sounds layered over the loop at random moments, like a distant groan.
-  var AMBIENCE_FADE_MS = 1500;
+  var AMBIENCE_FADE_IN_MS = 1000;
+  var AMBIENCE_FADE_OUT_MS = 500; // short, so clicking through phases keeps up
   var amb = { name: null, el: null, extrasTimer: null };
+  // Each track is loaded once and kept, so coming back to a phase (dusk, night,
+  // dawn, day) starts straight away instead of loading the file again.
+  var ambTracks = {};
 
+  // Returns the looping Audio element for a file, creating it the first time.
+  function ambTrack(src) {
+    if (!ambTracks[src]) {
+      ambTracks[src] = new Audio(src);
+      ambTracks[src].loop = true;
+      ambTracks[src].preload = "auto";
+      ambTracks[src].volume = 0;
+    }
+    return ambTracks[src];
+  }
+
+  // Starts loading ambience tracks before they are needed (game.js calls this at the start of a run).
+  function preloadAmbience(names) {
+    names.forEach(function (name) {
+      [].concat(SOUNDS[name] || []).forEach(ambTrack);
+    });
+  }
+
+  // Switches the looping ambience to a sound name from SOUNDS (null for silence).
+  // Does nothing if that track is already playing.
   function setAmbience(name, extras) {
     if (amb.name === (name || null)) return;
+    // The old phase's extras (a groan, a far-off sound) stop with it.
     clearTimeout(amb.extrasTimer);
-    if (amb.el) {
-      var old = amb.el;
-      fadeTo(old, 0, AMBIENCE_FADE_MS, function () {
+    stopChannel("ambienceExtras", AMBIENCE_FADE_OUT_MS);
+    var old = amb.el;
+    amb.name = name || null;
+    amb.el = name ? ambTrack(pickSrc(name)) : null;
+    if (old && old !== amb.el) {
+      fadeTo(old, 0, AMBIENCE_FADE_OUT_MS, function () {
         old.pause();
       });
     }
-    amb.name = name || null;
-    amb.el = null;
     if (!name) return;
-    amb.el = new Audio(pickSrc(name));
-    amb.el.loop = true;
-    amb.el.volume = 0;
     syncAmbience(load());
     if (extras) scheduleExtra(extras);
   }
@@ -293,7 +440,7 @@ for escaping HTML and managing survivor skills and traits.
       amb.el.pause();
       return;
     }
-    fadeTo(amb.el, volumeFor(amb.name, s), AMBIENCE_FADE_MS);
+    fadeTo(amb.el, volumeFor(amb.name, s), AMBIENCE_FADE_IN_MS);
     if (amb.el.paused) amb.el.play().catch(waitForInteraction);
   }
 
@@ -304,7 +451,9 @@ for escaping HTML and managing survivor skills and traits.
     amb.extrasTimer = setTimeout(
       function () {
         var list = extras.sounds;
-        playSound(list[Math.floor(Math.random() * list.length)]);
+        playSound(list[Math.floor(Math.random() * list.length)], {
+          channel: "ambienceExtras",
+        });
         scheduleExtra(extras);
       },
       (min + Math.random() * (max - min)) * 1000,
@@ -326,8 +475,87 @@ for escaping HTML and managing survivor skills and traits.
     }, 50);
   }
 
+  // Keeps a volume between 0 and 1.
   function clamp(v) {
     return Math.min(1, Math.max(0, v));
+  }
+
+  /*
+===============================================================
+---------- Text Speed ----------
+===============================================================
+The Text speed option (0 to 100) types story text out one letter at a time.
+100 shows it at once, and so does Reduce motion. Screen readers always get the
+whole text straight away from a hidden copy, so nobody has to wait for it.
+*/
+
+  // Milliseconds between letters: 0 at speed 100, 30 at speed 0 (15 at the default 50).
+  function charDelay(s) {
+    s = s || load();
+    if (s.reduceMotion) return 0;
+    return Math.round((100 - Number(s.textSpeed)) * 0.3);
+  }
+
+  // Sets an element up to be typed: a hidden full copy for screen readers,
+  // then the visible part, split into the letters typed so far and the rest.
+  // The rest is invisible but still takes up room (see .untyped in style.css),
+  // so the dialog doesn't grow and push the buttons around while text types.
+  function prepareTyping(el, text) {
+    el.innerHTML =
+      '<span class="visually-hidden"></span>' +
+      '<span aria-hidden="true"><span></span><span class="untyped"></span></span>';
+    el.firstChild.textContent = text;
+    var shown = el.lastChild;
+    shown.lastChild.textContent = text;
+    return shown;
+  }
+
+  // Shows the first `count` letters of text in a prepared element.
+  function showLetters(shown, text, count) {
+    shown.firstChild.textContent = text.slice(0, count);
+    shown.lastChild.textContent = text.slice(count);
+  }
+
+  // Types text into el, then calls done. Returns a function that skips
+  // straight to the end (call it when the player clicks the text).
+  function typeText(el, text, done) {
+    return typeLines([el], [text], done);
+  }
+
+  // Types several elements one after another (e.g. the lines of a report).
+  // texts[i] goes into els[i]. Returns a skip function like typeText().
+  function typeLines(els, texts, done) {
+    var ms = charDelay();
+    var finished = false;
+    // Shows all the text at once and stops typing (runs only once).
+    function finish() {
+      if (finished) return;
+      finished = true;
+      clearInterval(timer);
+      els.forEach(function (el, i) {
+        el.textContent = texts[i];
+      });
+      if (done) done();
+    }
+    if (!ms || !els.length) {
+      finish();
+      return finish;
+    }
+    var shown = els.map(function (el, i) {
+      return prepareTyping(el, texts[i]);
+    });
+    var line = 0,
+      letter = 0;
+    var timer = setInterval(function () {
+      letter += 1;
+      showLetters(shown[line], texts[line], letter);
+      if (letter >= texts[line].length) {
+        line += 1;
+        letter = 0;
+        if (line >= els.length) finish();
+      }
+    }, ms);
+    return finish;
   }
 
   /*
@@ -341,6 +569,10 @@ for escaping HTML and managing survivor skills and traits.
     DEFAULTS: DEFAULTS,
     SKILLS: SKILLS,
     TRAITS: TRAITS,
+    NAMES: NAMES,
+    AVATARS: AVATARS,
+    typeText: typeText,
+    typeLines: typeLines,
     load: load,
     save: save,
     reset: reset,
@@ -559,6 +791,7 @@ for escaping HTML and managing survivor skills and traits.
 
   // Each file is loaded once and then copied for every play.
   var loadedSounds = {};
+  // Returns the loaded Audio element for a file, creating it the first time.
   function loadFile(src) {
     if (!loadedSounds[src]) {
       loadedSounds[src] = new Audio(src);
@@ -580,21 +813,64 @@ for escaping HTML and managing survivor skills and traits.
     });
   }
 
+  /*
+  ---------- Channels ----------
+  A channel is a named group of sounds that can be stopped together, including
+  sounds still waiting on a delay. game.js puts everything from a report or
+  event on the "scene" channel and stops it when the player clicks Continue,
+  so the dusk sounds don't drag on into the night.
+
+  With replace: true, a new sound first stops whatever is still playing (or
+  waiting to play) on its channel. Every button press uses the "button"
+  channel this way, so clicking quickly from one option to the next swaps the
+  sound instead of piling them on top of each other.
+  */
+  var STOP_FADE_MS = 300;
+  var channels = {};
+  // Returns a channel's record of playing sounds and waiting timers, creating it if needed.
+  function channel(name) {
+    if (!channels[name]) channels[name] = { playing: [], timers: [] };
+    return channels[name];
+  }
+
+  // Fades out everything playing on a channel and cancels anything still waiting.
+  function stopChannel(name, ms) {
+    var ch = channels[name];
+    if (!ch) return;
+    ch.timers.forEach(clearTimeout);
+    ch.timers = [];
+    ch.playing.forEach(function (a) {
+      stopSound(a, ms == null ? STOP_FADE_MS : ms);
+    });
+    ch.playing = [];
+  }
+
   // Plays a sound by name, using the Sound and Volume settings from the Options page.
   // opts (all optional):
-  //   delay:  wait this many milliseconds first (to stagger stacked sounds)
-  //   volume: extra level for this one play (1 = normal, 0.5 = half)
-  //   loop:   keep repeating until AT.stopSound() is called (not with delay)
-  //   gap:    skip it if the same sound started less than this many ms ago,
-  //           so fast repeats (like zombies hitting the wall) don't pile up
+  //   delay:   wait this many milliseconds first (to stagger stacked sounds)
+  //   volume:  extra level for this one play (1 = normal, 0.5 = half)
+  //   loop:    keep repeating until AT.stopSound() is called (not with delay)
+  //   gap:     skip it if the same sound started less than this many ms ago,
+  //            so fast repeats (like zombies hitting the wall) don't pile up
+  //   channel: the channel it belongs to (see Channels above)
+  //   replace: stop the rest of the channel first
+  //   fade:    how fast (ms) replace fades out the old sounds
   // Returns the playing copy so it can be stopped, or null.
   var lastPlayed = {};
+  // See the opts list above.
   function playSound(name, opts) {
     opts = opts || {};
+    if (opts.replace && opts.channel) stopChannel(opts.channel, opts.fade);
     if (opts.delay) {
-      setTimeout(function () {
-        playSound(name, { volume: opts.volume, gap: opts.gap });
+      var later = { volume: opts.volume, gap: opts.gap, channel: opts.channel };
+      var id = setTimeout(function () {
+        if (later.channel) {
+          var waiting = channel(later.channel).timers;
+          if (waiting.indexOf(id) !== -1) waiting.splice(waiting.indexOf(id), 1);
+        }
+        playSound(name, later);
       }, opts.delay);
+      if (opts.channel) channel(opts.channel).timers.push(id);
       return null;
     }
     var s = load();
@@ -608,6 +884,15 @@ for escaping HTML and managing survivor skills and traits.
       volumeFor(name, s) * (opts.volume == null ? 1 : opts.volume),
     );
     a.loop = Boolean(opts.loop);
+    if (opts.channel) {
+      var ch = channel(opts.channel);
+      ch.playing.push(a);
+      // A finished sound no longer needs stopping, so drop it from its channel.
+      a.addEventListener("ended", function () {
+        var i = ch.playing.indexOf(a);
+        if (i !== -1) ch.playing.splice(i, 1);
+      });
+    }
     a.play().catch(function () {});
     return a;
   }
@@ -615,10 +900,18 @@ for escaping HTML and managing survivor skills and traits.
   // Plays several sounds stacked on top of each other. Each item is a name,
   // or [name, delay in ms] to start that one a little later, e.g.
   // AT.playSounds(["doorOpen", ["carefulWalking", 300]]).
-  function playSounds(list) {
+  // opts: channel, replace and fade work as in playSound(). With replace, the
+  // whole stack replaces what was on the channel before.
+  function playSounds(list, opts) {
+    opts = opts || {};
+    if (opts.replace && opts.channel) stopChannel(opts.channel, opts.fade);
     (list || []).forEach(function (item) {
-      if (typeof item === "string") playSound(item);
-      else playSound(item[0], { delay: item[1], volume: item[2] });
+      var one = typeof item === "string" ? [item] : item;
+      playSound(one[0], {
+        delay: one[1],
+        volume: one[2],
+        channel: opts.channel,
+      });
     });
   }
 
@@ -638,11 +931,16 @@ for escaping HTML and managing survivor skills and traits.
     playSound("click");
   }
 
+  // Plays each button's sound when it's clicked (see the note at the top of this section).
   document.addEventListener("click", function (e) {
+    // Only buttons (and links styled as buttons) make a sound.
     var btn = e.target.closest("button, .btn");
     if (!btn || btn.disabled) return;
     var name = btn.dataset.sound || "click";
-    if (name !== "none") playSound(name);
+    // A new button press cuts off the last one's sound (see Channels).
+    if (name !== "none") {
+      playSound(name, { channel: "button", replace: true, fade: 120 });
+    }
 
     // Links load a new page, which cuts the sound off, so wait a moment first.
     // Skip this if another handler (like data-back) already took over the click,
@@ -667,6 +965,8 @@ for escaping HTML and managing survivor skills and traits.
   window.AT.playSound = playSound;
   window.AT.playSounds = playSounds;
   window.AT.stopSound = stopSound;
+  window.AT.stopChannel = stopChannel;
+  window.AT.preloadAmbience = preloadAmbience;
   window.AT.preloadSounds = preloadSounds;
   window.AT.setAmbience = setAmbience;
 })();
