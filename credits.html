@@ -10,10 +10,25 @@ DESCRIPTION:
 This is the credits page for Another Tally. 
 It lists the contributors and resources used in the game.
 =========================================================
+TABLE OF CONTENTS
+Ctrl+F a tag such as "[S3]" to jump to that section.
+Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
+=========================================================
+[S1] Head ........................ meta, title, icon, fonts, CSS, JS
+[S2] Page Header ................. back button, h1
+  [S3] Social Links .............. GitHub, LinkedIn, Portfolio, Instagram
+[S4] Made By ..................... creator, course, date
+[S5] Built With .................. HTML/CSS/JS, GitHub Pages
+[S6] Fonts & Assets .............. font licence, icons, sounds
+[S7] References .................. sound-effect citations
+[S8] Accessibility ............... accessibility statement
+[S9] Back to Title ............... bottom button
+=========================================================
 -->
 
 <!doctype html>
 <html lang="en">
+  <!-- #region [S1] Head -->
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -32,12 +47,15 @@ It lists the contributors and resources used in the game.
     />
     <script src="js/common.js"></script></head
   ><!-- Link to the common JavaScript files, css, fonts and other resources, site Icon, etc...-->
+  <!-- #endregion [S1] Head -->
 
   <body>
     <main class="page">
+      <!-- #region [S2] Page Header -->
       <header class="page-head">
         <a class="btn btn-sm" href="index.html" data-back>← Back</a>
         <h1>Credits</h1>
+        <!-- #region [S3] Social Links -->
         <!-- Links to the creator's profiles. They open in a new tab so this page stays open. -->
         <nav class="social-links" aria-label="Cygnus J. Wiebe online">
           <a
@@ -52,7 +70,9 @@ It lists the contributors and resources used in the game.
             href="https://www.linkedin.com/in/cygnus-j-wiebe"
             target="_blank"
             rel="noopener noreferrer"
-            >LinkedIn<span class="visually-hidden"> (opens in a new tab)</span></a
+            >LinkedIn<span class="visually-hidden">
+              (opens in a new tab)</span
+            ></a
           >
           <a
             class="btn btn-sm social social-portfolio"
@@ -68,57 +88,66 @@ It lists the contributors and resources used in the game.
             href="https://www.instagram.com/c.j.wiebe/"
             target="_blank"
             rel="noopener noreferrer"
-            >Instagram<span class="visually-hidden"> (opens in a new tab)</span></a
+            >Instagram<span class="visually-hidden">
+              (opens in a new tab)</span
+            ></a
           >
         </nav>
+        <!-- #endregion [S3] Social Links -->
       </header>
       <!-- Header for the page that displays the title and back button -->
+      <!-- #endregion [S2] Page Header -->
 
-      
-        <!-- Section describing the creator information -->
-        <section class="card" aria-labelledby="made-h">
-          <h2 id="made-h" class="eyebrow">Made by</h2>
-          <p style="font-size: 1.25rem; font-weight: 700; margin: 0.4rem 0">
-            Cygnus J. Wiebe
-          </p>
-          <p class="muted small" style="margin-top: 0.4rem">
-            This is the final project for INFS 634: Web System Design &amp;
-            Management<br /><br /><b>December 14th, 2026</b><br /><br />
-            McGill University, School of Information Studies
-          </p>
-        </section>
-        <!-- Section describing the technologies used -->
-        <section class="card" aria-labelledby="built-h">
-          <h2 id="built-h" class="eyebrow">Built with</h2>
-          <p style="margin-top: 0.4rem">HTML, CSS and JavaScript</p>
-          <p class="muted small" style="margin-top: 0.4rem">
-            Hosted on GitHub Pages
-          </p>
-        </section>
+      <!-- #region [S4] Made By -->
+      <!-- Section describing the creator information -->
+      <section class="card" aria-labelledby="made-h">
+        <h2 id="made-h" class="eyebrow">Made by</h2>
+        <p style="font-size: 1.25rem; font-weight: 700; margin: 0.4rem 0">
+          Cygnus J. Wiebe
+        </p>
+        <p class="muted small" style="margin-top: 0.4rem">
+          This is the final project for INFS 634: Web System Design &amp;
+          Management<br /><br /><b>December 14th, 2026</b><br /><br />
+          McGill University, School of Information Studies
+        </p>
+      </section>
+      <!-- #endregion [S4] Made By -->
+      <!-- #region [S5] Built With -->
+      <!-- Section describing the technologies used -->
+      <section class="card" aria-labelledby="built-h">
+        <h2 id="built-h" class="eyebrow">Built with</h2>
+        <p style="margin-top: 0.4rem">HTML, CSS and JavaScript</p>
+        <p class="muted small" style="margin-top: 0.4rem">
+          Hosted on GitHub Pages
+        </p>
+      </section>
+      <!-- #endregion [S5] Built With -->
 
-        <section class="card" aria-labelledby="assets-h">
-          <!-- Section describing the fonts and assets used -->
-          <h2 id="assets-h" class="eyebrow">Fonts and assets</h2>
-          <ul style="margin: 0.4rem 0 0; padding-left: 1.1rem">
-            <li>
-              The fonts that were used in this project are licensed under the
-              SIL Open Font License, via Google Fonts
-            </li>
-            <li>
-              The icons and pictures used in the project were created by
-              <b>Cygnus J. Wiebe</b>.
-            </li>
-            <li>
-              The sound effects used in the project were created by
-              <b>Cygnus J. Wiebe</b>.
-            </li>
-          </ul>
-        </section>
-      </div>
+      <!-- #region [S6] Fonts & Assets -->
+      <section class="card" aria-labelledby="assets-h">
+        <!-- Section describing the fonts and assets used -->
+        <h2 id="assets-h" class="eyebrow">Fonts and assets</h2>
+        <ul style="margin: 0.4rem 0 0; padding-left: 1.1rem">
+          <li>
+            The fonts that were used in this project are licensed under the SIL
+            Open Font License, via Google Fonts
+          </li>
+          <li>
+            The icons and pictures used in the project were created by
+            <b>Cygnus J. Wiebe</b>.
+          </li>
+          <li>
+            The sound effects used in the project were created by
+            <b>Cygnus J. Wiebe</b>.
+          </li>
+        </ul>
+      </section>
+      <!-- #endregion [S6] Fonts & Assets -->
 
-      <section class="card" aria-labelledby="a11y-h" style="margin-top: 1rem">
-        <!-- Section on the accessibility features -->
-        <h2 id="a11y-h" class="eyebrow">References:</h2>
+      <!-- #region [S7] References -->
+      <section class="card" aria-labelledby="refs-h" style="margin-top: 1rem">
+        <!-- Section listing the references -->
+        <h2 id="refs-h" class="eyebrow">References:</h2>
         <p style="margin-top: 0.4rem">
           “Download Free Media from OxidVideos | Pixabay.” Accessed November 17,
           2026. https://pixabay.com/users/oxidvideos-37598254/. Freesound.
@@ -148,7 +177,9 @@ It lists the contributors and resources used in the game.
           https://pixabay.com/sound-effects/nature-rooster-crowing-in-the-morning-513410/.
         </p>
       </section>
+      <!-- #endregion [S7] References -->
 
+      <!-- #region [S8] Accessibility -->
       <section class="card" aria-labelledby="a11y-h" style="margin-top: 1rem">
         <!-- Section on the accessibility features -->
         <h2 id="a11y-h" class="eyebrow">Accessibility</h2>
@@ -160,10 +191,13 @@ It lists the contributors and resources used in the game.
           adjusted for better readability.
         </p>
       </section>
+      <!-- #endregion [S8] Accessibility -->
 
+      <!-- #region [S9] Back to Title -->
       <div class="page-actions" style="justify-content: flex-start">
         <a class="btn btn-primary" href="index.html">Back to title</a>
       </div>
+      <!-- #endregion [S9] Back to Title -->
     </main>
   </body>
 </html>

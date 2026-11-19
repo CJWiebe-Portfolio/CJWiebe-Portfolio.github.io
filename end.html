@@ -10,10 +10,21 @@ DESCRIPTION:
 This is the end page for Another Tally. 
 It displays the results of the game.
 =========================================================
+TABLE OF CONTENTS
+Ctrl+F a tag such as "[S3]" to jump to that section.
+Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
+=========================================================
+[S1] Head ........................ meta, title, icon, fonts, CSS, JS
+[S2] Result Art & Title .......... win/lose image, heading
+[S3] Stat Cards .................. filled in by end.js
+[S4] Your Group .................. survivor list
+[S5] Next Steps .................. Play again, Back to title
+=========================================================
 -->
 
 <!doctype html>
 <html lang="en">
+  <!-- #region [S1] Head -->
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -35,10 +46,12 @@ It displays the results of the game.
     <script src="js/end.js" defer></script>
   </head>
   <!-- Contains the information for the end page -->
+  <!-- #endregion [S1] Head -->
 
   <body>
     <!-- The body contains the a summary of the game run and allows the user to play again or go back to the title screen. -->
     <main class="end">
+      <!-- #region [S2] Result Art & Title -->
       <!-- Win or lose picture, swapped in by end.js -->
       <img
         class="end-art"
@@ -49,21 +62,28 @@ It displays the results of the game.
       <p class="eyebrow">Run summary</p>
       <h1 id="end-title">No run to show</h1>
       <p class="muted" id="end-sub">Finish a run to see its summary here.</p>
+      <!-- #endregion [S2] Result Art & Title -->
 
+      <!-- #region [S3] Stat Cards -->
       <!-- One card per stat (days survived, survivors found, and so on), built by end.js -->
       <div class="stat-grid" id="stats"></div>
+      <!-- #endregion [S3] Stat Cards -->
 
+      <!-- #region [S4] Your Group -->
       <!-- Everyone who was in the group and what happened to them (hidden until there's a run to show) -->
       <section class="card group" id="group" aria-labelledby="group-h" hidden>
         <h2 id="group-h" class="eyebrow">Your group</h2>
         <ul id="group-list"></ul>
       </section>
+      <!-- #endregion [S4] Your Group -->
 
+      <!-- #region [S5] Next Steps -->
       <!-- Next steps -->
       <div class="page-actions">
         <a class="btn btn-primary" href="new-game.html">Play again</a>
         <a class="btn" href="index.html">Back to title</a>
       </div>
+      <!-- #endregion [S5] Next Steps -->
     </main>
   </body>
 </html>

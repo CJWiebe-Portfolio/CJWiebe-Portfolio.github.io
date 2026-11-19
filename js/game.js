@@ -31,8 +31,65 @@ How this file is laid out:
 Lines marked [TUNE THESE] or [WORK IN PROGRESS NEEDS TUNING] are balance
 numbers to adjust after playtesting.
 =========================================================
+TABLE OF CONTENTS
+Ctrl+F a tag such as "[S3]" to jump to that section.
+Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
+=========================================================
+[S1] Game Screen: Start-up
+[S2] Static Game Data
+  [S3] Facilities
+  [S4] Map Locations
+  [S5] Events
+    [S6] Night events
+    [S7] Morning events
+  [S8] Mini-game Descriptions
+  [S9] Sounds
+  [S10] Log Labels & Filters
+[S11] Run State
+[S12] Helpers
+  [S13] Recruiting
+  [S14] Facility Checks
+  [S15] Bed Count
+  [S16] Guard Count
+  [S17] Night Defense
+  [S18] Builders & Build Costs
+  [S19] Health, Morale & Fatigue
+  [S20] Log & Skill Checks
+  [S21] Toast & Sound Cues
+[S22] Plan checks
+  [S23] Lookups
+  [S24] Traders
+  [S25] Food, Healing & Salvage
+  [S26] Task Info
+  [S27] Dusk & Tonight Forecasts
+  [S28] Plan Warnings
+[S29] Header
+[S30] Side Panel
+[S31] Tab badges
+[S32] Base Tab
+  [S33] Builder picker
+[S34] Survivors Tab
+[S35] Map Tab
+  [S36] Fence Controls
+[S37] Trade Tab
+[S38] Log Tab
+[S39] Tab Switching
+[S40] End Day to Dawn
+  [S41] Dusk (endDay)
+  [S42] Report pop-up
+  [S43] Typing
+  [S44] Event overlay
+  [S45] Mini-game Overlay
+  [S46] Night Raid
+  [S47] Finish Night, Morning & Start Day
+[S48] Leaving, Pause & Start-up
+  [S49] Leaving the Page
+  [S50] Pause Menu
+  [S51] Start-up (Go)
+=========================================================
 */
 
+// #region [S1] Game Screen: Start-up
 /*
 =========================================================
 ---------- Game Screen ----------
@@ -63,6 +120,8 @@ numbers to adjust after playtesting.
   var randInt = function (min, max) {
     return min + Math.floor(rng() * (max - min + 1));
   };
+// #endregion [S1] Game Screen: Start-up
+  // #region [S2] Static Game Data
   /*
 =========================================================
 ---------- Static game data [WORK IN PROGRESS NEEDS TUNING] ----------
@@ -179,6 +238,7 @@ numbers to adjust after playtesting.
   // Defines tasks that survivors can be assigned to each day
   var TASKS = ["Rest", "Scavenge", "Build", "Guard", "Cook", "Heal"];
 
+  // #region [S3] Facilities
   /* 
 ---------- Facilities [TUNE THESE] ----------
 Every facility starts unbuilt and has 3 tiers. Each tier has a name, a short
@@ -373,7 +433,9 @@ are in the FX table below so the rules and the descriptions stay together.
       guardBonus: [0, 0, 0, 3],
     },
   };
+  // #endregion [S3] Facilities
 
+  // #region [S4] Map Locations
   /* 
 ---------- Map Locations and there button x/y coordinates [WORK IN PROGRESS NEEDS TUNING] ----------
 */
@@ -472,7 +534,9 @@ are in the FX table below so the rules and the descriptions stay together.
     },
   ];
   var SHELTER_POS = { x: 41, y: 45 };
+  // #endregion [S4] Map Locations
 
+  // #region [S5] Events
   /* 
 ---------- Events [WORK IN PROGRESS NEEDS TUNING] ----------
 One event happens every night, and some mornings (MORNING_EVENT_CHANCE).
@@ -509,6 +573,7 @@ and any of these (all optional):
   sounds   played stacked when the choice is picked
 */
   var EVENTS = [
+    // #region [S6] Night events
     // ---------- Night events ----------
     {
       title: "Knocking at the gate",
@@ -841,7 +906,9 @@ and any of these (all optional):
         },
       ],
     },
+    // #endregion [S6] Night events
 
+    // #region [S7] Morning events
     // ---------- Morning events ----------
     {
       title: "A stranger on the road",
@@ -937,6 +1004,7 @@ and any of these (all optional):
         },
       ],
     },
+    // #endregion [S7] Morning events
   ];
 
   // Supplies that event choices bring in (see `reward` above). Each one rolls
@@ -985,7 +1053,9 @@ and any of these (all optional):
 
   // Each extra day of a long trip brings back this many extra supplies.
   var EXTRA_PER_TRIP_DAY = 2; // [TUNE THESE]
+  // #endregion [S5] Events
 
+  // #region [S8] Mini-game Descriptions
   /* 
 ---------- Minigame descriptions ----------
 */
@@ -994,7 +1064,9 @@ and any of these (all optional):
     Lockpick: "Turn the pins in the right order before time runs out.",
     Search: "Find the supplies hidden in the room.",
   };
+  // #endregion [S8] Mini-game Descriptions
 
+  // #region [S9] Sounds
   /* 
 ---------- Sounds ----------
 Sound names are listed in common.js (SOUNDS). A list of names plays them
@@ -1040,7 +1112,9 @@ stacked on top of each other; [name, ms] starts that one a little later.
       lost: ["rummage", ["zombieScream", 600]],
     },
   };
+  // #endregion [S9] Sounds
 
+  // #region [S10] Log Labels & Filters
   /* 
 ---------- Logs will record all that happens ----------
 */
@@ -1059,7 +1133,10 @@ stacked on top of each other; [name, ms] starts that one a little later.
     { id: "trade", label: "Trade" },
     { id: "base", label: "Base" },
   ];
+  // #endregion [S10] Log Labels & Filters
+  // #endregion [S2] Static Game Data
 
+  // #region [S11] Run State
   /*
 =========================================================
 ---------- Run State ----------
@@ -1119,7 +1196,9 @@ stacked on top of each other; [name, ms] starts that one a little later.
     hordeRoll: randInt(-3, 3), // tonight's horde is threatTonight() + this; rolled each dawn
   };
   var leaving = false; // true once the run is over, so leaving the page doesn't ask "are you sure?"
+  // #endregion [S11] Run State
 
+  // #region [S12] Helpers
   /*
 =========================================================
 ---------- Helpers: survivors ----------
@@ -1164,6 +1243,7 @@ stacked on top of each other; [name, ms] starts that one a little later.
     return pool[Math.floor(rng() * pool.length)];
   }
 
+  // #region [S13] Recruiting
   /*
 ---------- Recruiting ----------
 New survivors join from scavenging trips (each location's `people` chance) and
@@ -1253,6 +1333,8 @@ they can't stay. Names, skills, traits and portraits come from common.js.
     state.suppliesGathered += total;
     addLog(cat, "Brought back " + AT.minigames.describe(gained) + ".", "good");
   }
+  // #endregion [S13] Recruiting
+  // #region [S14] Facility Checks
   // ---------- Checks the state of a facility ----------
   function facility(id) {
     return state.facilities.find(function (f) {
@@ -1271,16 +1353,22 @@ they can't stay. Names, skills, traits and portraits come from common.js.
   function currentTier(f) {
     return f.level ? f.tiers[f.level - 1] : null;
   }
+  // #endregion [S14] Facility Checks
+  // #region [S15] Bed Count
   // ---------- Checks the number of available beds ----------
   function bedCount() {
     return fx("beds", "sleeps");
   }
+  // #endregion [S15] Bed Count
+  // #region [S16] Guard Count
   // ---------- Checks the number of available guards ----------
   function guards() {
     return home().filter(function (s) {
       return s.task === "Guard";
     }).length;
   }
+  // #endregion [S16] Guard Count
+  // #region [S17] Night Defense
   // ---------- Checks the night defense value ----------
   // How much night defense one survivor adds. Skills/traits are defined in common.js.
   function guardPower(s) {
@@ -1308,7 +1396,9 @@ they can't stay. Names, skills, traits and portraits come from common.js.
   function wallsFinishToday() {
     return facility("walls").building === 1 && builders().length > 0;
   } // [WORK IN PROGRESS NEEDS TUNING]
+  // #endregion [S17] Night Defense
 
+  // #region [S18] Builders & Build Costs
   // Survivors on Build who are rested enough to work.
   function builders() {
     return home().filter(function (s) {
@@ -1339,7 +1429,9 @@ they can't stay. Names, skills, traits and portraits come from common.js.
     var t = nextTier(f);
     return t ? Math.max(1, t.days - fx("workshop", "fasterBy")) : 0;
   }
+  // #endregion [S18] Builders & Build Costs
 
+  // #region [S19] Health, Morale & Fatigue
   // Heals a survivor by a specified amount, ensuring health does not exceed 100 and updating status if health is above 60.
   function heal(s, amount) {
     s.health = Math.min(100, s.health + amount);
@@ -1383,7 +1475,9 @@ they can't stay. Names, skills, traits and portraits come from common.js.
   function tire(s, amount) {
     s.fatigue = Math.max(0, Math.min(100, s.fatigue + amount));
   }
+  // #endregion [S19] Health, Morale & Fatigue
 
+  // #region [S20] Log & Skill Checks
   // Adds an entry to the game log with the current day, category, and text.
   // tone is optional: "good" or "bad" adds a coloured marker in the report pop-up.
   function addLog(cat, text, tone) {
@@ -1406,7 +1500,9 @@ they can't stay. Names, skills, traits and portraits come from common.js.
         return a.fatigue - b.fatigue;
       })[0];
   }
+  // #endregion [S20] Log & Skill Checks
 
+  // #region [S21] Toast & Sound Cues
   // Displays a toast notification with the specified text.
   function toast(text) {
     var t = $("toast");
@@ -1455,7 +1551,10 @@ they can't stay. Names, skills, traits and portraits come from common.js.
     var p = PHASE_SOUNDS[state.phase];
     if (p) AT.setAmbience(p.ambience, p.extras);
   }
+  // #endregion [S21] Toast & Sound Cues
+  // #endregion [S12] Helpers
 
+  // #region [S22] Plan checks
   /* 
 =============================================================== 
 ---------- Plan checks ----------
@@ -1464,6 +1563,7 @@ These look at today's plan without changing anything. The Today panel,
 the tab badges, the survivor cards and the End day check all use them,
 so they always agree with each other.
 */
+  // #region [S23] Lookups
   var DANGER_LABELS = ["", "Low", "Medium", "High"];
 
   // "1 day", "2 days": a number with its word, plural when needed.
@@ -1494,6 +1594,8 @@ so they always agree with each other.
       return s.task === "Scavenge" && s.target === locId;
     });
   }
+  // #endregion [S23] Lookups
+  // #region [S24] Traders
   // True while a trader is visiting.
   function traderHere() {
     return state.trader.leaves > 0;
@@ -1567,6 +1669,8 @@ so they always agree with each other.
       "good",
     );
   }
+  // #endregion [S24] Traders
+  // #region [S25] Food, Healing & Salvage
   // Food the group eats at dusk (also used by the dusk itself).
   // Survivors away on a trip live off what they find, so only those at home eat.
   function foodNeeded() {
@@ -1604,7 +1708,9 @@ so they always agree with each other.
   function salvageAmount() {
     return 2 + fx("workshop", "salvage");
   }
+  // #endregion [S25] Food, Healing & Salvage
 
+  // #region [S26] Task Info
   // What a survivor's task will actually do today.
   // Returns { text, level, fix }:
   //   level is "" (fine), "info" (does nothing useful) or "bad" (needs fixing)
@@ -1753,7 +1859,9 @@ so they always agree with each other.
     }
     return { text: "", level: "" };
   }
+  // #endregion [S26] Task Info
 
+  // #region [S27] Dusk & Tonight Forecasts
   // What dusk will do to food and water, before anything scavengers bring home.
   function duskForecast() {
     var food = {
@@ -1799,7 +1907,9 @@ so they always agree with each other.
       }[level],
     };
   }
+  // #endregion [S27] Dusk & Tonight Forecasts
 
+  // #region [S28] Plan Warnings
   // Everything worth fixing before the day ends. These show in the Today
   // panel, and End day asks "end anyway?" while any are left.
   function planWarnings() {
@@ -1871,7 +1981,10 @@ so they always agree with each other.
       "</li>"
     );
   }
+  // #endregion [S28] Plan Warnings
+  // #endregion [S22] Plan checks
 
+  // #region [S29] Header
   /* 
 =============================================================== 
 ---------- Header ----------
@@ -1904,7 +2017,9 @@ so they always agree with each other.
     }).join("");
     document.title = state.shelter + " · Day " + state.day + " — Another Tally";
   }
+  // #endregion [S29] Header
 
+  // #region [S30] Side Panel
   /* 
 =============================================================== 
 ---------- Side Panel ----------
@@ -1982,7 +2097,9 @@ so they always agree with each other.
     // Things to fix before ending the day.
     $("warnings").innerHTML = planWarnings().map(warnItem).join("");
   }
+  // #endregion [S30] Side Panel
 
+  // #region [S31] Tab badges
   /* 
 =============================================================== 
 ---------- Tab badges ----------
@@ -2043,7 +2160,9 @@ Small counts on the tabs show where something needs a look.
       unseen === 1 ? "new entry" : "new entries",
     );
   }
+  // #endregion [S31] Tab badges
 
+  // #region [S32] Base Tab
   /* 
 =============================================================== 
 ---------- Base Tab ----------
@@ -2244,6 +2363,7 @@ Small counts on the tabs show where something needs a look.
     renderAll();
   }
 
+  // #region [S33] Builder picker
   // ---------- Builder picker ----------
   var buildFor = null;
   // Opens the "Who builds this?" pop-up for a facility when nobody is on Build.
@@ -2305,7 +2425,10 @@ Small counts on the tabs show where something needs a look.
     buildFor = null;
     $("build-dialog").close();
   });
+  // #endregion [S33] Builder picker
+  // #endregion [S32] Base Tab
 
+  // #region [S34] Survivors Tab
   /* 
 =============================================================== 
 ---------- Survivors Tab ----------
@@ -2456,7 +2579,9 @@ Small counts on the tabs show where something needs a look.
     );
     if (again) again.focus();
   });
+  // #endregion [S34] Survivors Tab
 
+  // #region [S35] Map Tab
   /* 
 =============================================================== 
 ---------- Map Tab ----------
@@ -2651,6 +2776,7 @@ Small counts on the tabs show where something needs a look.
       "</div></div>";
   }
 
+  // #region [S36] Fence Controls
   // Materials it takes to cut through a locked location's fence: less with a
   // Builder or Mechanic at the shelter (see CHECKPOINT_CUT).
   function fenceCost() {
@@ -2724,7 +2850,10 @@ Small counts on the tabs show where something needs a look.
       $("send-btn").focus();
     }
   });
+  // #endregion [S36] Fence Controls
+  // #endregion [S35] Map Tab
 
+  // #region [S37] Trade Tab
   /* 
 =============================================================== 
 ---------- Trade Tab ----------
@@ -2979,7 +3108,9 @@ Small counts on the tabs show where something needs a look.
       renderAll();
     }
   });
+  // #endregion [S37] Trade Tab
 
+  // #region [S38] Log Tab
   /* 
 =============================================================== 
 ---------- Log Tab ----------
@@ -3076,7 +3207,9 @@ Small counts on the tabs show where something needs a look.
       .querySelector('[data-filter="' + state.logFilter + '"]')
       .focus();
   });
+  // #endregion [S38] Log Tab
 
+  // #region [S39] Tab Switching
   /* 
 =============================================================== 
 ---------- Tabs (ARIA tabs pattern: click, or Left/Right/Home/End) ----------
@@ -3145,7 +3278,9 @@ Small counts on the tabs show where something needs a look.
     if (dlg) dlg.close();
     selectTab($("tab-" + go.dataset.goto), true);
   });
+  // #endregion [S39] Tab Switching
 
+  // #region [S40] End Day to Dawn
   /* 
 ---------- End day → dusk → night event → (mini-game) → dawn ----------
 */
@@ -3172,6 +3307,7 @@ Small counts on the tabs show where something needs a look.
     endDay();
   });
 
+  // #region [S41] Dusk (endDay)
   // Dusk: works out everything the day's tasks did, then shows the Dusk report.
   // Continue on the report moves on to the night event.
   function endDay() {
@@ -3460,7 +3596,9 @@ Small counts on the tabs show where something needs a look.
       },
     });
   }
+  // #endregion [S41] Dusk (endDay)
 
+  // #region [S42] Report pop-up
   // ---------- Report pop-up ----------
   // Shows a list of log entries and waits for Continue before running opts.next.
   // opts = { kicker, title, entries, art (optional image name), button, next }
@@ -3517,7 +3655,9 @@ Small counts on the tabs show where something needs a look.
     $("report-dialog").close();
     if (next) next();
   });
+  // #endregion [S42] Report pop-up
 
+  // #region [S43] Typing
   // ---------- Typing ----------
   // Skips whatever text is still being typed (see AT.typeText in common.js).
   // Replaced each time new text starts typing.
@@ -3529,7 +3669,9 @@ Small counts on the tabs show where something needs a look.
   $("event-text").addEventListener("click", function () {
     skipTyping();
   });
+  // #endregion [S43] Typing
 
+  // #region [S44] Event overlay
   // ---------- Event overlay ----------
   // Picks an event for "night" or "morning" that fits the run right now
   // (see the needs... fields on EVENTS), avoiding the last one shown.
@@ -3703,7 +3845,9 @@ Small counts on the tabs show where something needs a look.
     if (state.eventTime === "morning") finishMorning();
     else finishNight();
   }
+  // #endregion [S44] Event overlay
 
+  // #region [S45] Mini-game Overlay
   //Mini-game overlay. The games themselves live in js/minigames.js.
   // mg = { name, game (controller), phase: 'ready' | 'playing' | 'done', result }
   var mg = null;
@@ -3849,7 +3993,9 @@ Small counts on the tabs show where something needs a look.
     }
     afterEvent();
   }
+  // #endregion [S45] Mini-game Overlay
 
+  // #region [S46] Night Raid
   // The horde grows over the run. It starts at threatBase and reaches
   // threatBase + threatPeak on the last night, whatever the run length.
   function threatTonight() {
@@ -3924,7 +4070,9 @@ Small counts on the tabs show where something needs a look.
       );
     }
   }
+  // #endregion [S46] Night Raid
 
+  // #region [S47] Finish Night, Morning & Start Day
   // Runs after the night event (and any mini-game) is resolved: the horde
   // attacks, then the Dawn report shows the whole night before the new day.
   function finishNight() {
@@ -4029,7 +4177,11 @@ Small counts on the tabs show where something needs a look.
     state.phase = "day";
     renderAll();
   }
+  // #endregion [S47] Finish Night, Morning & Start Day
+  // #endregion [S40] End Day to Dawn
 
+  // #region [S48] Leaving, Pause & Start-up
+  // #region [S49] Leaving the Page
   // ---------- Leaving the page ----------
   function endRun(won) {
     var group = state.survivors.map(function (s) {
@@ -4065,7 +4217,9 @@ Small counts on the tabs show where something needs a look.
     e.preventDefault();
     e.returnValue = "";
   });
+  // #endregion [S49] Leaving the Page
 
+  // #region [S50] Pause Menu
   // ---------- Pause menu ----------
   var pauseDialog = $("pause-dialog");
   // True if any pop-up is open (Esc only pauses when none is).
@@ -4113,7 +4267,9 @@ Small counts on the tabs show where something needs a look.
       e.preventDefault();
     });
   });
+  // #endregion [S50] Pause Menu
 
+  // #region [S51] Start-up (Go)
   // ---------- Go ----------
   function renderAll() {
     renderHeader();
@@ -4152,4 +4308,6 @@ Small counts on the tabs show where something needs a look.
   renderAll();
   // The door shuts behind the group as they settle in.
   AT.playSound("doorClose");
+  // #endregion [S51] Start-up (Go)
+  // #endregion [S48] Leaving, Pause & Start-up
 })();

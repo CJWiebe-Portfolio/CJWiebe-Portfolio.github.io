@@ -23,8 +23,19 @@ DESCRIPTION:
   Sounds play on the "minigame" channel (see sfx below), so game.js can cut
   them off when the player leaves the mini-game.
 =========================================================
+TABLE OF CONTENTS
+Ctrl+F a tag such as "[S3]" to jump to that section.
+Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
+=========================================================
+[S1] Shared Utilities
+[S2] Defense Mini-game
+[S3] Lockpick Mini-game
+[S4] Search Mini-game
+[S5] Auto-resolve Results
+=========================================================
 */
 
+// #region [S1] Shared Utilities
 /* 
 =============================================================== 
 ---------- Shared Utilities ----------
@@ -130,7 +141,9 @@ DESCRIPTION:
     b.querySelector("span").textContent = summary;
     arena.appendChild(b);
   }
+// #endregion [S1] Shared Utilities
 
+  // #region [S2] Defense Mini-game
   /* 
 =============================================================== 
 ---------- Defense minigame where players click zombies before they reach the wall ----------
@@ -386,7 +399,9 @@ DESCRIPTION:
       stop: stop,
     };
   }
+  // #endregion [S2] Defense Mini-game
 
+  // #region [S3] Lockpick Mini-game
   /* 
 =============================================================== 
 ---------- Lockpick minigame where players set the pins in the right order before time runs out ----------
@@ -549,7 +564,9 @@ DESCRIPTION:
       stop: stop,
     };
   }
+  // #endregion [S3] Lockpick Mini-game
 
+  // #region [S4] Search Mini-game
   /* 
 =============================================================== 
 ---------- Search minigame where players find hidden supplies ----------
@@ -862,7 +879,9 @@ DESCRIPTION:
   }
 
   var GAMES = { Defense: Defense, Lockpick: Lockpick, Search: Search };
+  // #endregion [S4] Search Mini-game
 
+  // #region [S5] Auto-resolve Results
   /* 
 =============================================================== 
 ---------- Auto-result function for minigames ----------
@@ -891,4 +910,5 @@ DESCRIPTION:
     autoResult: autoResult,
     describe: describe,
   };
+  // #endregion [S5] Auto-resolve Results
 })();

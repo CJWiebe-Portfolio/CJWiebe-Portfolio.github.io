@@ -11,10 +11,24 @@ This is the new game setup page for Another Tally.
 It allows the player to choose a shelter name, difficulty, game length, 
 and starting survivors.
 =========================================================
+TABLE OF CONTENTS
+Ctrl+F a tag such as "[S3]" to jump to that section.
+Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
+=========================================================
+[S1] Head ........................ meta, title, icon, fonts, CSS, JS
+[S2] Page Header ................. back button, h1
+  [S3] Social Links .............. GitHub, LinkedIn, Portfolio, Instagram
+[S4] Step 1: Shelter Name ........ text input
+[S5] Step 2: Difficulty .......... Easy / Normal / Hard cards
+[S6] Step 3: Game Length ......... 15 / 30 / 45 days
+[S7] Step 4: Survivors ........... survivor list, reroll
+[S8] Form Buttons ................ Quit, How to play, Start game
+=========================================================
 -->
 
 <!doctype html>
 <html lang="en">
+  <!-- #region [S1] Head -->
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -35,15 +49,18 @@ and starting survivors.
     <script src="js/new-game.js" defer></script>
   </head>
   <!-- Link to the common JavaScript files, css, fonts and other resources, site Icon, etc...-->
+  <!-- #endregion [S1] Head -->
 
   <body>
     <main class="page page-narrow">
+      <!-- #region [S2] Page Header -->
       <header class="page-head">
         <!-- Header for the page that displays the title and back button -->
         <a class="btn btn-sm" href="index.html" data-back>← Back</a>
         <div>
           <h1>New game</h1>
         </div>
+        <!-- #region [S3] Social Links -->
         <nav class="social-links" aria-label="Cygnus J. Wiebe online">
           <a
             class="btn btn-sm social social-github"
@@ -80,8 +97,11 @@ and starting survivors.
             ></a
           >
         </nav>
+        <!-- #endregion [S3] Social Links -->
       </header>
+      <!-- #endregion [S2] Page Header -->
       <form id="new-game-form" class="setup-form" novalidate>
+        <!-- #region [S4] Step 1: Shelter Name -->
         <!-- Step 1: records the name of the Shelter that the player will use, uses a random name if none is provided -->
         <section class="card setup-step">
           <label class="step-title" for="shelter"
@@ -101,7 +121,9 @@ and starting survivors.
             Leave blank to use the suggested name.
           </p>
         </section>
+        <!-- #endregion [S4] Step 1: Shelter Name -->
 
+        <!-- #region [S5] Step 2: Difficulty -->
         <!-- Step 2: difficulty -->
         <fieldset class="card setup-step">
           <legend class="step-title">
@@ -141,7 +163,9 @@ and starting survivors.
             </label>
           </div>
         </fieldset>
+        <!-- #endregion [S5] Step 2: Difficulty -->
 
+        <!-- #region [S6] Step 3: Game Length -->
         <!-- Step 3: game length -->
         <fieldset class="card setup-step">
           <legend class="step-title">
@@ -160,7 +184,9 @@ and starting survivors.
             >
           </div>
         </fieldset>
+        <!-- #endregion [S6] Step 3: Game Length -->
 
+        <!-- #region [S7] Step 4: Survivors -->
         <!-- Step 4: starting survivors, with a reroll if they don't like the initial selection -->
         <section class="card setup-step">
           <div class="section-head">
@@ -183,7 +209,9 @@ and starting survivors.
             aria-live="polite"
           ></ul>
         </section>
+        <!-- #endregion [S7] Step 4: Survivors -->
 
+        <!-- #region [S8] Form Buttons -->
         <div class="page-actions setup-actions">
           <!-- Allows players to cancel or start the game -->
           <a class="btn btn-danger btn-block" href="index.html">
@@ -191,13 +219,12 @@ and starting survivors.
           </a>
 
           <a class="btn btn-quiet btn-block" href="how-to-play.html">
-            How to play <span aria-hidden="true">↗</span>
+            How to play
           </a>
 
-          <button class="btn btn-primary btn-block" href="new-game.html">
-            Start game
-          </button>
+          <button class="btn btn-primary btn-block">Start game</button>
         </div>
+        <!-- #endregion [S8] Form Buttons -->
       </form>
     </main>
   </body>

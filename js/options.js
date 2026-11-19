@@ -13,6 +13,16 @@ DESCRIPTION:
   display and sound settings to the page. Moving the Volume slider or turning
   Sound on plays a click so the player can hear the new level.
 =========================================================
+TABLE OF CONTENTS
+Ctrl+F a tag such as "[S3]" to jump to that section.
+Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
+=========================================================
+[S1] Setup
+[S2] Fill Form From Settings
+[S3] Read Form Into Settings
+[S4] Save on Change
+[S5] Reset & Start-up
+=========================================================
 */
 
 /* 
@@ -25,9 +35,12 @@ DESCRIPTION:
 (function () {
   "use strict";
 
+  // #region [S1] Setup
   var form = document.getElementById("options-form");
   var msg = document.getElementById("saved-msg");
+  // #endregion [S1] Setup
 
+  // #region [S2] Fill Form From Settings
   // Puts saved settings into the form controls.
   function fill(s) {
     Array.prototype.forEach.call(form.elements, function (el) {
@@ -38,7 +51,9 @@ DESCRIPTION:
     });
     form.elements.volume.disabled = !s.sound;
   }
+  // #endregion [S2] Fill Form From Settings
 
+  // #region [S3] Read Form Into Settings
   // Reads the form back into a settings object.
   function read() {
     var s = AT.load();
@@ -55,7 +70,9 @@ DESCRIPTION:
     s.volume = Number(form.elements.volume.value);
     return s;
   }
+  // #endregion [S3] Read Form Into Settings
 
+  // #region [S4] Save on Change
   // Saves every change straight away (there is no Save button).
   function onChange(e) {
     var s = read();
@@ -73,11 +90,14 @@ DESCRIPTION:
   form.addEventListener("submit", function (e) {
     e.preventDefault();
   });
+  // #endregion [S4] Save on Change
 
+  // #region [S5] Reset & Start-up
   document.getElementById("reset").addEventListener("click", function () {
     fill(AT.reset());
     msg.textContent = "Options reset to defaults.";
   });
 
   fill(AT.load());
+  // #endregion [S5] Reset & Start-up
 })();

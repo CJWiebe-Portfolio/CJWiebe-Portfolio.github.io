@@ -10,10 +10,30 @@ DESCRIPTION:
 This is the main game page for Another Tally. 
 It provides the interface for playing the game.
 =========================================================
+TABLE OF CONTENTS
+Ctrl+F a tag such as "[S3]" to jump to that section.
+Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
+=========================================================
+[S1] Head ........................ meta, title, icon, fonts, CSS, JS
+[S2] No-Run Screen ............... shown when no game is loaded
+[S3] In-Progress Game ............ everything in #game
+  [S4] Top Bar ................... day, phase, resources, Pause
+  [S5] Section Tabs .............. Base, Survivors, Map, Trade, Log
+  [S6] Tab Panels ................ filled in by game.js
+  [S7] Today Sidebar ............. plan, dusk, tonight, End day
+  [S8] Event Dialog .............. night/morning events
+  [S9] Report Dialog ............. dusk/dawn reports
+  [S10] Mini-game Dialog ......... canvas, timer, stats
+  [S11] Build Dialog ............. pick a builder
+  [S12] End-Day Check Dialog ..... warnings before night
+  [S13] Pause Menu ............... resume, pages, quit, links
+  [S14] Toast .................... pop-up status message
+=========================================================
 -->
 
 <!doctype html>
 <html lang="en">
+  <!-- #region [S1] Head -->
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -37,14 +57,16 @@ It provides the interface for playing the game.
     <script src="js/game.js" defer></script>
   </head>
   <!-- Contains the information for the game page -->
+  <!-- #endregion [S1] Head -->
 
   <!--
 =============================================================== 
----------- In-Progress Game ----------
+---------- No Run Screen (shown when there is no game in memory) ----------
 =============================================================== 
 -->
 
   <body>
+    <!-- #region [S2] No-Run Screen -->
     <main id="no-run" class="page" hidden>
       <div
         class="card"
@@ -63,6 +85,7 @@ It provides the interface for playing the game.
         </div>
       </div>
     </main>
+    <!-- #endregion [S2] No-Run Screen -->
 
     <!--
 =============================================================== 
@@ -74,9 +97,11 @@ It provides the interface for playing the game.
       ---------- Consistent Header ----------
       -->
 
+    <!-- #region [S3] In-Progress Game -->
     <div id="game" hidden>
       <!-- Sticky wrapper: keeps the top bar and tabs on screen while scrolling -->
       <div class="game-header">
+        <!-- #region [S4] Top Bar -->
         <header class="topbar">
           <div class="brand">
             <img
@@ -105,7 +130,9 @@ It provides the interface for playing the game.
             Pause
           </button>
         </header>
+        <!-- #endregion [S4] Top Bar -->
 
+        <!-- #region [S5] Section Tabs -->
         <!-- 
       ---------- Tabs that allow navigation between sections ----------
       -->
@@ -170,6 +197,7 @@ It provides the interface for playing the game.
             Log<span class="tab-badge" id="badge-log" hidden></span></button
           ><!-- Brings players to the Log section -->
         </nav>
+        <!-- #endregion [S5] Section Tabs -->
       </div>
       <!-- End of sticky wrapper -->
 
@@ -178,6 +206,7 @@ It provides the interface for playing the game.
       -->
 
       <div class="game-layout">
+        <!-- #region [S6] Tab Panels -->
         <main>
           <section
             id="panel-base"
@@ -214,7 +243,9 @@ It provides the interface for playing the game.
             hidden
           ></section>
         </main>
+        <!-- #endregion [S6] Tab Panels -->
 
+        <!-- #region [S7] Today Sidebar -->
         <!-- 
       ---------- Consistent block that appears on all sections and allows for the end of the game day ----------
       -->
@@ -245,8 +276,10 @@ It provides the interface for playing the game.
             Tasks resolve at dusk, then the night begins.
           </p>
         </aside>
+        <!-- #endregion [S7] Today Sidebar -->
       </div>
 
+      <!-- #region [S8] Event Dialog -->
       <!-- 
       ---------- Overlay for the night and morning events ----------
       The text types out at the Text speed setting (click it to skip), and the
@@ -264,7 +297,9 @@ It provides the interface for playing the game.
         <p class="event-text" id="event-text"></p>
         <div class="event-choices" id="event-choices"></div>
       </dialog>
+      <!-- #endregion [S8] Event Dialog -->
 
+      <!-- #region [S9] Report Dialog -->
       <!-- 
       ---------- Overlay for the Dusk, Dawn and Morning reports ----------
       Lists what happened since the last report. Continue moves the turn on.
@@ -282,7 +317,9 @@ It provides the interface for playing the game.
           Continue
         </button>
       </dialog>
+      <!-- #endregion [S9] Report Dialog -->
 
+      <!-- #region [S10] Mini-game Dialog -->
       <!-- 
       ---------- Overlay for the mini-games ----------
       minigames.js draws the game inside #mg-canvas and updates the timer and stats.
@@ -326,7 +363,9 @@ It provides the interface for playing the game.
           </div>
         </div>
       </dialog>
+      <!-- #endregion [S10] Mini-game Dialog -->
 
+      <!-- #region [S11] Build Dialog -->
       <!-- 
       ---------- Overlay for picking who builds a facility ----------
       -->
@@ -344,7 +383,9 @@ It provides the interface for playing the game.
           Cancel
         </button>
       </dialog>
+      <!-- #endregion [S11] Build Dialog -->
 
+      <!-- #region [S12] End-Day Check Dialog -->
       <!-- 
       ---------- Overlay that checks the plan before the day ends ----------
       -->
@@ -364,7 +405,9 @@ It provides the interface for playing the game.
           </button>
         </div>
       </dialog>
+      <!-- #endregion [S12] End-Day Check Dialog -->
 
+      <!-- #region [S13] Pause Menu -->
       <!-- 
       ---------- Overlay for the pause menu ----------
       -->
@@ -407,7 +450,12 @@ It provides the interface for playing the game.
 
         <!-- Quitting ends the run, so it sits apart and is coloured as a warning -->
         <div class="pause-quit">
-          <button class="btn btn-danger btn-block" data-sound="menu" type="button" id="quit">
+          <button
+            class="btn btn-danger btn-block"
+            data-sound="menu"
+            type="button"
+            id="quit"
+          >
             Quit to title
           </button>
           <p class="pause-hint">Ends this run. Progress isn't saved.</p>
@@ -422,7 +470,9 @@ It provides the interface for playing the game.
               href="https://github.com/CJWiebe-Portfolio"
               target="_blank"
               rel="noopener noreferrer"
-              >GitHub<span class="visually-hidden"> (opens in a new tab)</span></a
+              >GitHub<span class="visually-hidden">
+                (opens in a new tab)</span
+              ></a
             >
             <a
               class="btn btn-sm social social-linkedin"
@@ -454,7 +504,9 @@ It provides the interface for playing the game.
           </nav>
         </footer>
       </dialog>
+      <!-- #endregion [S13] Pause Menu -->
 
+      <!-- #region [S14] Toast -->
       <div
         id="toast"
         class="toast"
@@ -462,6 +514,8 @@ It provides the interface for playing the game.
         aria-live="polite"
         hidden
       ></div>
+      <!-- #endregion [S14] Toast -->
     </div>
+    <!-- #endregion [S3] In-Progress Game -->
   </body>
 </html>

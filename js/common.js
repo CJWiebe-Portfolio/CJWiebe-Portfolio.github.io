@@ -28,8 +28,38 @@ What's in here, in order:
   Game logistics ....... the AT object every other script uses
   Sound effects ........ every sound by name, stacking, channels and button sounds
 =========================================================
+TABLE OF CONTENTS
+Ctrl+F a tag such as "[S3]" to jump to that section.
+Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
+=========================================================
+[S1] Game Settings
+[S2] Display Settings
+[S3] Game Seed Generator
+[S4] Game Attributes
+[S5] Background Music
+[S6] Ambience
+[S7] Text Speed
+[S8] Game Logistics
+[S9] Sound Effects
+  [S10] Sound List
+    [S11] Menus and buttons
+    [S12] Weapons
+    [S13] Zombies
+    [S14] Doors
+    [S15] Searching
+    [S16] Building and materials
+    [S17] Around the shelter
+    [S18] Footsteps
+    [S19] Traders
+    [S20] Ambience sounds
+  [S21] Volume Mix & Loading
+  [S22] Channels
+  [S23] Play & Stop Sounds
+  [S24] Preload & Button Sounds
+=========================================================
 */
 
+// #region [S1] Game Settings
 /* 
 =============================================================== 
 ---------- Game Settings ----------
@@ -89,7 +119,9 @@ What's in here, in order:
     apply(DEFAULTS);
     return Object.assign({}, DEFAULTS);
   }
+// #endregion [S1] Game Settings
 
+  // #region [S2] Display Settings
   /* 
 =============================================================== 
 ---------- Display Settings for Adaptive Features ----------
@@ -127,7 +159,9 @@ What's in here, in order:
       return null;
     }
   }
+  // #endregion [S2] Display Settings
 
+  // #region [S3] Game Seed Generator
   /* 
 =============================================================== 
 ---------- Game Seed Generator ----------
@@ -165,7 +199,9 @@ What's in here, in order:
       }[c];
     });
   }
+  // #endregion [S3] Game Seed Generator
 
+  // #region [S4] Game Attributes
   /* 
 =============================================================== 
 ---------- Game Attributes ----------
@@ -306,7 +342,9 @@ What's in here, in order:
 
   // Portrait numbers: assets/images/png/survivor-1.png to survivor-6.png.
   var AVATARS = [1, 2, 3, 4, 5, 6];
+  // #endregion [S4] Game Attributes
 
+  // #region [S5] Background Music
   /*
 ===============================================================
 ---------- Background Music ----------
@@ -376,7 +414,9 @@ What's in here, in order:
     syncMusic(s);
     syncAmbience(s);
   }
+  // #endregion [S5] Background Music
 
+  // #region [S6] Ambience
   /*
 ===============================================================
 ---------- Ambience ----------
@@ -479,7 +519,9 @@ What's in here, in order:
   function clamp(v) {
     return Math.min(1, Math.max(0, v));
   }
+  // #endregion [S6] Ambience
 
+  // #region [S7] Text Speed
   /*
 ===============================================================
 ---------- Text Speed ----------
@@ -557,7 +599,9 @@ whole text straight away from a hidden copy, so nobody has to wait for it.
     }, ms);
     return finish;
   }
+  // #endregion [S7] Text Speed
 
+  // #region [S8] Game Logistics
   /*
 ===============================================================
 ---------- Game Logistics ----------
@@ -632,7 +676,9 @@ whole text straight away from a hidden copy, so nobody has to wait for it.
       history.back();
     }
   });
+  // #endregion [S8] Game Logistics
 
+  // #region [S9] Sound Effects
   /*
   ===============================================================
   ---------- Sound Effects ----------
@@ -648,13 +694,17 @@ whole text straight away from a hidden copy, so nobody has to wait for it.
 
   var A = "assets/audio/";
 
+  // #region [S10] Sound List
   // Sound name → file, or a list of files to pick from. Add a line here for each new sound.
   var SOUNDS = {
+    // #region [S11] Menus and buttons
     // ---- Menus and buttons ----
     click: A + "click.mp3",
     menu: A + "menu_select.mp3",
     turnPage: A + "paper(next-page).mp3",
+    // #endregion [S11] Menus and buttons
 
+    // #region [S12] Weapons
     // ---- Weapons ----
     gunshot: A + "pistol_shot.mp3",
     cock: A + "gun_cocking.mp3",
@@ -671,7 +721,9 @@ whole text straight away from a hidden copy, so nobody has to wait for it.
       A + "wooshing_weapon2.mp3",
       A + "wooshing_weapon3.mp3",
     ],
+    // #endregion [S12] Weapons
 
+    // #region [S13] Zombies
     // ---- Zombies ----
     zombie: A + "zombie_individual.mp3",
     horde: A + "zombie_horde.mp3",
@@ -694,7 +746,9 @@ whole text straight away from a hidden copy, so nobody has to wait for it.
     ],
     zombieAttack: A + "213509__soykevin__zombie-attack.wav",
     zombieDying: A + "zombie_dying.mp3",
+    // #endregion [S13] Zombies
 
+    // #region [S14] Doors
     // ---- Doors ----
     doorOpen: A + "door_opening.mp3",
     doorClose: A + "door_closing.mp3",
@@ -703,7 +757,9 @@ whole text straight away from a hidden copy, so nobody has to wait for it.
     knockHard: A + "door_knocking(intense).mp3",
     rustyDoor: A + "rusty_door.mp3",
     rustyHinges: A + "rusty_hindges.mp3",
+    // #endregion [S14] Doors
 
+    // #region [S15] Searching
     // ---- Searching ----
     searchBooks: A + "searching_books.mp3",
     searchDesk: A + "searching_desk.mp3",
@@ -717,7 +773,9 @@ whole text straight away from a hidden copy, so nobody has to wait for it.
       A + "opening_kitchen_drawer.mp3",
       A + "rusty_cabinet.mp3",
     ],
+    // #endregion [S15] Searching
 
+    // #region [S16] Building and materials
     // ---- Building and materials ----
     buildingHammering: A + "building(hammering).mp3",
     woodCutting: A + "wood_cutting.mp3",
@@ -726,7 +784,9 @@ whole text straight away from a hidden copy, so nobody has to wait for it.
     shovel: A + "shovel_digging.mp3",
     cardboardBox: A + "cardboard_box.mp3",
     rubbish: A + "rubbish_pile.mp3",
+    // #endregion [S16] Building and materials
 
+    // #region [S17] Around the shelter
     // ---- Around the shelter ----
     lightSwitch: A + "light_switch.mp3",
     match: A + "lighting_a_match.mp3",
@@ -740,16 +800,22 @@ whole text straight away from a hidden copy, so nobody has to wait for it.
     canJiggle: A + "soda_can_jiggle.mp3",
     canDrop: A + "soda_can_falling.mp3",
     glassBreak: A + "small_glass_shattering.mp3",
+    // #endregion [S17] Around the shelter
 
+    // #region [S18] Footsteps
     // ---- Footsteps ----
     footsteps: A + "footprints_across_a_room.mp3",
     carefulWalking: A + "careful_walking.mp3",
     glassSteps: A + "footsteps_on_glass.mp3",
+    // #endregion [S18] Footsteps
 
+    // #region [S19] Traders
     // ---- Traders ----
     shopBell: A + "shop_door_bell(trader).mp3",
     helloWoman: A + "hello(women).mp3",
+    // #endregion [S19] Traders
 
+    // #region [S20] Ambience sounds
     // ---- Ambience (looped with AT.setAmbience, see the Ambience section) ----
     ambMorning: A + "morning(ambiance).mp3",
     rooster: A + "morning(rooster).mp3",
@@ -757,8 +823,11 @@ whole text straight away from a hidden copy, so nobody has to wait for it.
     ambDayExtra: A + "day(occational-ambiance).mp3",
     ambEvening: [A + "evening(ambiance).mp3", A + "evening(ambiance2).mp3"],
     ambNight: A + "night(ombiance).mp3",
+    // #endregion [S20] Ambience sounds
   };
+  // #endregion [S10] Sound List
 
+  // #region [S21] Volume Mix & Loading
   // How loud each sound plays compared to the Volume setting (1 = full volume).
   // Anything not listed plays at 1. Turn these up or down to balance the mix.
   var SOUND_VOLUME = {
@@ -812,7 +881,9 @@ whole text straight away from a hidden copy, so nobody has to wait for it.
       [].concat(SOUNDS[name] || []).forEach(loadFile);
     });
   }
+  // #endregion [S21] Volume Mix & Loading
 
+  // #region [S22] Channels
   /*
   ---------- Channels ----------
   A channel is a named group of sounds that can be stopped together, including
@@ -844,7 +915,9 @@ whole text straight away from a hidden copy, so nobody has to wait for it.
     });
     ch.playing = [];
   }
+  // #endregion [S22] Channels
 
+  // #region [S23] Play & Stop Sounds
   // Plays a sound by name, using the Sound and Volume settings from the Options page.
   // opts (all optional):
   //   delay:   wait this many milliseconds first (to stagger stacked sounds)
@@ -922,7 +995,9 @@ whole text straight away from a hidden copy, so nobody has to wait for it.
       a.pause();
     });
   }
+  // #endregion [S23] Play & Stop Sounds
 
+  // #region [S24] Preload & Button Sounds
   // The menu sounds are used on every page, so load them now.
   preloadSounds(["click", "menu", "turnPage"]);
 
@@ -969,4 +1044,6 @@ whole text straight away from a hidden copy, so nobody has to wait for it.
   window.AT.preloadAmbience = preloadAmbience;
   window.AT.preloadSounds = preloadSounds;
   window.AT.setAmbience = setAmbience;
+  // #endregion [S24] Preload & Button Sounds
+  // #endregion [S9] Sound Effects
 })();

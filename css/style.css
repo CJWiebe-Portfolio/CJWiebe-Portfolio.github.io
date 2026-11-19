@@ -18,6 +18,8 @@ pill, the How to Play cards) and it will take on that phase's colours.
 
 =========================================================
 TABLE OF CONTENTS
+Ctrl+F a number such as "7f." to jump to that section.
+Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
 =========================================================
   01. Design tokens ............ every colour, font and size lives here
         1a. Shared colours (all phases)
@@ -59,7 +61,9 @@ TABLE OF CONTENTS
         9h. Trade
         9i. Log
         9j. Event cards
+        9j-2. Report pop-up
         9k. Skills and traits
+        9l. Turn clarity
   10. Mini-games
         10a. Shared mini-game frame
         10b. Defense
@@ -67,6 +71,7 @@ TABLE OF CONTENTS
         10d. Search
 */
 
+/* #region 01. DESIGN TOKENS */
 /*
 ===============================================================
 01. DESIGN TOKENS
@@ -84,6 +89,7 @@ same six roles so they can be swapped one-for-one:
 */
 
 :root {
+  /* #region 1a. Shared colours (all phases) */
   /* ---------- 1a. Shared colours (all phases) ---------- */
   --healing: #0ab1e0; /* Healing effects (CURRENTLY NOT USED) */
   --accent: #5e7a48; /* Primary action colour, good states */
@@ -91,7 +97,9 @@ same six roles so they can be swapped one-for-one:
   --accent-2: #c98a2b; /* Secondary highlight (.notice, .choice) */
   --danger: #9a3a2b; /* Bad outcomes */
   --focus: #c98a2b; /* Keyboard focus ring */
+  /* #endregion 1a. Shared colours (all phases) */
 
+  /* #region 1b. Dawn palette */
   /* ---------- 1b. Dawn palette: rose and peach, the sun coming up ---------- */
   --bg-dawn: #f4d9cf;
   --surface-dawn: #fff3ee;
@@ -101,7 +109,9 @@ same six roles so they can be swapped one-for-one:
   --line-dawn: #e2bfb3;
   --phase-dawn: #e07a5f;
   --phase-ink-dawn: #2b1f24;
+  /* #endregion 1b. Dawn palette */
 
+  /* #region 1c. Day palette */
   /* ---------- 1c. Day palette: warm cream and mustard ---------- */
   --bg-day: #f7e8c7;
   --surface-day: #fff8e7;
@@ -111,7 +121,9 @@ same six roles so they can be swapped one-for-one:
   --line-day: #d3cab5;
   --phase-day: #eac338;
   --phase-ink-day: #23211c;
+  /* #endregion 1c. Day palette */
 
+  /* #region 1d. Dusk palette */
   /* ---------- 1d. Dusk palette: plum with a burnt-orange sunset ---------- */
   --bg-dusk: #3b2436;
   --surface-dusk: #4d2f45;
@@ -122,7 +134,9 @@ same six roles so they can be swapped one-for-one:
   --phase-dusk: #e07f3c;
   --phase-ink-dusk: #1f1218;
   --danger-dusk: #f08a72; /* Lighter red so warnings stay readable on dark */
+  /* #endregion 1d. Dusk palette */
 
+  /* #region 1e. Night palette */
   /* ---------- 1e. Night palette: deep navy with moonlit violet ---------- */
   --bg-night: #121525;
   --surface-night: #1c1c23;
@@ -133,13 +147,17 @@ same six roles so they can be swapped one-for-one:
   --phase-night: #8a93e8;
   --phase-ink-night: #121525;
   --danger-night: #f08a72;
+  /* #endregion 1e. Night palette */
 
+  /* #region 1f. Single-use colours */
   /* ---------- 1f. Single-use colours ---------- */
   --title_screen: #f7e8c7c7; /* Translucent panel over the title art */
   --dialog: #f7e8c7c7; /* Reserved for dialogs (CURRENTLY NOT USED) */
   --white_text: #f7e8c7c7; /* Resting border of a wrong lockpick pin */
   --hatch: rgba(35, 33, 28, 0.07);
+  /* #endregion 1f. Single-use colours */
 
+  /* #region 1g. Typography and shape */
   /* ---------- 1g. Typography and shape ---------- */
   --font-display: "Special Elite", "Courier New", monospace;
   --font-body: system-ui, -apple-system, "Caveat", Roboto, sans-serif;
@@ -152,7 +170,9 @@ same six roles so they can be swapped one-for-one:
   --content-max: 1400px; /* Widest the in-game content gets */
   --header-h: 0px; /* Height of the sticky game header, set by js/game.js */
   font-size: 16px;
+  /* #endregion 1g. Typography and shape */
 
+  /* #region 1h. Active palette (Day by default) */
   /* ---------- 1h. Active palette (Day by default) ----------
      Every rule below reads these. Section 02 re-points them per phase. */
   --bg: var(--bg-day);
@@ -163,8 +183,11 @@ same six roles so they can be swapped one-for-one:
   --line: var(--line-day);
   --phase: var(--phase-day);
   --phase-ink: var(--phase-ink-day);
+  /* #endregion 1h. Active palette (Day by default) */
 }
+/* #endregion 01. DESIGN TOKENS */
 
+/* #region 02. PHASE THEMES */
 /*
 ===============================================================
 02. PHASE THEMES
@@ -225,7 +248,9 @@ inside it.
 [data-phase] {
   color: var(--ink);
 }
+/* #endregion 02. PHASE THEMES */
 
+/* #region 03. ACCESSIBILITY SETTINGS (from the Options page) */
 /*
 ===============================================================
 03. ACCESSIBILITY SETTINGS (from the Options page)
@@ -268,7 +293,9 @@ html[data-motion="reduce"] ::backdrop {
   animation: none !important;
   scroll-behavior: auto !important;
 }
+/* #endregion 03. ACCESSIBILITY SETTINGS (from the Options page) */
 
+/* #region 04. BASE ELEMENTS */
 /*
 ===============================================================
 04. BASE ELEMENTS
@@ -321,7 +348,9 @@ a {
   outline: 3px solid var(--focus);
   outline-offset: 2px;
 }
+/* #endregion 04. BASE ELEMENTS */
 
+/* #region 05. UTILITIES */
 /*
 ===============================================================
 05. UTILITIES
@@ -400,7 +429,9 @@ a {
 .field-hint {
   margin-top: 0.4rem;
 }
+/* #endregion 05. UTILITIES */
 
+/* #region 06. LAYOUT */
 /*
 ===============================================================
 06. LAYOUT
@@ -512,13 +543,16 @@ html[data-contrast="high"] .btn.social {
   align-items: baseline;
   margin-bottom: 1rem;
 }
+/* #endregion 06. LAYOUT */
 
+/* #region 07. COMPONENTS */
 /*
 ===============================================================
 07. COMPONENTS
 ===============================================================
 */
 
+/* #region 7a. Buttons */
 /* ---------- 7a. Buttons ---------- */
 .btn {
   display: inline-flex;
@@ -574,7 +608,9 @@ html[data-contrast="high"] .btn.social {
   background: transparent;
   cursor: not-allowed;
 }
+/* #endregion 7a. Buttons */
 
+/* #region 7b. Chips */
 /* ---------- 7b. Chips ---------- */
 .chip {
   display: inline-block;
@@ -584,7 +620,9 @@ html[data-contrast="high"] .btn.social {
   font-size: 0.8rem;
   background: var(--surface);
 }
+/* #endregion 7b. Chips */
 
+/* #region 7c. Cards */
 /* ---------- 7c. Cards ---------- */
 .card {
   background: var(--surface);
@@ -616,7 +654,9 @@ html[data-contrast="high"] .btn.social {
   transform: translateY(-2px);
   box-shadow: var(--shadow-hover);
 }
+/* #endregion 7c. Cards */
 
+/* #region 7d. Forms */
 /* ---------- 7d. Forms ---------- */
 fieldset {
   border: 0;
@@ -728,7 +768,9 @@ select {
   background: var(--surface);
   color: var(--ink);
 }
+/* #endregion 7d. Forms */
 
+/* #region 7e. Tables */
 /* ---------- 7e. Tables ---------- */
 table {
   width: 100%;
@@ -756,7 +798,9 @@ thead th {
   display: inline-block;
   margin-top: 0.2rem;
 }
+/* #endregion 7e. Tables */
 
+/* #region 7f. Dialogs */
 /* ---------- 7f. Dialogs ---------- */
 dialog {
   border: 0;
@@ -894,7 +938,9 @@ dialog .ph.art {
     grid-template-columns: 1fr 1fr;
   }
 }
+/* #endregion 7f. Dialogs */
 
+/* #region 7g. Toast */
 /* ---------- 7g. Toast ---------- */
 .toast {
   position: fixed;
@@ -909,7 +955,9 @@ dialog .ph.art {
   box-shadow: var(--shadow);
   z-index: 50;
 }
+/* #endregion 7g. Toast */
 
+/* #region 7h. Portraits and art */
 /* ---------- 7h. Portraits and art ---------- */
 .avatar {
   width: 56px;
@@ -950,13 +998,17 @@ dialog img.art {
   height: 80px;
   margin-bottom: 0.75rem;
 }
+/* #endregion 7h. Portraits and art */
+/* #endregion 07. COMPONENTS */
 
+/* #region 08. PAGES */
 /*
 ===============================================================
 08. PAGES
 ===============================================================
 */
 
+/* #region 8a. Title screen (index.html) */
 /* ---------- 8a. Title screen (index.html) ----------
    A solid panel on the left over the title art. The title and menu sit at
    the top; the profile links and the warning sit at the bottom. On phones
@@ -1070,7 +1122,9 @@ dialog img.art {
     border-bottom: 1px solid var(--line);
   }
 }
+/* #endregion 8a. Title screen (index.html) */
 
+/* #region 8b. How to Play (how-to-play.html) */
 /* ---------- 8b. How to Play (how-to-play.html) ---------- */
 .htp {
   display: grid;
@@ -1153,7 +1207,9 @@ dialog img.art {
     flex-wrap: wrap;
   }
 }
+/* #endregion 8b. How to Play (how-to-play.html) */
 
+/* #region 8c. New Game (new-game.html) */
 /* ---------- 8c. New Game (new-game.html) ----------
    The form is a column of numbered step cards with a sticky Start bar. */
 .page-head p {
@@ -1228,7 +1284,9 @@ fieldset.setup-step > legend.step-title + * {
   flex-wrap: wrap;
   margin-top: 0.35rem;
 }
+/* #endregion 8c. New Game (new-game.html) */
 
+/* #region 8d. Options (options.html) */
 /* ---------- 8d. Options (options.html) ---------- */
 .options-grid {
   display: grid;
@@ -1236,7 +1294,9 @@ fieldset.setup-step > legend.step-title + * {
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   align-items: start;
 }
+/* #endregion 8d. Options (options.html) */
 
+/* #region 8e. End screen (end.html) */
 /* ---------- 8e. End screen (end.html) ---------- */
 .end {
   max-width: 720px;
@@ -1293,13 +1353,17 @@ fieldset.setup-step > legend.step-title + * {
   margin-left: auto;
   color: var(--muted);
 }
+/* #endregion 8e. End screen (end.html) */
+/* #endregion 08. PAGES */
 
+/* #region 09. IN-GAME (game.html) */
 /*
 ===============================================================
 09. IN-GAME (game.html)
 ===============================================================
 */
 
+/* #region 9a. Top bar */
 /* ---------- 9a. Top bar ----------
    .game-header wraps the top bar and the tabs and sticks to the top. Its
    side padding lines the header up with the centred content below. */
@@ -1399,7 +1463,9 @@ fieldset.setup-step > legend.step-title + * {
     justify-content: space-between;
   }
 }
+/* #endregion 9a. Top bar */
 
+/* #region 9b. Phase pill */
 /* ---------- 9b. Phase pill ----------
    Its colour comes from its own data-phase (see section 02). */
 .phase-pill {
@@ -1414,7 +1480,9 @@ fieldset.setup-step > legend.step-title + * {
     background-color var(--phase-fade),
     border-color var(--phase-fade);
 }
+/* #endregion 9b. Phase pill */
 
+/* #region 9c. Tabs and game layout */
 /* ---------- 9c. Tabs and game layout ---------- */
 .tabs {
   display: flex;
@@ -1478,7 +1546,9 @@ fieldset.setup-step > legend.step-title + * {
     padding-bottom: 6rem; /* room for the floating End day button */
   }
 }
+/* #endregion 9c. Tabs and game layout */
 
+/* #region 9d. Side panel (the turn panel) */
 /* ---------- 9d. Side panel (the turn panel) ----------
    Sticks just under the game header; the phase colour runs along its top. */
 .side {
@@ -1546,7 +1616,9 @@ fieldset.setup-step > legend.step-title + * {
 .side .btn {
   margin-top: 1rem;
 }
+/* #endregion 9d. Side panel (the turn panel) */
 
+/* #region 9e. Facilities */
 /* ---------- 9e. Facilities ---------- */
 .facility {
   display: flex;
@@ -1690,7 +1762,9 @@ fieldset.setup-step > legend.step-title + * {
   margin-bottom: 1rem;
   color: var(--muted);
 }
+/* #endregion 9e. Facilities */
 
+/* #region 9f. Survivors */
 /* ---------- 9f. Survivors ---------- */
 .survivor .top {
   display: flex;
@@ -1748,7 +1822,9 @@ fieldset.setup-step > legend.step-title + * {
   border-style: dashed;
   min-height: 220px;
 }
+/* #endregion 9f. Survivors */
 
+/* #region 9g. Map */
 /* ---------- 9g. Map ---------- */
 .map-wrap {
   display: grid;
@@ -1853,7 +1929,9 @@ fieldset.setup-step > legend.step-title + * {
     padding: 0.3rem 0.6rem;
   }
 }
+/* #endregion 9g. Map */
 
+/* #region 9h. Trade */
 /* ---------- 9h. Trade ---------- */
 .trader {
   display: flex;
@@ -1939,7 +2017,9 @@ fieldset.setup-step > legend.step-title + * {
     grid-template-columns: 1fr;
   }
 }
+/* #endregion 9h. Trade */
 
+/* #region 9i. Log */
 /* ---------- 9i. Log ---------- */
 .filters {
   display: flex;
@@ -1979,7 +2059,9 @@ fieldset.setup-step > legend.step-title + * {
 .log-day .chip {
   text-align: center;
 }
+/* #endregion 9i. Log */
 
+/* #region 9j. Event cards */
 /* ---------- 9j. Event cards ---------- */
 .event-text {
   color: var(--muted);
@@ -2013,7 +2095,9 @@ fieldset.setup-step > legend.step-title + * {
   opacity: 0.45;
   cursor: not-allowed;
 }
+/* #endregion 9j. Event cards */
 
+/* #region 9j-2. Report pop-up (dusk and dawn results) */
 /* ---------- 9j-2. Report pop-up (dusk and dawn results) ---------- */
 /* The report pop-up only shows a picture for wins and losses. */
 dialog img.art[hidden] {
@@ -2043,7 +2127,9 @@ dialog img.art[hidden] {
 .report-list .chip {
   flex: none;
 }
+/* #endregion 9j-2. Report pop-up (dusk and dawn results) */
 
+/* #region 9k. Skills and traits */
 /* ---------- 9k. Skills and traits ---------- */
 .perk-list {
   list-style: none;
@@ -2058,7 +2144,9 @@ dialog img.art[hidden] {
   white-space: nowrap;
   width: 9rem;
 }
+/* #endregion 9k. Skills and traits */
 
+/* #region 9l. Turn clarity */
 /* ---------- 9l. Turn clarity ----------
    The Today panel's checklist, tab badges, task buttons and the small
    "why" notes that explain what each choice will do. A "good" colour is
@@ -2445,13 +2533,17 @@ details.log-day li.good {
   box-shadow: inset 3px 0 0 var(--accent);
   padding-left: 0.6rem;
 }
+/* #endregion 9l. Turn clarity */
+/* #endregion 09. IN-GAME (game.html) */
 
+/* #region 10. MINI-GAMES (js/minigames.js) */
 /*
 ===============================================================
 10. MINI-GAMES (js/minigames.js)
 ===============================================================
 */
 
+/* #region 10a. Shared mini-game frame */
 /* ---------- 10a. Shared mini-game frame ---------- */
 .mg-head {
   display: flex;
@@ -2523,7 +2615,9 @@ details.log-day li.good {
   display: flex;
   gap: 0.5rem;
 }
+/* #endregion 10a. Shared mini-game frame */
 
+/* #region 10b. Defense */
 /* ---------- 10b. Defense ---------- */
 .mg-defense {
   padding: 0;
@@ -2608,7 +2702,9 @@ details.log-day li.good {
     opacity 0.25s,
     transform 0.25s;
 }
+/* #endregion 10b. Defense */
 
+/* #region 10c. Lockpick */
 /* ---------- 10c. Lockpick ---------- */
 .mg-lockpick {
   display: grid;
@@ -2681,7 +2777,9 @@ details.log-day li.good {
     color: #fff;
   }
 }
+/* #endregion 10c. Lockpick */
 
+/* #region 10d. Search */
 /* ---------- 10d. Search ---------- */
 .mg-search {
   display: flex;
@@ -2730,3 +2828,5 @@ details.log-day li.good {
   opacity: 0.45;
   border-style: dashed;
 }
+/* #endregion 10d. Search */
+/* #endregion 10. MINI-GAMES (js/minigames.js) */

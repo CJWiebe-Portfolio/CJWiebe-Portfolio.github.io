@@ -10,6 +10,15 @@ DESCRIPTION:
 This is the end screen JavaScript file for Another Tally, a zombie survival game. 
 It contains the logic for displaying the game results and run summary.
 =========================================================
+TABLE OF CONTENTS
+Ctrl+F a tag such as "[S3]" to jump to that section.
+Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
+=========================================================
+[S1] Load Result, Art & Sound
+[S2] Title & Subtitle
+[S3] Stat Cards
+[S4] Group List
+=========================================================
 */
 
 /* 
@@ -22,6 +31,7 @@ It contains the logic for displaying the game results and run summary.
 (function () {
   "use strict";
 
+  // #region [S1] Load Result, Art & Sound
   var r = AT.handoff.peekResult();
   if (!r) return;
 
@@ -36,7 +46,9 @@ It contains the logic for displaying the game results and run summary.
   var pad = function (n) {
     return String(n).padStart(2, "0");
   };
+  // #endregion [S1] Load Result, Art & Sound
 
+  // #region [S2] Title & Subtitle
   // Display the run summary on the end screen depending on whether the player won or lost.
   document.getElementById("end-title").textContent = r.won
     ? "You made it"
@@ -49,7 +61,9 @@ It contains the logic for displaying the game results and run summary.
       " of " +
       r.length +
       " days.";
+  // #endregion [S2] Title & Subtitle
 
+  // #region [S3] Stat Cards
   // Provide a summary of the player's performance in the game,
   // including days survived, survivors alive, survivors lost,
   // supplies gathered, locations explored, events faced and survivors found.
@@ -76,7 +90,9 @@ It contains the logic for displaying the game results and run summary.
       );
     })
     .join("");
+  // #endregion [S3] Stat Cards
 
+  // #region [S4] Group List
   // Display the list of survivors with their avatars and fates on the end screen.
   document.getElementById("group-list").innerHTML = r.group
     .map(function (s) {
@@ -93,4 +109,5 @@ It contains the logic for displaying the game results and run summary.
     })
     .join("");
   document.getElementById("group").hidden = false;
+  // #endregion [S4] Group List
 })();

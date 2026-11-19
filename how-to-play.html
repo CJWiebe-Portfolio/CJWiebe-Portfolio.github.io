@@ -10,10 +10,33 @@ DESCRIPTION:
 This is the how-to-play page for Another Tally. 
 It explains the rules and mechanics of the game.
 =========================================================
+TABLE OF CONTENTS
+Ctrl+F a tag such as "[S3]" to jump to that section.
+Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
+=========================================================
+[S1] Head ........................ meta, title, icon, fonts, CSS, JS
+[S2] Page Header ................. back button, h1
+  [S3] Social Links .............. GitHub, LinkedIn, Portfolio, Instagram
+[S4] On This Page ................ sticky sidebar links
+[S5] Goal ........................ #goal
+[S6] Turns: Day & Night .......... #day-night
+[S7] Resources ................... #resources
+[S8] Survivors & Base ............ #survivors
+[S9] Scavenging .................. #scavenging
+[S10] New Survivors .............. #newcomers
+[S11] Events ..................... #events
+[S12] Night Raids ................ #night-raids
+[S13] Trading .................... #trading
+[S14] Difficulty ................. #difficulty
+[S15] Skills & Traits ............ #skills
+[S16] Mini-games ................. #mini-games
+[S17] Controls ................... #controls
+=========================================================
 -->
 
 <!doctype html>
 <html lang="en">
+  <!-- #region [S1] Head -->
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -33,14 +56,17 @@ It explains the rules and mechanics of the game.
     <script src="js/common.js"></script>
   </head>
   <!-- Link to the common JavaScript files, css, fonts and other resources, site Icon, etc...-->
+  <!-- #endregion [S1] Head -->
 
   <body>
     <main class="page">
+      <!-- #region [S2] Page Header -->
       <header class="page-head">
         <a class="btn btn-sm" data-sound="click" href="index.html" data-back
           >← Back</a
         >
         <h1>How to play</h1>
+        <!-- #region [S3] Social Links -->
         <nav class="social-links" aria-label="Cygnus J. Wiebe online">
           <a
             class="btn btn-sm social social-github"
@@ -77,10 +103,13 @@ It explains the rules and mechanics of the game.
             ></a
           >
         </nav>
+        <!-- #endregion [S3] Social Links -->
       </header>
       <!-- Header for the page that displays the title and back button -->
+      <!-- #endregion [S2] Page Header -->
 
       <div class="htp">
+        <!-- #region [S4] On This Page -->
         <nav class="card htp-nav" aria-label="On this page">
           <a href="#goal">Goal</a>
           <a href="#day-night">Day and night</a>
@@ -97,8 +126,10 @@ It explains the rules and mechanics of the game.
           <a href="#controls">Controls</a>
         </nav>
         <!-- Sidebar navigation for the page that sticks the the left of the page, even on scroll -->
+        <!-- #endregion [S4] On This Page -->
 
         <div>
+          <!-- #region [S5] Goal -->
           <section id="goal" aria-labelledby="goal-h">
             <!-- Explain the goal of the game -->
             <h2 id="goal-h">What is the goal of Another Tally?</h2>
@@ -129,7 +160,9 @@ It explains the rules and mechanics of the game.
               before doing any of these actions!
             </p>
           </section>
+          <!-- #endregion [S5] Goal -->
 
+          <!-- #region [S6] Turns: Day & Night -->
           <section id="day-night" aria-labelledby="day-night-h">
             <!-- Explain the day and night cycles in the game -->
             <h2 id="day-night-h">Turns in the game.</h2>
@@ -169,7 +202,9 @@ It explains the rules and mechanics of the game.
               </li>
             </ol>
           </section>
+          <!-- #endregion [S6] Turns: Day & Night -->
 
+          <!-- #region [S7] Resources -->
           <section id="resources" aria-labelledby="resources-h">
             <!-- Explain the resources in the game -->
             <h2 id="resources-h">Resources</h2>
@@ -263,7 +298,9 @@ It explains the rules and mechanics of the game.
               </li>
             </ul>
           </section>
+          <!-- #endregion [S7] Resources -->
 
+          <!-- #region [S8] Survivors & Base -->
           <section id="survivors" aria-labelledby="survivors-h">
             <!-- The Survivors and Base Section -->
             <h2 id="survivors-h">Survivors and base</h2>
@@ -501,7 +538,9 @@ It explains the rules and mechanics of the game.
               alt="Survivor needs and the facilities that meet them: hunger, the kitchen; thirst, the water collector; fatigue, the beds; health, the infirmary; safety, the walls."
             />
           </section>
+          <!-- #endregion [S8] Survivors & Base -->
 
+          <!-- #region [S9] Scavenging -->
           <section id="scavenging" aria-labelledby="scavenging-h">
             <!-- Explains how scavenging trips work -->
             <h2 id="scavenging-h">Scavenging</h2>
@@ -541,7 +580,9 @@ It explains the rules and mechanics of the game.
               </li>
             </ul>
           </section>
+          <!-- #endregion [S9] Scavenging -->
 
+          <!-- #region [S10] New Survivors -->
           <section id="newcomers" aria-labelledby="newcomers-h">
             <!-- Explains how new survivors join the group -->
             <h2 id="newcomers-h">New survivors</h2>
@@ -559,7 +600,9 @@ It explains the rules and mechanics of the game.
               morale rises a little when someone new joins.
             </p>
           </section>
+          <!-- #endregion [S10] New Survivors -->
 
+          <!-- #region [S11] Events -->
           <section id="events" aria-labelledby="events-h">
             <!-- Explains night and morning events -->
             <h2 id="events-h">Events</h2>
@@ -579,7 +622,9 @@ It explains the rules and mechanics of the game.
               the day starts.
             </p>
           </section>
+          <!-- #endregion [S11] Events -->
 
+          <!-- #region [S12] Night Raids -->
           <section id="night-raids" aria-labelledby="night-raids-h">
             <!-- Explains how night defense and the horde work -->
             <h2 id="night-raids-h">Night raids</h2>
@@ -622,7 +667,9 @@ It explains the rules and mechanics of the game.
               see the exact size of tonight's horde instead of an estimate.
             </p>
           </section>
+          <!-- #endregion [S12] Night Raids -->
 
+          <!-- #region [S13] Trading -->
           <section id="trading" aria-labelledby="trading-h">
             <!-- Explains how the wandering traders work -->
             <h2 id="trading-h">Trading</h2>
@@ -683,7 +730,9 @@ It explains the rules and mechanics of the game.
               </li>
             </ul>
           </section>
+          <!-- #endregion [S13] Trading -->
 
+          <!-- #region [S14] Difficulty -->
           <section id="difficulty" aria-labelledby="difficulty-h">
             <!-- Explains what changes between difficulty levels -->
             <h2 id="difficulty-h">Difficulty</h2>
@@ -747,7 +796,9 @@ It explains the rules and mechanics of the game.
               </tbody>
             </table>
           </section>
+          <!-- #endregion [S14] Difficulty -->
 
+          <!-- #region [S15] Skills & Traits -->
           <section id="skills" aria-labelledby="skills-h">
             <!-- Explains the skills and traits -->
             <h2 id="skills-h">Skills and traits</h2>
@@ -787,7 +838,9 @@ It explains the rules and mechanics of the game.
               })();
             </script>
           </section>
+          <!-- #endregion [S15] Skills & Traits -->
 
+          <!-- #region [S16] Mini-games -->
           <section id="mini-games" aria-labelledby="mini-games-h">
             <h2 id="mini-games-h">Mini-games</h2>
             <!-- Explanation of the mini-game mechanics -->
@@ -835,7 +888,9 @@ It explains the rules and mechanics of the game.
               </div>
             </div>
           </section>
+          <!-- #endregion [S16] Mini-games -->
 
+          <!-- #region [S17] Controls -->
           <section id="controls" aria-labelledby="controls-h">
             <h2 id="controls-h">Controls</h2>
             <!-- Explanation of the controls for both mouse and keyboard -->
@@ -880,6 +935,7 @@ It explains the rules and mechanics of the game.
               </tbody>
             </table>
           </section>
+          <!-- #endregion [S17] Controls -->
         </div>
       </div>
     </main>

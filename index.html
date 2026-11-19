@@ -10,10 +10,22 @@ DESCRIPTION:
 This is the title screen for the game Another Tally. 
 It is a turn-based zombie survival game played in the browser.
 =========================================================
+TABLE OF CONTENTS
+Ctrl+F a tag such as "[S3]" to jump to that section.
+Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
+=========================================================
+[S1] Head ........................ meta, title, icon, fonts, CSS, JS
+[S2] Title & Tagline ............. logo, h1, subtitle
+[S3] Main Menu ................... New game, Options, How to play, Credits
+[S4] Footer ...................... creator credit
+  [S5] Social Links .............. GitHub, LinkedIn, Portfolio, Instagram
+  [S6] Warning ................... browser-only save notice
+=========================================================
 -->
 
 <!doctype html>
 <html lang="en">
+  <!-- #region [S1] Head -->
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -24,7 +36,7 @@ It is a turn-based zombie survival game played in the browser.
       href="assets/icons/anothertally_icon.png"
     />
     <!-- Site icon -->
-    <title>Another Tally: A zombie survival game</title>
+    <title>Another Tally</title>
     <!-- Site title -->
     <meta
       name="description"
@@ -41,6 +53,7 @@ It is a turn-based zombie survival game played in the browser.
     <script src="js/common.js"></script>
     <!-- Link to the common JavaScript file, css, fonts and other resources -->
   </head>
+  <!-- #endregion [S1] Head -->
 
   <!-- Body of the Page -->
   <body>
@@ -49,6 +62,7 @@ It is a turn-based zombie survival game played in the browser.
            profile links and the warning at the bottom -->
       <section class="title-menu" aria-labelledby="game-title">
         <div class="title-top">
+          <!-- #region [S2] Title & Tagline -->
           <img class="logo" src="assets/icons/anothertally_icon.png" alt="" />
           <!-- Site logo (decorative, the title says the name) -->
           <h1 id="game-title">Another Tally</h1>
@@ -58,26 +72,27 @@ It is a turn-based zombie survival game played in the browser.
             how far you can make it! Will the zombies overwhelm you?
           </p>
           <!-- Sub-title -->
+          <!-- #endregion [S2] Title & Tagline -->
 
+          <!-- #region [S3] Main Menu -->
           <nav class="title-nav" aria-label="Main menu">
             <a class="btn btn-primary" data-sound="click" href="new-game.html"
               >Begin the Next Zombie Outbreak!</a
             >
-            <a class="btn" data-sound="click" href="options.html"
-              >Options <span aria-hidden="true">↗</span></a
-            >
+            <a class="btn" data-sound="click" href="options.html">Options</a>
             <a class="btn" data-sound="click" href="how-to-play.html"
-              >How to play <span aria-hidden="true">↗</span></a
+              >How to play</a
             >
-            <a class="btn" data-sound="click" href="credits.html"
-              >Credits <span aria-hidden="true">↗</span></a
-            >
+            <a class="btn" data-sound="click" href="credits.html">Credits</a>
           </nav>
           <!-- Navigation menu -->
+          <!-- #endregion [S3] Main Menu -->
         </div>
 
+        <!-- #region [S4] Footer -->
         <footer class="title-foot">
           <p class="eyebrow">Made by Cygnus J. Wiebe</p>
+          <!-- #region [S5] Social Links -->
           <!-- Links to the creator's profiles. They open in a new tab so the game stays open. -->
           <nav class="social-links" aria-label="Cygnus J. Wiebe online">
             <a
@@ -117,13 +132,17 @@ It is a turn-based zombie survival game played in the browser.
               ></a
             >
           </nav>
+          <!-- #endregion [S5] Social Links -->
 
+          <!-- #region [S6] Warning -->
           <p class="title-note">
             <strong>WARNING!!!</strong> This game exists only in your current
             browser and will reset when the page is refreshed or closed.
           </p>
           <!-- Alert message of the game existing only in the browser -->
+          <!-- #endregion [S6] Warning -->
         </footer>
+        <!-- #endregion [S4] Footer -->
       </section>
     </main>
     <!-- Background music is handled in js/common.js so it plays on every page. -->

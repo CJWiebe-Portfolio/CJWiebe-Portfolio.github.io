@@ -10,10 +10,30 @@ DESCRIPTION:
 This is the options page for Another Tally. 
 It allows the player to customize various settings for the game.
 =========================================================
+TABLE OF CONTENTS
+Ctrl+F a tag such as "[S3]" to jump to that section.
+Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
+=========================================================
+[S1] Head ........................ meta, title, icon, fonts, CSS, JS
+[S2] Page Header ................. back button, h1
+  [S3] Social Links .............. GitHub, LinkedIn, Portfolio, Instagram
+[S4] Gameplay .................... gameplay settings card
+  [S5] Difficulty ................ Easy / Normal / Hard
+  [S6] Game Length ............... 15 / 30 / 45 days
+  [S7] Mini-games ................ play or auto-resolve
+  [S8] Seed ...................... optional world seed
+[S9] Display & Accessibility ..... display settings card
+  [S10] Text Size ................ Small / Medium / Large
+  [S11] Text Speed ............... slider
+  [S12] Contrast & Motion ........ checkboxes
+[S13] Sound ...................... sound on/off, volume
+[S14] Saved Message & Buttons .... status, Reset, Done
+=========================================================
 -->
 
 <!doctype html>
 <html lang="en">
+  <!-- #region [S1] Head -->
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -34,12 +54,15 @@ It allows the player to customize various settings for the game.
     <script src="js/options.js" defer></script>
   </head>
   <!-- Link to the common JavaScript files, css, fonts and other resources, site Icon, etc...-->
+  <!-- #endregion [S1] Head -->
 
   <body>
     <main class="page">
+      <!-- #region [S2] Page Header -->
       <header class="page-head">
         <a class="btn btn-sm" href="index.html" data-back>← Back</a>
         <h1>Options</h1>
+        <!-- #region [S3] Social Links -->
         <nav class="social-links" aria-label="Cygnus J. Wiebe online">
           <a
             class="btn btn-sm social social-github"
@@ -76,15 +99,19 @@ It allows the player to customize various settings for the game.
             ></a
           >
         </nav>
+        <!-- #endregion [S3] Social Links -->
       </header>
       <!-- Header for the page that displays the title and back button -->
+      <!-- #endregion [S2] Page Header -->
 
       <form id="options-form" class="options-grid" novalidate>
         <div>
+          <!-- #region [S4] Gameplay -->
           <section class="card" aria-labelledby="gameplay-h">
             <!-- Options for gameplay settings -->
             <h2 id="gameplay-h" class="eyebrow panel-title">Gameplay</h2>
 
+            <!-- #region [S5] Difficulty -->
             <fieldset>
               <!-- Allows the user to select a difficulty level -->
               <legend>Change the Game Difficulty</legend>
@@ -108,7 +135,9 @@ It allows the player to customize various settings for the game.
                 >
               </div>
             </fieldset>
+            <!-- #endregion [S5] Difficulty -->
 
+            <!-- #region [S6] Game Length -->
             <fieldset>
               <!-- Options for change in game length -->
               <legend>Game length</legend>
@@ -132,7 +161,9 @@ It allows the player to customize various settings for the game.
                 >
               </div>
             </fieldset>
+            <!-- #endregion [S6] Game Length -->
 
+            <!-- #region [S7] Mini-games -->
             <fieldset>
               <!-- Selection for mini-games, with options for playing or auto-resolving -->
               <legend>Mini-games</legend>
@@ -151,7 +182,9 @@ It allows the player to customize various settings for the game.
                 >
               </div>
             </fieldset>
+            <!-- #endregion [S7] Mini-games -->
 
+            <!-- #region [S8] Seed -->
             <label class="field-label" for="seed">Seed (optional)</label>
             <!-- Allows the user to specify a seed for reproducible gameplay -->
             <p class="small muted" style="margin-top: 0.4rem">
@@ -166,15 +199,19 @@ It allows the player to customize various settings for the game.
               placeholder="Random"
               autocomplete="off"
             />
+            <!-- #endregion [S8] Seed -->
           </section>
+          <!-- #endregion [S4] Gameplay -->
         </div>
 
+        <!-- #region [S9] Display & Accessibility -->
         <section class="card" aria-labelledby="display-h">
           <!-- Allows the user to specify display and accessibility preferences -->
           <h2 id="display-h" class="eyebrow panel-title">
             Display and accessibility
           </h2>
 
+          <!-- #region [S10] Text Size -->
           <fieldset>
             <!-- Allows the user to specify text size -->
             <legend>Text size</legend>
@@ -199,7 +236,9 @@ It allows the player to customize various settings for the game.
               >
             </div>
           </fieldset>
+          <!-- #endregion [S10] Text Size -->
 
+          <!-- #region [S11] Text Speed -->
           <label class="field-label" for="textSpeed">Text speed</label>
           <!-- Allows the user to specify text speed -->
           <p class="small muted" style="margin-top: 0.4rem">
@@ -216,7 +255,9 @@ It allows the player to customize various settings for the game.
             max="100"
             step="10"
           />
+          <!-- #endregion [S11] Text Speed -->
 
+          <!-- #region [S12] Contrast & Motion -->
           <div style="margin-top: 1.25rem">
             <!-- Allows the user to turn on/off high-contrast theme -->
             <label class="check"
@@ -229,8 +270,11 @@ It allows the player to customize various settings for the game.
               motion</label
             >
           </div>
+          <!-- #endregion [S12] Contrast & Motion -->
         </section>
+        <!-- #endregion [S9] Display & Accessibility -->
 
+        <!-- #region [S13] Sound -->
         <section class="card" aria-labelledby="sound-h">
           <!-- Allows the user to turn on/off the sound effects the are featured in the game, and change the volume -->
           <h2 id="sound-h" class="eyebrow panel-title">Sound</h2>
@@ -247,8 +291,10 @@ It allows the player to customize various settings for the game.
             step="5"
           />
         </section>
+        <!-- #endregion [S13] Sound -->
       </form>
 
+      <!-- #region [S14] Saved Message & Buttons -->
       <p
         id="saved-msg"
         class="small muted"
@@ -263,6 +309,7 @@ It allows the player to customize various settings for the game.
         </button>
         <a class="btn btn-primary" href="index.html" data-back>Done</a>
       </div>
+      <!-- #endregion [S14] Saved Message & Buttons -->
     </main>
   </body>
 </html>
