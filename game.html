@@ -21,7 +21,8 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
   [S5] Section Tabs .............. Base, Survivors, Map, Trade, Log
   [S6] Tab Panels ................ filled in by game.js
   [S7] Today Sidebar ............. plan, dusk, tonight, End day
-  [S8] Event Dialog .............. night/morning events
+  [S8a] Story Dialog ............. opening plot, before day 1 (text in js/story.js)
+  [S8] Event Dialog .............. night/morning events and story checkpoints
   [S9] Report Dialog ............. dusk/dawn reports
   [S10] Mini-game Dialog ......... canvas, timer, stats
   [S11] Build Dialog ............. pick a builder
@@ -50,10 +51,11 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
       type="image/png"
       href="assets/icons/anothertally_icon.png"
     />
-    <!-- common.js (settings, sound, text speed) runs first; minigames.js must load
-         before game.js, which uses AT.minigames. -->
+    <!-- common.js (settings, sound, text speed) runs first; minigames.js and
+         story.js must load before game.js, which uses AT.minigames and AT.STORY. -->
     <script src="js/common.js"></script>
     <script src="js/minigames.js" defer></script>
+    <script src="js/story.js" defer></script>
     <script src="js/game.js" defer></script>
   </head>
   <!-- Contains the information for the game page -->
@@ -113,8 +115,8 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
             ><!-- Game icon -->
           </div>
           <p class="day-info">
-            <span id="day-label">Day 01 of 15</span
-            ><!-- Lists the day number -->
+            <span id="day-label" class="day-tally">Day 1 of 15</span
+            ><!-- The day as tally marks on the wall, drawn by renderHeader() in js/game.js -->
             <span id="phase-pill" class="phase-pill" data-phase="day"
               >Day phase</span
             >
@@ -278,6 +280,27 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
         </aside>
         <!-- #endregion [S7] Today Sidebar -->
       </div>
+
+      <!-- #region [S8a] Story Dialog -->
+      <!-- 
+      ---------- Overlay for the opening story ----------
+      Shown once before day 1. The title, picture and paragraphs come from
+      the Opening section of js/story.js; openIntro() in game.js fills them in.
+      -->
+      <dialog id="story-dialog" aria-labelledby="story-title">
+        <p class="eyebrow" id="story-kicker">Day 01 · Before it begins</p>
+        <img class="art" id="story-art" src="" alt="" hidden />
+        <h2 id="story-title">[Story title]</h2>
+        <div class="story-text" id="story-text"></div>
+        <button
+          class="btn btn-primary btn-block"
+          type="button"
+          id="story-continue"
+        >
+          Begin day 1
+        </button>
+      </dialog>
+      <!-- #endregion [S8a] Story Dialog -->
 
       <!-- #region [S8] Event Dialog -->
       <!-- 

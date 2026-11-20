@@ -18,7 +18,11 @@ How a turn flows:
           forward and the group eats. The Dusk report shows what happened.
   Night - one event (sometimes a mini-game from minigames.js), then the horde
           tests the night defense. The Dawn report shows the night.
-  Dawn  - sometimes a morning event, then the next day starts.
+  Dawn  - the Tally mini-game carves the new day's mark on the wall, then
+          sometimes a morning event, then the next day starts.
+
+The story (the opening pop-up, the checkpoint events on set days and the
+endings) is written in js/story.js and read from AT.STORY.
 
 How this file is laid out:
   1. Static game data (resources, difficulty, facilities, map, events, sounds)
@@ -85,7 +89,8 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
 [S48] Leaving, Pause & Start-up
   [S49] Leaving the Page
   [S50] Pause Menu
-  [S51] Start-up (Go)
+  [S51] Opening Story
+  [S52] Start-up (Go)
 =========================================================
 */
 
@@ -120,7 +125,7 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
   var randInt = function (min, max) {
     return min + Math.floor(rng() * (max - min + 1));
   };
-// #endregion [S1] Game Screen: Start-up
+  // #endregion [S1] Game Screen: Start-up
   // #region [S2] Static Game Data
   /*
 =========================================================
@@ -588,7 +593,8 @@ and any of these (all optional):
           skill: "Medic",
           cost: { medicine: 1 },
           recruit: true,
-          outcome: "Your medic checked the stranger for bites and opened the gate.",
+          outcome:
+            "Your medic checked the stranger for bites and opened the gate.",
           sounds: ["doorOpen", ["pillCap", 600], ["closeJar", 1400]],
         },
         {
@@ -619,7 +625,11 @@ and any of these (all optional):
           fatigue: 20,
           reward: "crate",
           outcome: "Your builder forced the lid off the crate.",
-          sounds: ["woodSplitting", ["rustyHinges", 500], ["cardboardBox", 1100]],
+          sounds: [
+            "woodSplitting",
+            ["rustyHinges", 500],
+            ["cardboardBox", 1100],
+          ],
         },
         { label: "Pick the lock", kind: "minigame", game: "Lockpick" },
         {
@@ -645,7 +655,12 @@ and any of these (all optional):
           fatigue: 30,
           injure: 10,
           outcome: "Your fighter held the wall until dawn.",
-          sounds: ["swing", ["swing", 450], ["swing", 900], ["zombieDying", 1100]],
+          sounds: [
+            "swing",
+            ["swing", 450],
+            ["swing", 900],
+            ["zombieDying", 1100],
+          ],
         },
         { label: "Defend the wall", kind: "minigame", game: "Defense" },
         {
@@ -704,8 +719,14 @@ and any of these (all optional):
           fatigue: 30,
           injure: 10,
           recruit: true,
-          outcome: "Your fighter cut a path to the school and brought them back.",
-          sounds: ["doorOpen", ["swing", 700], ["swing", 1100], ["doorClose", 2000]],
+          outcome:
+            "Your fighter cut a path to the school and brought them back.",
+          sounds: [
+            "doorOpen",
+            ["swing", 700],
+            ["swing", 1100],
+            ["doorClose", 2000],
+          ],
         },
         {
           label: "Cover them as they run",
@@ -738,7 +759,8 @@ and any of these (all optional):
           fatigue: 10,
           reward: "soldier",
           unlock: "military",
-          outcome: "Your scavenger took the keycard and everything useful on him.",
+          outcome:
+            "Your scavenger took the keycard and everything useful on him.",
           sounds: ["carefulWalking", ["pillCap", 700], ["reload", 1200]],
         },
         {
@@ -771,7 +793,8 @@ and any of these (all optional):
           skill: "Hunter",
           fatigue: 10,
           reward: "rats",
-          outcome: "Your hunter cleared the rats out. Not much meat, but it's food.",
+          outcome:
+            "Your hunter cleared the rats out. Not much meat, but it's food.",
           sounds: ["swing", ["swing", 400], ["stove", 1200]],
         },
         {
@@ -805,7 +828,8 @@ and any of these (all optional):
           cost: { materials: 1 },
           reward: "rain",
           morale: 5,
-          outcome: "Your builder patched the roof and rigged it to catch the rain.",
+          outcome:
+            "Your builder patched the roof and rigged it to catch the rain.",
           sounds: ["buildingHammering", ["pourWater", 900]],
         },
         {
@@ -991,7 +1015,8 @@ and any of these (all optional):
           cost: {},
           hurtOne: 10,
           reward: "tracks",
-          outcome: "The tracks led to a lurker, and a few berry bushes behind it.",
+          outcome:
+            "The tracks led to a lurker, and a few berry bushes behind it.",
           sounds: ["carefulWalking", ["zombieAttack", 1200], ["swing", 1500]],
         },
         {
@@ -1049,7 +1074,11 @@ and any of these (all optional):
 
   // Cutting through the Military checkpoint fence from the Map tab.
   // Cheaper when a Builder or Mechanic is at the shelter to do the cutting.
-  var CHECKPOINT_CUT = { cost: 8, skilledCost: 4, skills: ["Builder", "Mechanic"] }; // [TUNE THESE]
+  var CHECKPOINT_CUT = {
+    cost: 8,
+    skilledCost: 4,
+    skills: ["Builder", "Mechanic"],
+  }; // [TUNE THESE]
 
   // Each extra day of a long trip brings back this many extra supplies.
   var EXTRA_PER_TRIP_DAY = 2; // [TUNE THESE]
@@ -1063,7 +1092,13 @@ and any of these (all optional):
     Defense: "Click zombies before they reach the wall.",
     Lockpick: "Turn the pins in the right order before time runs out.",
     Search: "Find the supplies hidden in the room.",
+    Tally:
+      "Stop the blade over the marked spot to carve today's mark on the wall.",
   };
+  // What carving the dawn tally does to everyone's morale. [TUNE THESE]
+  // A clean mark steadies the group; every fifth mark (the slash) more so.
+  // A crooked mark (a lost or failed Tally) shakes them a little.
+  var TALLY = { clean: 3, fifth: 5, crooked: -2 };
   // #endregion [S8] Mini-game Descriptions
 
   // #region [S9] Sounds
@@ -1111,6 +1146,10 @@ stacked on top of each other; [name, ms] starts that one a little later.
       won: ["rummage", ["canJiggle", 600]],
       lost: ["rummage", ["zombieScream", 600]],
     },
+    Tally: {
+      won: ["tally"],
+      lost: ["tally", ["rustyMetal", 250]],
+    },
   };
   // #endregion [S9] Sounds
 
@@ -1148,6 +1187,9 @@ stacked on top of each other; [name, ms] starts that one a little later.
     length: setup.length,
     day: 1,
     phase: "day",
+    // One entry per day carved on the wall: true = clean, false = crooked.
+    // Day 1's mark is made on arrival; each dawn's Tally mini-game adds the next.
+    tallies: [true],
     resources: Object.assign(
       {},
       START_RESOURCES[setup.difficulty] || START_RESOURCES.normal,
@@ -1178,6 +1220,7 @@ stacked on top of each other; [name, ms] starts that one a little later.
     explored: [],
     unlocked: [], // ids of map locations that started locked and have been opened
     recruited: 0, // survivors who joined during the run (shown on the end screen)
+    flags: {}, // story flags set by checkpoint choices (see js/story.js), e.g. { signal: true }
     lastEvent: null, // title of the last event, so the same one doesn't come twice in a row
     eventTime: "night", // "night" or "morning": what happens after the current event
     currentChoice: null, // the choice picked for the current event (for mini-game wins)
@@ -1227,7 +1270,11 @@ stacked on top of each other; [name, ms] starts that one a little later.
     var loc = findLoc(id);
     if (!loc || !isLocked(loc)) return;
     state.unlocked.push(id);
-    addLog(cat || "exploring", "The " + loc.name + " is open. Scavengers can go there now.", "good");
+    addLog(
+      cat || "exploring",
+      "The " + loc.name + " is open. Scavengers can go there now.",
+      "good",
+    );
   }
   // Free beds: beds the facility provides minus everyone in the group.
   function freeBeds() {
@@ -1298,7 +1345,9 @@ they can't stay. Names, skills, traits and portraits come from common.js.
     if (freeBeds() <= 0) {
       addLog(
         cat,
-        "A survivor " + where + " wanted to join, but there was no free bed. Build more beds to take people in.",
+        "A survivor " +
+          where +
+          " wanted to join, but there was no free bed. Build more beds to take people in.",
         "bad",
       );
       return null;
@@ -1309,7 +1358,14 @@ they can't stay. Names, skills, traits and portraits come from common.js.
     state.recruited += 1;
     addLog(
       cat,
-      s.name + " (" + s.skill + ", " + s.trait.toLowerCase() + ") joined the group " + where + ".",
+      s.name +
+        " (" +
+        s.skill +
+        ", " +
+        s.trait.toLowerCase() +
+        ") joined the group " +
+        where +
+        ".",
       "good",
     );
     // A new face lifts everyone a little.
@@ -1765,8 +1821,12 @@ so they always agree with each other.
           DANGER_LABELS[loc.danger].toLowerCase() +
           " danger)." +
           (loc.travel > 1
-            ? " A " + loc.travel + "-day trip: away until dusk " +
-              (loc.travel === 2 ? "tomorrow" : "in " + plural(loc.travel - 1, "day")) +
+            ? " A " +
+              loc.travel +
+              "-day trip: away until dusk " +
+              (loc.travel === 2
+                ? "tomorrow"
+                : "in " + plural(loc.travel - 1, "day")) +
               "."
             : ""),
         level: "",
@@ -1996,8 +2056,24 @@ so they always agree with each other.
   // The top bar: day, phase, resources and the tab title.
   function renderHeader() {
     var night = state.phase === "night";
-    $("day-label").textContent =
-      (night ? "Night " : "Day ") + pad(state.day) + " of " + state.length;
+    // The day is shown as tally marks on the wall, with the run length beside it.
+    // Screen readers (and the tooltip) still get "Day 7 of 15".
+    var dayText =
+      (night ? "Night " : "Day ") + state.day + " of " + state.length;
+    var label = $("day-label");
+    label.title = dayText;
+    // Past 20 marks the resource tiles drop their words to make room (see 9a in style.css).
+    document
+      .querySelector(".topbar")
+      .classList.toggle("long-tally", state.tallies.length > 20);
+    label.innerHTML =
+      AT.tallyMarks(state.tallies) +
+      '<span class="tally-of" aria-hidden="true">of ' +
+      state.length +
+      "</span>" +
+      '<span class="visually-hidden">' +
+      dayText +
+      "</span>";
     var pill = $("phase-pill");
     pill.textContent = PHASE_LABELS[state.phase] + " phase";
     pill.dataset.phase = state.phase;
@@ -2715,7 +2791,11 @@ Small counts on the tabs show where something needs a look.
       ' <span class="muted">(+' +
       20 * loc.travel +
       " fatigue" +
-      (loc.travel > 1 ? ", away overnight, +" + EXTRA_PER_TRIP_DAY * (loc.travel - 1) + " supplies" : "") +
+      (loc.travel > 1
+        ? ", away overnight, +" +
+          EXTRA_PER_TRIP_DAY * (loc.travel - 1) +
+          " supplies"
+        : "") +
       ")</span></dd>" +
       "<dt>Likely finds</dt><dd>" +
       loc.finds +
@@ -2770,7 +2850,9 @@ Small counts on the tabs show where something needs a look.
           '<p class="small muted" style="margin-top:.5rem">' +
           (sender
             ? "They switch to Scavenge. May trigger an event or a mini-game." +
-              (loc.travel > 1 ? " This trip keeps them away until tomorrow's dusk." : "")
+              (loc.travel > 1
+                ? " This trip keeps them away until tomorrow's dusk."
+                : "")
             : "Everyone at the shelter is too tired. Let someone rest first.") +
           "</p>") +
       "</div></div>";
@@ -2803,8 +2885,14 @@ Small counts on the tabs show where something needs a look.
       (short > 0
         ? "Need " + short + " more materials."
         : cost === CHECKPOINT_CUT.skilledCost
-          ? "Your " + CHECKPOINT_CUT.skills.join(" or ") + " makes quick work of it."
-          : "A " + CHECKPOINT_CUT.skills.join(" or ") + " at the shelter would need only " + CHECKPOINT_CUT.skilledCost + ".") +
+          ? "Your " +
+            CHECKPOINT_CUT.skills.join(" or ") +
+            " makes quick work of it."
+          : "A " +
+            CHECKPOINT_CUT.skills.join(" or ") +
+            " at the shelter would need only " +
+            CHECKPOINT_CUT.skilledCost +
+            ".") +
       "</p>"
     );
   }
@@ -2818,7 +2906,11 @@ Small counts on the tabs show where something needs a look.
       if (!isLocked(place) || state.resources.materials < cost) return;
       state.resources.materials -= cost;
       unlock(place.id, "exploring");
-      actionSounds(["rustyMetal", ["woodSplitting", 400], ["rustyHinges", 900]]);
+      actionSounds([
+        "rustyMetal",
+        ["woodSplitting", 400],
+        ["rustyHinges", 900],
+      ]);
       toast("The fence is down. The " + place.name + " is open.");
       renderAll();
       if ($("send-btn")) $("send-btn").focus();
@@ -3331,7 +3423,10 @@ Small counts on the tabs show where something needs a look.
       if (s.away) {
         s.away -= 1;
         if (s.away > 0) {
-          addLog("exploring", s.name + " is still out at the " + loc.name + ".");
+          addLog(
+            "exploring",
+            s.name + " is still out at the " + loc.name + ".",
+          );
           return;
         }
       } else {
@@ -3361,7 +3456,9 @@ Small counts on the tabs show where something needs a look.
       // Riskier places hold more, and longer trips bring back more, but every
       // trip wears survivors out.
       var found =
-        randInt(1, 4) + (loc.danger - 1) + EXTRA_PER_TRIP_DAY * (loc.travel - 1);
+        randInt(1, 4) +
+        (loc.danger - 1) +
+        EXTRA_PER_TRIP_DAY * (loc.travel - 1);
       if (s.trait === "Lucky")
         found = Math.max(found, randInt(1, 4) + (loc.danger - 1));
       if (s.skill === "Scavenger") found += 2;
@@ -3700,6 +3797,7 @@ Small counts on the tabs show where something needs a look.
     });
     var parts = [];
     if (c.kind === "skill") parts.push("Requires: " + c.skill);
+    if (c.needsFlag) parts.push("Requires: " + (c.needsNote || c.needsFlag));
     if (c.kind === "minigame") parts.push("Starts a mini-game");
     if (costParts.length) parts.push("Costs: " + costParts.join(", "));
     else if (c.kind === "cost") parts.push("No cost");
@@ -3726,6 +3824,8 @@ Small counts on the tabs show where something needs a look.
   // Can the group pick this choice right now? Skill choices need a rested
   // survivor with that skill at the shelter; anything with a cost needs the supplies.
   function choiceOk(c) {
+    // Story choices can need a flag set by an earlier checkpoint.
+    if (c.needsFlag && !state.flags[c.needsFlag]) return false;
     var cost = c.cost || {};
     var affordable = Object.keys(cost).every(function (k) {
       return state.resources[k] >= cost[k];
@@ -3745,8 +3845,9 @@ Small counts on the tabs show where something needs a look.
     state.eventTime = time || "night";
     state.lastEvent = ev.title;
     state.eventsFaced += 1;
-    $("event-kicker").textContent =
-      state.eventTime === "morning"
+    $("event-kicker").textContent = ev.checkpoint
+      ? "Day " + pad(state.day) + " · Story"
+      : state.eventTime === "morning"
         ? "Day " + pad(state.day) + " · Morning"
         : "Night " + pad(state.day) + " · Event";
     $("event-title").textContent = ev.title;
@@ -3774,7 +3875,7 @@ Small counts on the tabs show where something needs a look.
       .join("");
     $("event-dialog").showModal();
     // The story text types out at the Text speed setting.
-    skipTyping = AT.typeText($("event-text"), ev.text);
+    skipTyping = AT.typeText($("event-text"), storyText(ev.text));
     sceneSounds(ev.sounds);
   }
 
@@ -3809,6 +3910,7 @@ Small counts on the tabs show where something needs a look.
       state.resources[k] -= c.cost[k];
     });
     addLog("event", ev.title + ": " + c.outcome);
+    if (c.flag) state.flags[c.flag] = true; // remembered for later checkpoints and the ending
     if (who && c.fatigue) tire(who, c.fatigue);
     if (who && c.injure) hurt(who, c.injure, "event", "was hurt");
     // Losses take as much as there is.
@@ -3821,7 +3923,8 @@ Small counts on the tabs show where something needs a look.
       addLog("event", "Lost " + AT.minigames.describe(lost) + ".", "bad");
     }
     if (c.reward) gainSupplies("event", REWARDS[c.reward]());
-    if (c.recruit) recruit("event", ev.from || "after the " + ev.title.toLowerCase());
+    if (c.recruit)
+      recruit("event", ev.from || "after the " + ev.title.toLowerCase());
     if (c.unlock) unlock(c.unlock, "event");
     if (c.morale) {
       alive().forEach(function (s) {
@@ -3829,7 +3932,9 @@ Small counts on the tabs show where something needs a look.
       });
       addLog(
         "event",
-        (c.morale < 0 ? "Morale dropped (" : "Morale rose (+") + c.morale + ").",
+        (c.morale < 0 ? "Morale dropped (" : "Morale rose (+") +
+          c.morale +
+          ").",
         c.morale < 0 ? "bad" : "good",
       );
     }
@@ -3869,7 +3974,7 @@ Small counts on the tabs show where something needs a look.
 
   // Opens the mini-game overlay and creates the game controller.
   function openMinigame(name) {
-    $("mg-title").textContent = name;
+    $("mg-title").textContent = name === "Tally" ? "Carve the tally" : name;
     $("mg-instructions").textContent = MINIGAMES[name];
     $("minigame-dialog").dataset.game = name;
     $("mg-start").textContent = "Start";
@@ -3881,6 +3986,8 @@ Small counts on the tabs show where something needs a look.
       rng: rng,
       difficulty: state.difficulty,
       wallLevel: facility("walls").level,
+      marks: state.tallies, // Tally: the marks already on the wall
+      length: state.length,
       ui: mgUi,
       done: function (result) {
         mg.phase = "done";
@@ -3939,6 +4046,11 @@ Small counts on the tabs show where something needs a look.
     // Leaving the mini-game cuts off its sounds (see minigames.js).
     AT.stopChannel("minigame");
     AT.stopChannel("searching");
+    // The dawn tally isn't part of an event: it has its own ending (see finishTally).
+    if (name === "Tally") {
+      finishTally(won, auto);
+      return;
+    }
     var how = auto ? " (auto-resolved)" : "";
     var cat =
       name === "Defense" ? "night" : name === "Search" ? "exploring" : "event";
@@ -3970,9 +4082,13 @@ Small counts on the tabs show where something needs a look.
       var ev = state.currentEvent || {};
       if (choice.win.reward) gainSupplies(cat, REWARDS[choice.win.reward]());
       if (choice.win.recruit) {
-        recruit(cat, ev.from || "after the " + (ev.title || "fight").toLowerCase());
+        recruit(
+          cat,
+          ev.from || "after the " + (ev.title || "fight").toLowerCase(),
+        );
       }
       if (choice.win.unlock) unlock(choice.win.unlock, cat);
+      if (choice.win.flag) state.flags[choice.win.flag] = true;
     }
     // Zombie bites from the Search mini-game all land on one survivor (Cowards are spared if possible).
     if (result && result.bites) {
@@ -4130,19 +4246,68 @@ Small counts on the tabs show where something needs a look.
         " made it through the night.",
     );
     renderAll();
-    // Some mornings bring an event before the day starts (decided now so the
-    // button can say what comes next).
-    var morning = rng() < MORNING_EVENT_CHANCE ? pickEvent("morning") : null;
+    // A story checkpoint (js/story.js) always takes the morning on its day.
+    // Other mornings sometimes bring an event before the day starts.
+    var morning =
+      AT.STORY.checkpointFor(state.day, state.length) ||
+      (rng() < MORNING_EVENT_CHANCE ? pickEvent("morning") : null);
     showReport({
       kicker: "Dawn · Day " + pad(state.day),
       title: "Dawn report",
       entries: state.log.slice(eventMark),
-      button: morning ? "Continue" : "Start day " + state.day,
+      button: "Carve the tally",
       next: function () {
-        if (morning) openEvent(morning, "morning");
-        else startDay();
+        carveTally(function () {
+          if (morning) openEvent(morning, "morning");
+          else startDay();
+        });
       },
     });
+  }
+
+  // Dawn: carve the new day's mark with the Tally mini-game (or auto-resolve it,
+  // following the Mini-games option), then carry on with next().
+  var tallyNext = null;
+  function carveTally(next) {
+    tallyNext = next;
+    state.currentEvent = null;
+    state.currentChoice = null;
+    if (AT.load().minigames === "auto") autoResolve("Tally");
+    else openMinigame("Tally");
+  }
+
+  // Adds the mark to the wall, applies its morale and moves on.
+  function finishTally(won, auto) {
+    var number = state.tallies.length + 1;
+    var fifth = number % 5 === 0;
+    state.tallies.push(won);
+    var lift = won ? (fifth ? TALLY.fifth : TALLY.clean) : TALLY.crooked;
+    alive().forEach(function (s) {
+      changeMorale(s, lift);
+    });
+    var how = auto ? " (auto-resolved)" : "";
+    var text = won
+      ? (fifth ? "Slashed through five: tally " : "Carved tally ") +
+        number +
+        " on the wall. Morale +" +
+        lift +
+        "."
+      : "The blade slipped. Tally " +
+        number +
+        " came out crooked. Morale " +
+        lift +
+        ".";
+    addLog("base", text + how, won ? "good" : "bad");
+    toast(text);
+    renderAll();
+    // Losing morale can make someone leave; if no one is left, the run ends.
+    if (!alive().length) {
+      endRun(false);
+      return;
+    }
+    var next = tallyNext;
+    tallyNext = null;
+    if (next) next();
   }
 
   // Runs after a morning event: shows what it led to, then starts the day.
@@ -4196,6 +4361,8 @@ Small counts on the tabs show where something needs a look.
       shelter: state.shelter,
       length: state.length,
       daysSurvived: won ? state.length : state.day - 1,
+      // The marks for every day fully survived (clean or crooked), for the Final Tally.
+      tallies: state.tallies.slice(0, won ? state.length : state.day - 1),
       alive: alive().length,
       lost: state.survivors.length - alive().length,
       supplies: state.suppliesGathered,
@@ -4205,6 +4372,7 @@ Small counts on the tabs show where something needs a look.
       locations: LOCATIONS.length,
       events: state.eventsFaced,
       found: state.recruited,
+      flags: state.flags, // picks the ending on end.html (js/story.js)
       group: group,
     });
     leaving = true;
@@ -4262,14 +4430,67 @@ Small counts on the tabs show where something needs a look.
   });
 
   // Events, mini-games and reports must be answered; Esc does not dismiss them.
-  ["event-dialog", "minigame-dialog", "report-dialog"].forEach(function (id) {
-    $(id).addEventListener("cancel", function (e) {
-      e.preventDefault();
-    });
-  });
+  ["story-dialog", "event-dialog", "minigame-dialog", "report-dialog"].forEach(
+    function (id) {
+      $(id).addEventListener("cancel", function (e) {
+        e.preventDefault();
+      });
+    },
+  );
   // #endregion [S50] Pause Menu
 
-  // #region [S51] Start-up (Go)
+  // #region [S51] Opening Story
+  // ---------- Opening story ----------
+  // Fills {shelter}, {day} and the other placeholders in story text
+  // (see the top of js/story.js).
+  function storyText(text) {
+    return AT.STORY.fill(text, {
+      shelter: state.shelter,
+      length: state.length,
+      day: state.day,
+      daysLeft: state.length - state.day,
+      alive: alive().length,
+      lost: state.survivors.length - alive().length,
+    });
+  }
+
+  // Shows the opening story once, before day 1. With no paragraphs in
+  // js/story.js the pop-up is skipped.
+  function openIntro() {
+    var intro = AT.STORY.intro;
+    if (!intro || !intro.paragraphs || !intro.paragraphs.length) {
+      AT.playSound("doorClose");
+      return;
+    }
+    $("story-kicker").textContent = storyText(intro.kicker || "");
+    $("story-title").textContent = storyText(intro.title || "");
+    var art = $("story-art");
+    art.hidden = !intro.art;
+    if (intro.art) art.src = "assets/images/png/" + intro.art + ".png";
+    // One <p> per paragraph, typed out one after another.
+    var box = $("story-text");
+    box.innerHTML = "";
+    var paras = intro.paragraphs.map(function () {
+      return box.appendChild(document.createElement("p"));
+    });
+    $("story-continue").textContent = intro.button || "Begin day 1";
+    $("story-dialog").showModal();
+    $("story-continue").focus();
+    skipTyping = AT.typeLines(paras, intro.paragraphs.map(storyText));
+  }
+  // Clicking the story shows it all at once.
+  $("story-text").addEventListener("click", function () {
+    skipTyping();
+  });
+  // Begin closes the story, and the door shuts behind the group.
+  $("story-continue").addEventListener("click", function () {
+    skipTyping();
+    $("story-dialog").close();
+    AT.playSound("doorClose");
+  });
+  // #endregion [S51] Opening Story
+
+  // #region [S52] Start-up (Go)
   // ---------- Go ----------
   function renderAll() {
     renderHeader();
@@ -4306,8 +4527,8 @@ Small counts on the tabs show where something needs a look.
     }),
   );
   renderAll();
-  // The door shuts behind the group as they settle in.
-  AT.playSound("doorClose");
-  // #endregion [S51] Start-up (Go)
+  // The opening story, then the door shuts behind the group as they settle in.
+  openIntro();
+  // #endregion [S52] Start-up (Go)
   // #endregion [S48] Leaving, Pause & Start-up
 })();

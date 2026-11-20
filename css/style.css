@@ -64,11 +64,13 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
         9j-2. Report pop-up
         9k. Skills and traits
         9l. Turn clarity
+        9m. Tally marks
   10. Mini-games
         10a. Shared mini-game frame
         10b. Defense
         10c. Lockpick
         10d. Search
+        10e. Tally
 */
 
 /* #region 01. DESIGN TOKENS */
@@ -840,6 +842,7 @@ dialog.pause::backdrop {
 }
 /* Reports, events and mini-games carry the phase colour as a top stripe,
    the same way phase cards do, and rise gently into place. */
+#story-dialog,
 #report-dialog,
 #event-dialog,
 #minigame-dialog {
@@ -1327,6 +1330,17 @@ fieldset.setup-step > legend.step-title + * {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
+/* The ending story sits between the Final Tally and the stat cards. */
+.ending {
+  margin-top: 1.5rem;
+  text-align: left;
+}
+.ending h2 {
+  margin-bottom: 0.5rem;
+}
+.ending .story-text {
+  margin-bottom: 0;
+}
 .group {
   text-align: left;
 }
@@ -1351,6 +1365,19 @@ fieldset.setup-step > legend.step-title + * {
 }
 .group .fate {
   margin-left: auto;
+  color: var(--muted);
+}
+/* Final Tally: one mark for each day survived, big, under the title. */
+.final-tally {
+  margin: 1.25rem 0 0.5rem;
+}
+.final-tally-wall .tally {
+  justify-content: center;
+  max-width: 100%;
+  font-size: 2.4rem;
+}
+.final-tally-count {
+  margin-top: 0.5rem;
   color: var(--muted);
 }
 /* #endregion 8e. End screen (end.html) */
@@ -1437,8 +1464,9 @@ fieldset.setup-step > legend.step-title + * {
   font-variant-numeric: tabular-nums;
 }
 
-/* Medium screens: drop the words, keep icon + number (still read aloud). */
-@media (max-width: 1180px) {
+/* Medium screens: drop the words, keep icon + number (still read aloud).
+   Raised from 1180px to make room for the day's tally marks. */
+@media (max-width: 1400px) {
   .resources .res-label {
     position: absolute;
     width: 1px;
@@ -1447,6 +1475,15 @@ fieldset.setup-step > legend.step-title + * {
     clip: rect(0 0 0 0);
     white-space: nowrap;
   }
+}
+/* Long tallies (past 20 marks, set by renderHeader in js/game.js) need the room on any screen. */
+.topbar.long-tally .res-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 /* Small screens: resources get their own full-width row under the title. */
 @media (max-width: 760px) {
@@ -2067,6 +2104,19 @@ fieldset.setup-step > legend.step-title + * {
   color: var(--muted);
   margin-bottom: 1rem;
 }
+/* Story text: the opening pop-up (game.html) and the ending (end.html).
+   One <p> per paragraph from js/story.js. */
+.story-text {
+  margin-bottom: 1.25rem;
+  line-height: 1.6;
+  cursor: pointer; /* clicking shows all the text at once */
+}
+.story-text p {
+  margin: 0 0 0.75rem;
+}
+.story-text p:last-child {
+  margin-bottom: 0;
+}
 .event-choices {
   display: grid;
   gap: 0.6rem;
@@ -2534,6 +2584,123 @@ details.log-day li.good {
   padding-left: 0.6rem;
 }
 /* #endregion 9l. Turn clarity */
+
+/* #region 9m. Tally marks */
+/* ---------- 9m. Tally marks ----------
+   Drawn by AT.tallyMarks() in js/common.js and used in the top bar, the
+   Tally mini-game and the Final Tally. Four upright marks, then a slash
+   through them. Sizes are in em, so font-size scales the whole tally. */
+.tally {
+  --tally-h: 1.2em;
+  --tally-w: 0.14em;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25em 0.45em;
+  color: var(--ink);
+}
+.tally-group {
+  position: relative;
+  display: inline-flex;
+  align-items: stretch;
+  gap: 0.22em;
+  height: var(--tally-h);
+  padding: 0 0.1em;
+}
+.tally i {
+  display: block;
+  font-style: normal;
+  background: currentColor;
+  border-radius: 1px;
+}
+.tally-mark {
+  width: var(--tally-w);
+  min-width: 2px;
+}
+.tally-slash {
+  position: absolute;
+  left: -0.25em;
+  right: -0.25em;
+  top: 50%;
+  height: var(--tally-w);
+  min-height: 2px;
+  transform: rotate(-28deg);
+}
+/* A crooked mark: a Tally mini-game that slipped. */
+.tally-mark.crooked {
+  transform: rotate(14deg);
+  opacity: 0.7;
+}
+.tally-slash.crooked {
+  transform: rotate(-10deg) translateY(0.2em);
+  opacity: 0.7;
+}
+/* The mark about to be carved, as a dotted outline. */
+.tally-mark.ghost {
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--muted) 0 3px,
+    transparent 3px 6px
+  );
+}
+.tally-slash.ghost {
+  background: repeating-linear-gradient(
+    to right,
+    var(--muted) 0 3px,
+    transparent 3px 6px
+  );
+}
+/* The mark just carved draws itself in (switched off by Reduce motion). */
+.tally-mark.fresh {
+  animation: tally-carve-down 0.35s ease-out;
+}
+.tally-slash.fresh {
+  animation: tally-carve-across 0.35s ease-out;
+}
+@keyframes tally-carve-down {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    clip-path: inset(0);
+  }
+}
+@keyframes tally-carve-across {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0);
+  }
+}
+
+/* Top bar: the day as tally marks on a small "wall" tile, with the run
+   length beside it. Shaped like the resource tiles so it reads as one unit. */
+.day-tally {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.3rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg);
+  font-size: 1.05rem;
+  transition: background-color var(--phase-fade);
+}
+/* Tighter spacing in the top bar so a long run still fits on one line. */
+.day-tally .tally {
+  gap: 0.25em 0.35em;
+}
+.day-tally .tally-group {
+  gap: 0.17em;
+}
+.tally-of {
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--muted);
+  white-space: nowrap;
+}
+/* #endregion 9m. Tally marks */
 /* #endregion 09. IN-GAME (game.html) */
 
 /* #region 10. MINI-GAMES (js/minigames.js) */
@@ -2829,4 +2996,70 @@ details.log-day li.good {
   border-style: dashed;
 }
 /* #endregion 10d. Search */
+
+/* #region 10e. Tally */
+/* ---------- 10e. Tally ---------- */
+/* The whole arena takes a click, so the cursor says "cut" everywhere. */
+.mg-tally {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 1.1rem;
+  cursor: crosshair;
+}
+.mg-tally-wall {
+  max-width: 100%;
+  padding: 0.6rem 1.2rem;
+  font-size: 2.2rem;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.mg-groove {
+  position: relative;
+  width: min(520px, 90%);
+  height: 2.25rem;
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+  background: var(--surface);
+}
+/* The spot to stop the blade on. */
+.mg-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: var(--accent);
+  opacity: 0.4;
+}
+.mg-blade {
+  position: absolute;
+  top: -8px;
+  bottom: -8px;
+  left: 0;
+  width: 4px;
+  margin-left: -2px;
+  border-radius: 2px;
+  background: var(--ink);
+  box-shadow: 0 0 0 2px var(--surface);
+}
+/* A missed cut jolts the groove. */
+.mg-groove.slip {
+  animation: mg-slip 0.3s;
+}
+@keyframes mg-slip {
+  25% {
+    transform: translateX(-5px);
+    border-color: var(--danger);
+  }
+  75% {
+    transform: translateX(5px);
+    border-color: var(--danger);
+  }
+}
+.mg-tally .mg-msg {
+  margin-top: 0;
+  max-width: 44ch;
+}
+/* #endregion 10e. Tally */
 /* #endregion 10. MINI-GAMES (js/minigames.js) */

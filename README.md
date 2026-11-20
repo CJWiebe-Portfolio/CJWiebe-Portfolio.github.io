@@ -51,6 +51,7 @@ The full rules are on the in-game **How to play** page.
 - 11 night events and 3 morning events with skill, cost and mini-game choices, offered only when they fit the situation and never twice in a row
 - Four wandering traders who come and go, each with their own stock and wants
 - Three mini-games (Defense, Lockpick, Search), with an option to auto-resolve them
+- A story told through an opening pop-up, four checkpoint events that land on set days for each run length, and six endings that depend on how the run went (all written in `js/story.js`)
 - Dusk and Dawn report pop-ups, plus a filterable log of everything that happened
 - A seed option in Options for repeatable runs
 - Sound: background music, looping ambience for each phase, and stacked sound effects for actions, events, mini-games and the night raid
@@ -93,6 +94,7 @@ VS Code's Live Server extension works too. Note that refreshing the game page en
 │   ├── new-game.js      # rolls the starting survivors and hands the setup to the game
 │   ├── game.js          # the game: state, rules, tabs, events, reports
 │   ├── minigames.js     # Defense, Lockpick and Search
+│   ├── story.js         # all story text: the opening pop-up, checkpoint events and endings
 │   ├── options.js
 │   └── end.js
 └── assets/

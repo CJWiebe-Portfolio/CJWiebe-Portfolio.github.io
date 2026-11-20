@@ -16,9 +16,11 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
 =========================================================
 [S1] Head ........................ meta, title, icon, fonts, CSS, JS
 [S2] Result Art & Title .......... win/lose image, heading
-[S3] Stat Cards .................. filled in by end.js
-[S4] Your Group .................. survivor list
-[S5] Next Steps .................. Play again, Back to title
+[S3] Final Tally ................. marks for each day survived
+[S3a] Ending ..................... ending story (text in js/story.js)
+[S4] Stat Cards .................. filled in by end.js
+[S5] Your Group .................. survivor list
+[S6] Next Steps .................. Play again, Back to title
 =========================================================
 -->
 
@@ -28,7 +30,7 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Run summary — Another Tally</title>
+    <title>Final Tally — Another Tally</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -41,8 +43,10 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
       type="image/png"
       href="assets/icons/anothertally_icon.png"
     />
-    <!-- common.js applies the settings and plays the music; end.js fills in the summary. -->
+    <!-- common.js applies the settings and plays the music; story.js holds the
+         endings; end.js picks one and fills in the summary. -->
     <script src="js/common.js"></script>
+    <script src="js/story.js" defer></script>
     <script src="js/end.js" defer></script>
   </head>
   <!-- Contains the information for the end page -->
@@ -59,31 +63,50 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
         src="assets/images/png/end_win.png"
         alt=""
       />
-      <p class="eyebrow">Run summary</p>
+      <p class="eyebrow">Final Tally</p>
       <h1 id="end-title">No run to show</h1>
       <p class="muted" id="end-sub">Finish a run to see its summary here.</p>
       <!-- #endregion [S2] Result Art & Title -->
 
-      <!-- #region [S3] Stat Cards -->
+      <!-- #region [S3] Final Tally -->
+      <!-- One mark for each day survived, crooked ones included, drawn by end.js -->
+      <section class="final-tally" id="final-tally" aria-labelledby="final-tally-h" hidden>
+        <h2 id="final-tally-h" class="visually-hidden">Tally marks</h2>
+        <div class="final-tally-wall" id="final-tally-marks"></div>
+        <p class="final-tally-count" id="final-tally-count"></p>
+      </section>
+      <!-- #endregion [S3] Final Tally -->
+
+      <!-- #region [S3a] Ending -->
+      <!-- The ending that fits this run, picked by end.js from the Endings in js/story.js
+           (hidden until there's a run to show) -->
+      <section class="card ending" id="ending" aria-labelledby="ending-title" hidden>
+        <p class="eyebrow">Ending</p>
+        <h2 id="ending-title">[Ending title]</h2>
+        <div class="story-text" id="ending-text"></div>
+      </section>
+      <!-- #endregion [S3a] Ending -->
+
+      <!-- #region [S4] Stat Cards -->
       <!-- One card per stat (days survived, survivors found, and so on), built by end.js -->
       <div class="stat-grid" id="stats"></div>
-      <!-- #endregion [S3] Stat Cards -->
+      <!-- #endregion [S4] Stat Cards -->
 
-      <!-- #region [S4] Your Group -->
+      <!-- #region [S5] Your Group -->
       <!-- Everyone who was in the group and what happened to them (hidden until there's a run to show) -->
       <section class="card group" id="group" aria-labelledby="group-h" hidden>
         <h2 id="group-h" class="eyebrow">Your group</h2>
         <ul id="group-list"></ul>
       </section>
-      <!-- #endregion [S4] Your Group -->
+      <!-- #endregion [S5] Your Group -->
 
-      <!-- #region [S5] Next Steps -->
+      <!-- #region [S6] Next Steps -->
       <!-- Next steps -->
       <div class="page-actions">
         <a class="btn btn-primary" href="new-game.html">Play again</a>
         <a class="btn" href="index.html">Back to title</a>
       </div>
-      <!-- #endregion [S5] Next Steps -->
+      <!-- #endregion [S6] Next Steps -->
     </main>
   </body>
 </html>

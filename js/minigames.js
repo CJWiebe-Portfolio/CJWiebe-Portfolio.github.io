@@ -8,7 +8,8 @@ COURSE: INFS 634 - McGill University
 =========================================================
 DESCRIPTION:
   This is the minigames screen JavaScript file for Another Tally. 
-  There are three mini-games: Defense, Lockpick, and Search. Each has its own logic and UI.
+  There are four mini-games: Defense, Lockpick, Search and Tally. Each has its own logic and UI.
+  Tally is played at every dawn to carve the new day's mark on the shelter wall.
   The minigames can be played in-game or auto-resolved for a quick outcome, and the results are returned in a consistent format.
 
   How game.js uses this file:
@@ -31,7 +32,8 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
 [S2] Defense Mini-game
 [S3] Lockpick Mini-game
 [S4] Search Mini-game
-[S5] Auto-resolve Results
+[S5] Tally Mini-game
+[S6] Auto-resolve Results
 =========================================================
 */
 
@@ -878,10 +880,166 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
     return parts.slice(0, -1).join(", ") + " and " + parts[parts.length - 1];
   }
 
-  var GAMES = { Defense: Defense, Lockpick: Lockpick, Search: Search };
+  var GAMES = { Defense: Defense, Lockpick: Lockpick, Search: Search, Tally: Tally };
   // #endregion [S4] Search Mini-game
 
-  // #region [S5] Auto-resolve Results
+  // #region [S5] Tally Mini-game
+  /*
+===============================================================
+---------- Tally minigame where players carve the new day's mark at dawn ----------
+===============================================================
+A blade sweeps back and forth along a groove. Stop it inside the marked
+spot (Space, Enter or a click) to carve a clean mark. Every fifth mark
+slashes through the group, so its spot is smaller and the blade faster.
+Running out of tries or time still carves the mark, just crooked.
+
+opts.marks is the list of marks already on the wall (true = clean,
+false = crooked) and opts.length is the run length in days.
+The result adds mark (the new mark's number) and fifth (true for a slash).
+*/
+  function Tally(o) {
+    var marks = (o.marks || []).slice();
+    var n = marks.length; // index of the mark being carved
+    var fifth = n % 5 === 4;
+    var zoneW = byDifficulty(o.difficulty, 0.22, 0.16, 0.11) * (fifth ? 0.75 : 1); // [TUNE THESE]
+    var period = byDifficulty(o.difficulty, 1500, 1200, 950) * (fifth ? 0.85 : 1); // ms for one sweep there and back
+    var seconds = 8;
+    var tries = 3;
+    var running = false,
+      cooling = false,
+      raf = null,
+      t0 = 0,
+      x = 0;
+    var zoneL = 0.1 + o.rng() * (0.8 - zoneW);
+
+    o.arena.className = "mg-canvas mg-tally";
+    o.arena.innerHTML =
+      '<div class="mg-tally-wall" aria-hidden="true">' +
+      AT.tallyMarks(marks.concat([true])) +
+      "</div>" +
+      '<div class="mg-groove" aria-hidden="true">' +
+      '<span class="mg-zone" style="left:' +
+      zoneL * 100 +
+      "%;width:" +
+      zoneW * 100 +
+      '%"></span><span class="mg-blade"></span></div>' +
+      '<p class="mg-msg" aria-live="polite">' +
+      (fifth
+        ? "Fifth mark: slash through the group. The spot is smaller this time."
+        : "Stop the blade over the marked spot.") +
+      " Press Space or Enter, or click.</p>";
+
+    var all = o.arena.querySelectorAll(".tally i");
+    var newMark = all[all.length - 1];
+    newMark.classList.add("ghost");
+    var groove = o.arena.querySelector(".mg-groove");
+    var blade = o.arena.querySelector(".mg-blade");
+    var msg = o.arena.querySelector(".mg-msg");
+
+    // Tries left, and how far through the run this mark takes the group.
+    function stats() {
+      o.ui.statA("Tries left", String(tries));
+      o.ui.statB(
+        "Tally",
+        o.length ? ((n + 1) / o.length) * 100 : 0,
+        n + 1 + (o.length ? " of " + o.length : ""),
+      );
+    }
+    stats();
+
+    var clock = makeClock(seconds, o.ui, function () {
+      finish(false);
+    });
+
+    // Moves the blade: a steady sweep from one end of the groove to the other and back.
+    function frame(now) {
+      if (!running) return;
+      var t = ((now - t0) % period) / period;
+      x = t < 0.5 ? t * 2 : 2 - t * 2;
+      blade.style.left = x * 100 + "%";
+      raf = requestAnimationFrame(frame);
+    }
+
+    // One cut: inside the spot carves the mark, outside costs a try.
+    function strike() {
+      if (!running || cooling) return;
+      if (x >= zoneL && x <= zoneL + zoneW) {
+        finish(true);
+        return;
+      }
+      tries -= 1;
+      stats();
+      sfx("swing");
+      groove.classList.remove("slip");
+      void groove.offsetWidth;
+      groove.classList.add("slip");
+      if (tries <= 0) {
+        finish(false);
+        return;
+      }
+      msg.textContent =
+        "The blade skidded off the wall. " +
+        tries +
+        (tries === 1 ? " try" : " tries") +
+        " left.";
+      // A short pause so one held key can't spend every try at once.
+      cooling = true;
+      setTimeout(function () {
+        cooling = false;
+      }, 300);
+    }
+
+    o.arena.addEventListener("click", strike);
+    // Space or Enter cuts.
+    function onKey(e) {
+      if (e.key === " " || e.key === "Enter") {
+        e.preventDefault();
+        if (!e.repeat) strike();
+      }
+    }
+
+    // Stops the blade, the clock and the keys.
+    function stop() {
+      running = false;
+      clock.stop();
+      cancelAnimationFrame(raf);
+      document.removeEventListener("keydown", onKey);
+    }
+
+    // Carves the mark (clean or crooked), shows the result and hands it to game.js.
+    function finish(won) {
+      if (!running) return;
+      stop();
+      newMark.classList.remove("ghost");
+      newMark.classList.add("fresh");
+      if (!won) newMark.classList.add("crooked");
+      sfx("tally");
+      if (!won) sfx("rustyMetal", { delay: 250 });
+      var summary = won
+        ? fifth
+          ? "Five down. The slash cuts clean through the group: tally " + (n + 1) + "."
+          : "A clean mark. Tally " + (n + 1) + " is on the wall."
+        : "The blade slipped. Tally " + (n + 1) + " came out crooked.";
+      showBanner(o.arena, won, summary);
+      o.done({ won: won, summary: summary, reward: {}, mark: n + 1, fifth: fifth });
+    }
+
+    // The controller game.js uses: start() when the player presses Start,
+    // stop() if they auto-resolve instead.
+    return {
+      start: function () {
+        running = true;
+        t0 = performance.now();
+        clock.start();
+        document.addEventListener("keydown", onKey);
+        raf = requestAnimationFrame(frame);
+      },
+      stop: stop,
+    };
+  }
+  // #endregion [S5] Tally Mini-game
+
+  // #region [S6] Auto-resolve Results
   /* 
 =============================================================== 
 ---------- Auto-result function for minigames ----------
@@ -910,5 +1068,5 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
     autoResult: autoResult,
     describe: describe,
   };
-  // #endregion [S5] Auto-resolve Results
+  // #endregion [S6] Auto-resolve Results
 })();

@@ -56,6 +56,7 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
   [S22] Channels
   [S23] Play & Stop Sounds
   [S24] Preload & Button Sounds
+[S25] Tally Marks
 =========================================================
 */
 
@@ -779,6 +780,7 @@ whole text straight away from a hidden copy, so nobody has to wait for it.
     // ---- Building and materials ----
     buildingHammering: A + "building(hammering).mp3",
     woodCutting: A + "wood_cutting.mp3",
+    tally: A + "tally.mp3", // carving a tally mark (add assets/audio/tally.mp3)
     woodSplitting: A + "wood_splitting.mp3",
     rustyMetal: A + "rusty_metalmp3.mp3",
     shovel: A + "shovel_digging.mp3",
@@ -1046,4 +1048,41 @@ whole text straight away from a hidden copy, so nobody has to wait for it.
   window.AT.setAmbience = setAmbience;
   // #endregion [S24] Preload & Button Sounds
   // #endregion [S9] Sound Effects
+
+  // #region [S25] Tally Marks
+  /*
+===============================================================
+---------- Tally Marks ----------
+===============================================================
+Draws tally marks as HTML: four upright lines, then the fifth slashes
+through them. Used by the top bar (game.js), the Tally mini-game
+(minigames.js) and the Final Tally (end.js). The look lives in
+css/style.css (9m. Tally marks).
+
+marks is a number, or a list with one entry per mark: true for a clean
+mark, false for a crooked one (a lost Tally mini-game).
+opts.fresh: the index of a mark to draw with the carving animation.
+*/
+  function tallyMarks(marks, opts) {
+    opts = opts || {};
+    if (typeof marks === "number") {
+      marks = Array.apply(null, Array(Math.max(0, marks))).map(function () {
+        return true;
+      });
+    }
+    var html = "";
+    for (var g = 0; g < marks.length; g += 5) {
+      html += '<span class="tally-group">';
+      for (var i = g; i < Math.min(g + 5, marks.length); i++) {
+        var cls = i - g === 4 ? "tally-slash" : "tally-mark";
+        if (marks[i] === false) cls += " crooked";
+        if (opts.fresh === i) cls += " fresh";
+        html += '<i class="' + cls + '"></i>';
+      }
+      html += "</span>";
+    }
+    return '<span class="tally" aria-hidden="true">' + html + "</span>";
+  }
+  window.AT.tallyMarks = tallyMarks;
+  // #endregion [S25] Tally Marks
 })();
