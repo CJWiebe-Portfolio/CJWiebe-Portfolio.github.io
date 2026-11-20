@@ -42,11 +42,13 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
   // The ending that fits this run (see Endings in js/story.js).
   var ending = AT.STORY.pickEnding(r);
 
-  // The ending's own picture, or the plain win/lose one.
-  document.getElementById("end-art").src =
-    "assets/images/png/" +
-    ((ending && ending.art) || (r.won ? "end_win" : "end_lose")) +
-    ".png";
+  // The ending's own picture (the first one in its `art` list that exists),
+  // or the plain win/lose one.
+  AT.showArt(
+    document.getElementById("end-art"),
+    ending && ending.art,
+    r.won ? "end_win" : "end_lose",
+  );
 
   // A rooster for making it to the last dawn; the horde if the shelter fell.
   if (r.won) AT.playSound("rooster");

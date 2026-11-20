@@ -21,11 +21,12 @@ How a turn flows:
   Dawn  - the Tally mini-game carves the new day's mark on the wall, then
           sometimes a morning event, then the next day starts.
 
-The story (the opening pop-up, the checkpoint events on set days and the
-endings) is written in js/story.js and read from AT.STORY.
+The story (the opening pop-up, every night and morning event, the
+checkpoint events on set days and the endings) is written in js/story.js
+and read from AT.STORY.
 
 How this file is laid out:
-  1. Static game data (resources, difficulty, facilities, map, events, sounds)
+  1. Static game data (resources, difficulty, facilities, map, event rewards, sounds)
   2. Run state
   3. Helpers (survivors, facilities, recruiting, plan checks)
   4. Rendering for the header, side panel and each tab
@@ -43,9 +44,9 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
 [S2] Static Game Data
   [S3] Facilities
   [S4] Map Locations
-  [S5] Events
-    [S6] Night events
-    [S7] Morning events
+  [S5] Events (the events themselves are in js/story.js)
+    [S6] Event Rewards
+    [S7] Morning Chance, Fence & Trips
   [S8] Mini-game Descriptions
   [S9] Sounds
   [S10] Log Labels & Filters
@@ -544,496 +545,18 @@ are in the FX table below so the rules and the descriptions stay together.
   // #region [S5] Events
   /* 
 ---------- Events [WORK IN PROGRESS NEEDS TUNING] ----------
-One event happens every night, and some mornings (MORNING_EVENT_CHANCE).
-
-Each event has:
-  title, text     what the player reads
-  art             a picture name from assets/images/png/
-  time            "night" (default) or "morning"
-  sounds          played stacked when the event opens (names are in common.js;
-                  [name, ms] starts that one a little later)
-  needsScavenging only offered after someone came home from scavenging tonight
-  needsFreeBed    only offered when there is a free bed (events that bring someone in)
-  needsLocked     only offered while that map location is still locked
-  from            for events that bring someone in: where they came from
-  choices         the options, usually three
-
-Each choice has a kind:
-  "skill"    needs a rested survivor with that skill
-  "minigame" plays a mini-game (game: "Defense", "Lockpick" or "Search")
-  "cost"     anyone can pick it, if the group can pay the cost
-
-and any of these (all optional):
-  cost     resources paid, e.g. { food: 3 }; the choice is greyed out if you can't pay
-  lose     resources taken, as much as you have (never greyed out)
-  fatigue  added to the survivor with the skill
-  injure   health the survivor with the skill loses
-  hurtOne  health one random survivor at the shelter loses (Cowards are spared)
-  morale   added to everyone (can be negative)
-  reward   a name from REWARDS below: supplies the choice brings in
-  recruit  true: a newcomer joins if there is a free bed
-  unlock   a location id to unlock on the map
-  win      for minigame choices: { recruit, unlock, reward } applied only on a win
-  outcome  the line written to the log
-  sounds   played stacked when the choice is picked
+Every event (night and morning) is written in js/story.js, along with the
+list of fields an event and its choices can use. This file only keeps the
+rules behind them: the REWARDS, how often mornings bring an event, and
+pickEvent() / applyChoice() further down.
 */
-  var EVENTS = [
-    // #region [S6] Night events
-    // ---------- Night events ----------
-    {
-      title: "Knocking at the gate",
-      art: "event_gate",
-      text: "Someone is pounding on the gate, begging to be let in. Behind them, shapes shuffle out of the dark.",
-      from: "at the gate", // finishes "X joined the group ..." for recruits
-      sounds: ["knockSoft", ["knockHard", 1500], ["zombieGroan", 2600]],
-      choices: [
-        {
-          label: "Talk them through it",
-          kind: "skill",
-          skill: "Medic",
-          cost: { medicine: 1 },
-          recruit: true,
-          outcome:
-            "Your medic checked the stranger for bites and opened the gate.",
-          sounds: ["doorOpen", ["pillCap", 600], ["closeJar", 1400]],
-        },
-        {
-          label: "Clear the street first",
-          kind: "minigame",
-          game: "Defense",
-          win: { recruit: true },
-        },
-        {
-          label: "Pay them to move on",
-          kind: "cost",
-          cost: { food: 3 },
-          outcome: "You passed food through the gate. They left.",
-          sounds: ["canJiggle", ["footsteps", 600]],
-        },
-      ],
-    },
-    {
-      title: "A locked supply crate",
-      art: "event_crate",
-      text: "A survivor found a padlocked crate in the alley behind the shelter.",
-      sounds: ["rustyMetal"],
-      choices: [
-        {
-          label: "Pry it open",
-          kind: "skill",
-          skill: "Builder",
-          fatigue: 20,
-          reward: "crate",
-          outcome: "Your builder forced the lid off the crate.",
-          sounds: [
-            "woodSplitting",
-            ["rustyHinges", 500],
-            ["cardboardBox", 1100],
-          ],
-        },
-        { label: "Pick the lock", kind: "minigame", game: "Lockpick" },
-        {
-          label: "Leave it",
-          kind: "cost",
-          cost: {},
-          morale: -5,
-          outcome: "You left the crate where it was.",
-          sounds: ["footsteps"],
-        },
-      ],
-    },
-    {
-      title: "Raid on the walls",
-      art: "event_raid",
-      text: "A crowd of the dead presses against the north wall. It will not hold for long.",
-      sounds: ["hordeClose", ["zombieAttack", 800], ["knockHard", 1200]],
-      choices: [
-        {
-          label: "Hold the line",
-          kind: "skill",
-          skill: "Fighter",
-          fatigue: 30,
-          injure: 10,
-          outcome: "Your fighter held the wall until dawn.",
-          sounds: [
-            "swing",
-            ["swing", 450],
-            ["swing", 900],
-            ["zombieDying", 1100],
-          ],
-        },
-        { label: "Defend the wall", kind: "minigame", game: "Defense" },
-        {
-          label: "Fire into the crowd",
-          kind: "cost",
-          cost: { ammo: 3 },
-          outcome: "The shots scattered the crowd.",
-          sounds: [
-            "gunshot",
-            ["gunshot", 350],
-            ["gunshot", 700],
-            ["zombieDying", 1100],
-          ],
-        },
-      ],
-    },
-    {
-      title: "A house worth searching",
-      art: "event_house",
-      text: "On the way back, your scavenger spotted a house with the door hanging open. The dead can't be far.",
-      needsScavenging: true,
-      sounds: ["rustyDoor", ["glassSteps", 900]],
-      choices: [
-        { label: "Search it room by room", kind: "minigame", game: "Search" },
-        {
-          label: "Let the expert pick the spots",
-          kind: "skill",
-          skill: "Scavenger",
-          fatigue: 20,
-          reward: "pantry",
-          outcome:
-            "Your scavenger went straight for the pantry and slipped out quietly.",
-          sounds: ["carefulWalking", ["drawer", 700], ["searchDesk", 1400]],
-        },
-        {
-          label: "Head home before dark",
-          kind: "cost",
-          cost: {},
-          outcome: "You left the house alone.",
-          sounds: ["footsteps", ["doorClose", 1200]],
-        },
-      ],
-    },
-    {
-      title: "A voice on the radio",
-      art: "school",
-      text: "The old radio crackles to life. Someone is hiding in the school gym, out of food, asking if anyone can hear them.",
-      from: "from the school gym",
-      needsFreeBed: true,
-      sounds: ["lightSwitch", ["zombieGroan", 1400]],
-      choices: [
-        {
-          label: "Send your fighter",
-          kind: "skill",
-          skill: "Fighter",
-          fatigue: 30,
-          injure: 10,
-          recruit: true,
-          outcome:
-            "Your fighter cut a path to the school and brought them back.",
-          sounds: [
-            "doorOpen",
-            ["swing", 700],
-            ["swing", 1100],
-            ["doorClose", 2000],
-          ],
-        },
-        {
-          label: "Cover them as they run",
-          kind: "minigame",
-          game: "Defense",
-          win: { recruit: true },
-        },
-        {
-          label: "Turn the radio off",
-          kind: "cost",
-          cost: {},
-          morale: -5,
-          outcome: "You turned the radio off. Nobody slept well.",
-          sounds: ["lightSwitch"],
-        },
-      ],
-    },
-    {
-      title: "A fallen soldier",
-      art: "military_checkpoint",
-      text: "Near the checkpoint, your scavenger found a soldier slumped against the fence. A keycard hangs from his belt.",
-      needsScavenging: true,
-      needsLocked: "military",
-      sounds: ["glassSteps", ["rustyMetal", 900]],
-      choices: [
-        {
-          label: "Let the expert check him",
-          kind: "skill",
-          skill: "Scavenger",
-          fatigue: 10,
-          reward: "soldier",
-          unlock: "military",
-          outcome:
-            "Your scavenger took the keycard and everything useful on him.",
-          sounds: ["carefulWalking", ["pillCap", 700], ["reload", 1200]],
-        },
-        {
-          label: "Grab the keycard and run",
-          kind: "cost",
-          cost: {},
-          hurtOne: 10,
-          unlock: "military",
-          outcome: "You snatched the keycard as the dead closed in.",
-          sounds: ["footsteps", ["zombieShout", 500], ["doorClose", 1400]],
-        },
-        {
-          label: "Leave him be",
-          kind: "cost",
-          cost: {},
-          outcome: "You left the soldier where he fell.",
-          sounds: ["footsteps"],
-        },
-      ],
-    },
-    {
-      title: "Rats in the stores",
-      art: "kitchen",
-      text: "Something has been chewing through the food sacks. Droppings everywhere.",
-      sounds: ["rubbish", ["cardboardBox", 700]],
-      choices: [
-        {
-          label: "Hunt them down",
-          kind: "skill",
-          skill: "Hunter",
-          fatigue: 10,
-          reward: "rats",
-          outcome:
-            "Your hunter cleared the rats out. Not much meat, but it's food.",
-          sounds: ["swing", ["swing", 400], ["stove", 1200]],
-        },
-        {
-          label: "Set traps",
-          kind: "cost",
-          cost: { materials: 2 },
-          outcome: "You built traps from scrap. The food is safe.",
-          sounds: ["buildingHammering"],
-        },
-        {
-          label: "Let it be",
-          kind: "cost",
-          cost: {},
-          lose: { food: 3 },
-          outcome: "The rats got into the food.",
-          sounds: ["rubbish"],
-        },
-      ],
-    },
-    {
-      title: "A storm rolls in",
-      art: "watercollector",
-      text: "Rain hammers the roof and water drips through a dozen cracks. The walls are slick, and the dead are quiet for once.",
-      sounds: ["pourWater", ["rustyMetal", 800]],
-      choices: [
-        {
-          label: "Patch the roof",
-          kind: "skill",
-          skill: "Builder",
-          fatigue: 20,
-          cost: { materials: 1 },
-          reward: "rain",
-          morale: 5,
-          outcome:
-            "Your builder patched the roof and rigged it to catch the rain.",
-          sounds: ["buildingHammering", ["pourWater", 900]],
-        },
-        {
-          label: "Put out every pot and pan",
-          kind: "cost",
-          cost: {},
-          reward: "rain",
-          morale: -5,
-          outcome: "You caught the rain, but everyone slept cold and wet.",
-          sounds: ["pourWater", ["canDrop", 500]],
-        },
-        {
-          label: "Sit it out",
-          kind: "cost",
-          cost: {},
-          outcome: "You waited out the storm.",
-          sounds: [],
-        },
-      ],
-    },
-    {
-      title: "Fever in the shelter",
-      art: "infirmary",
-      text: "One of the group is burning up with fever and can barely stand.",
-      sounds: ["footsteps", ["openJar", 900]],
-      choices: [
-        {
-          label: "Have the medic treat them",
-          kind: "skill",
-          skill: "Medic",
-          cost: { medicine: 1 },
-          outcome: "Your medic brought the fever down by morning.",
-          sounds: ["pillCap", ["pourWater", 600]],
-        },
-        {
-          label: "Use the medicine",
-          kind: "cost",
-          cost: { medicine: 2 },
-          outcome: "Two doses of medicine broke the fever.",
-          sounds: ["pillCap", ["closeJar", 700]],
-        },
-        {
-          label: "Let them sweat it out",
-          kind: "cost",
-          cost: {},
-          hurtOne: 20,
-          outcome: "You kept them warm and hoped for the best.",
-          sounds: ["lightSwitch"],
-        },
-      ],
-    },
-    {
-      title: "Raiders at the gate",
-      art: "event_gate",
-      text: "Three armed strangers stand at the gate. They want food and water, or they'll come in and take it.",
-      sounds: ["knockHard", ["cock", 900]],
-      choices: [
-        {
-          label: "Talk them down",
-          kind: "skill",
-          skill: "Negotiator",
-          reward: "raiders",
-          outcome:
-            "Your negotiator talked them into a truce. They even left some ammo.",
-          sounds: ["doorOpen", ["cardboardBox", 900], ["doorClose", 1800]],
-        },
-        { label: "Drive them off", kind: "minigame", game: "Defense" },
-        {
-          label: "Hand over supplies",
-          kind: "cost",
-          cost: { food: 2, water: 2 },
-          outcome: "You handed over food and water. They left you alone.",
-          sounds: ["cardboardBox", ["doorClose", 900]],
-        },
-      ],
-    },
-    {
-      title: "An old guitar",
-      art: "bedroom",
-      text: "Someone found a battered guitar in the rubble. It's out of tune, but it still plays.",
-      sounds: ["cardboardBox"],
-      choices: [
-        {
-          label: "Play quietly by the fire",
-          kind: "cost",
-          cost: {},
-          morale: 10,
-          outcome: "For one night, it almost felt normal.",
-          sounds: ["match"],
-        },
-        {
-          label: "Trade it for parts",
-          kind: "cost",
-          cost: {},
-          reward: "scrap",
-          outcome: "You stripped the guitar for wire and wood.",
-          sounds: ["woodSplitting"],
-        },
-      ],
-    },
-    // #endregion [S6] Night events
+  var EVENTS = AT.STORY.events;
 
-    // #region [S7] Morning events
-    // ---------- Morning events ----------
-    {
-      title: "A stranger on the road",
-      art: "event_gate",
-      time: "morning",
-      text: "At first light, a tired stranger waves from the road, hands raised to show they're unarmed.",
-      from: "from the road",
-      needsFreeBed: true,
-      sounds: ["knockSoft"],
-      choices: [
-        {
-          label: "Let them in",
-          kind: "cost",
-          cost: { food: 1 },
-          recruit: true,
-          outcome: "You shared a meal and opened the gate.",
-          sounds: ["doorOpen", ["footsteps", 500], ["doorClose", 1500]],
-        },
-        {
-          label: "Send them on their way",
-          kind: "cost",
-          cost: {},
-          outcome: "You pointed them down the road.",
-          sounds: ["doorClose"],
-        },
-      ],
-    },
-    {
-      title: "A broken cart",
-      art: "event_crate",
-      time: "morning",
-      text: "A cart lies tipped over in the road outside, one wheel snapped. Its owner is nowhere to be seen.",
-      sounds: ["rustyMetal", ["rustyHinges", 700]],
-      choices: [
-        {
-          label: "Take it apart properly",
-          kind: "skill",
-          skill: "Mechanic",
-          fatigue: 20,
-          reward: "cart",
-          outcome: "Your mechanic stripped the cart down to every useful bolt.",
-          sounds: ["buildingHammering", ["rustyMetal", 600]],
-        },
-        {
-          label: "Grab what you can",
-          kind: "cost",
-          cost: {},
-          reward: "scrap",
-          outcome: "You pulled a few boards and nails off the cart.",
-          sounds: ["woodSplitting", ["rubbish", 600]],
-        },
-        {
-          label: "Leave it",
-          kind: "cost",
-          cost: {},
-          outcome: "You left the cart in the road.",
-          sounds: ["footsteps"],
-        },
-      ],
-    },
-    {
-      title: "Fresh tracks",
-      art: "farm",
-      time: "morning",
-      text: "Muddy tracks lead from the walls toward the treeline. Something circled the shelter last night.",
-      sounds: ["footsteps", ["zombieGroan", 1200]],
-      choices: [
-        {
-          label: "Send the hunter after them",
-          kind: "skill",
-          skill: "Hunter",
-          fatigue: 20,
-          reward: "deer",
-          outcome: "They were a deer's. Your hunter brought it home.",
-          sounds: ["carefulWalking", ["gunshot", 1500]],
-        },
-        {
-          label: "Follow them together",
-          kind: "cost",
-          cost: {},
-          hurtOne: 10,
-          reward: "tracks",
-          outcome:
-            "The tracks led to a lurker, and a few berry bushes behind it.",
-          sounds: ["carefulWalking", ["zombieAttack", 1200], ["swing", 1500]],
-        },
-        {
-          label: "Shore up the gate",
-          kind: "cost",
-          cost: { materials: 1 },
-          morale: 5,
-          outcome: "You braced the gate. Everyone breathed easier.",
-          sounds: ["buildingHammering"],
-        },
-      ],
-    },
-    // #endregion [S7] Morning events
-  ];
-
-  // Supplies that event choices bring in (see `reward` above). Each one rolls
-  // fresh numbers every time, using the run's seeded rng.
+  // #region [S6] Event Rewards
+  // Supplies that event choices bring in when they name one with `reward`
+  // (simple amounts can be written straight into story.js with `gain`). Each
+  // one rolls fresh numbers every time, using the run's seeded rng.
+  // Add a name to the list in story.js [S2] when you add one here.
   var REWARDS = {
     // A forced crate holds the same as a picked lock.
     crate: function () {
@@ -1069,6 +592,19 @@ and any of these (all optional):
     },
   };
 
+  // Rolls a `gain` from story.js: a number is that many, and a pair of
+  // numbers [min, max] rolls between them, e.g. { food: [2, 4] }.
+  function rollGain(gain) {
+    var out = {};
+    Object.keys(gain || {}).forEach(function (k) {
+      var v = gain[k];
+      out[k] = Array.isArray(v) ? randInt(v[0], v[1]) : v;
+    });
+    return out;
+  }
+  // #endregion [S6] Event Rewards
+
+  // #region [S7] Morning Chance, Fence & Trips
   // Chance (0 to 1) that a morning event happens before a day starts (never on day 1).
   var MORNING_EVENT_CHANCE = 0.3; // [TUNE THESE]
 
@@ -1082,6 +618,7 @@ and any of these (all optional):
 
   // Each extra day of a long trip brings back this many extra supplies.
   var EXTRA_PER_TRIP_DAY = 2; // [TUNE THESE]
+  // #endregion [S7] Morning Chance, Fence & Trips
   // #endregion [S5] Events
 
   // #region [S8] Mini-game Descriptions
@@ -1220,8 +757,9 @@ stacked on top of each other; [name, ms] starts that one a little later.
     explored: [],
     unlocked: [], // ids of map locations that started locked and have been opened
     recruited: 0, // survivors who joined during the run (shown on the end screen)
-    flags: {}, // story flags set by checkpoint choices (see js/story.js), e.g. { signal: true }
+    flags: {}, // story flags set by event and checkpoint choices (see js/story.js), e.g. { signal: true }
     lastEvent: null, // title of the last event, so the same one doesn't come twice in a row
+    seenEvents: [], // titles of every event shown this run (for events marked `once`)
     eventTime: "night", // "night" or "morning": what happens after the current event
     currentChoice: null, // the choice picked for the current event (for mini-game wins)
     selectedLocation: "hospital",
@@ -3771,7 +3309,7 @@ Small counts on the tabs show where something needs a look.
   // #region [S44] Event overlay
   // ---------- Event overlay ----------
   // Picks an event for "night" or "morning" that fits the run right now
-  // (see the needs... fields on EVENTS), avoiding the last one shown.
+  // (see "When it can happen" in js/story.js), avoiding the last one shown.
   // Returns null when nothing fits.
   function pickEvent(time, scavenged) {
     var pool = EVENTS.filter(function (ev) {
@@ -3779,7 +3317,12 @@ Small counts on the tabs show where something needs a look.
         (ev.time || "night") === time &&
         (!ev.needsScavenging || scavenged) &&
         (!ev.needsFreeBed || freeBeds() > 0) &&
-        (!ev.needsLocked || isLocked(findLoc(ev.needsLocked)))
+        (!ev.needsLocked || isLocked(findLoc(ev.needsLocked))) &&
+        (!ev.needsFlag || Boolean(state.flags[ev.needsFlag])) &&
+        (!ev.needsHurt || someoneHurt()) &&
+        (!ev.needsBuilt || (facility(ev.needsBuilt) || {}).level > 0) &&
+        (!ev.minDay || state.day >= ev.minDay) &&
+        (!ev.once || state.seenEvents.indexOf(ev.title) === -1)
       );
     });
     var fresh = pool.filter(function (ev) {
@@ -3811,9 +3354,12 @@ Small counts on the tabs show where something needs a look.
             .join(", "),
       );
     if (c.fatigue) parts.push("Tiring");
+    if (c.fatigueAll)
+      parts.push(c.fatigueAll < 0 ? "Everyone rests" : "Tires everyone");
     if (c.injure || c.hurtOne) parts.push("Risky");
+    if (c.healOne) parts.push("Treats the worst hurt");
     if (c.morale) parts.push(c.morale < 0 ? "Hurts morale" : "Lifts morale");
-    if (c.reward) parts.push("Brings supplies");
+    if (c.reward || c.gain) parts.push("Brings supplies");
     if (c.recruit || (c.win && c.win.recruit))
       parts.push(freeBeds() > 0 ? "They join you" : "No free bed for them");
     if (c.unlock || (c.win && c.win.unlock))
@@ -3844,16 +3390,18 @@ Small counts on the tabs show where something needs a look.
     state.currentChoice = null;
     state.eventTime = time || "night";
     state.lastEvent = ev.title;
+    if (state.seenEvents.indexOf(ev.title) === -1)
+      state.seenEvents.push(ev.title);
     state.eventsFaced += 1;
     $("event-kicker").textContent = ev.checkpoint
       ? "Day " + pad(state.day) + " · Story"
       : state.eventTime === "morning"
         ? "Day " + pad(state.day) + " · Morning"
         : "Night " + pad(state.day) + " · Event";
-    $("event-title").textContent = ev.title;
-    // Event pictures live in assets/images/png/; events without `art` use the generic one.
-    $("event-art").src =
-      "assets/images/png/" + (ev.art || "event_generic") + ".png";
+    $("event-title").textContent = storyText(ev.title);
+    // Event pictures live in assets/images/png/. `art` can be a list: the first
+    // picture that exists is shown, and event_generic if none do.
+    AT.showArt($("event-art"), ev.art, "event_generic");
     $("event-choices").innerHTML = ev.choices
       .map(function (c, i) {
         var ok = choiceOk(c);
@@ -3865,7 +3413,7 @@ Small counts on the tabs show where something needs a look.
           (ok ? "" : " disabled") +
           ">" +
           "<strong>" +
-          c.label +
+          esc(storyText(c.label)) +
           "</strong><span>" +
           choiceNote(c) +
           (ok ? "" : " — not available") +
@@ -3902,14 +3450,14 @@ Small counts on the tabs show where something needs a look.
   });
 
   // Carries out a picked choice: pays its cost, writes the outcome to the log,
-  // then applies each of its effects (see the list above EVENTS).
+  // then applies each of its effects (see the field list in js/story.js [S2]).
   function applyChoice(ev, c) {
     // Who does the work for a skill choice (read before costs change anything).
     var who = c.kind === "skill" ? skilled(c.skill) : null;
     Object.keys(c.cost || {}).forEach(function (k) {
       state.resources[k] -= c.cost[k];
     });
-    addLog("event", ev.title + ": " + c.outcome);
+    addLog("event", storyText(ev.title + ": " + c.outcome));
     if (c.flag) state.flags[c.flag] = true; // remembered for later checkpoints and the ending
     if (who && c.fatigue) tire(who, c.fatigue);
     if (who && c.injure) hurt(who, c.injure, "event", "was hurt");
@@ -3923,6 +3471,9 @@ Small counts on the tabs show where something needs a look.
       addLog("event", "Lost " + AT.minigames.describe(lost) + ".", "bad");
     }
     if (c.reward) gainSupplies("event", REWARDS[c.reward]());
+    if (c.gain) gainSupplies("event", rollGain(c.gain));
+    if (c.healOne) treatWorstHurt(c.healOne, "event");
+    if (c.fatigueAll) tireEveryone(c.fatigueAll, "event");
     if (c.recruit)
       recruit("event", ev.from || "after the " + ev.title.toLowerCase());
     if (c.unlock) unlock(c.unlock, "event");
@@ -3942,6 +3493,46 @@ Small counts on the tabs show where something needs a look.
       var victim = pickVictim();
       if (victim) hurt(victim, c.hurtOne, "event", "was hurt");
     }
+  }
+
+  // True while anyone at the shelter is injured (under 60 health).
+  function someoneHurt() {
+    return home().some(function (s) {
+      return s.health < 60;
+    });
+  }
+
+  // Event `healOne`: the most hurt survivor at the shelter gets health back.
+  function treatWorstHurt(amount, cat) {
+    var patient = home()
+      .filter(function (s) {
+        return s.health < 100;
+      })
+      .sort(function (a, b) {
+        return a.health - b.health;
+      })[0];
+    if (!patient) return;
+    var before = patient.health;
+    heal(patient, amount);
+    addLog(
+      cat,
+      patient.name + " was treated (+" + (patient.health - before) + " health).",
+      "good",
+    );
+  }
+
+  // Event `fatigueAll`: everyone at the shelter gets more tired (or rests, if negative).
+  function tireEveryone(amount, cat) {
+    home().forEach(function (s) {
+      tire(s, amount);
+    });
+    addLog(
+      cat,
+      amount < 0
+        ? "Everyone got some rest (" + amount + " fatigue)."
+        : "Everyone is worn out (+" + amount + " fatigue).",
+      amount < 0 ? "good" : "bad",
+    );
   }
 
   // After an event (and any mini-game): the night raid for night events, or
@@ -4081,6 +3672,7 @@ Small counts on the tabs show where something needs a look.
     if (won && choice && choice.win) {
       var ev = state.currentEvent || {};
       if (choice.win.reward) gainSupplies(cat, REWARDS[choice.win.reward]());
+      if (choice.win.gain) gainSupplies(cat, rollGain(choice.win.gain));
       if (choice.win.recruit) {
         recruit(
           cat,

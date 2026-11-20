@@ -52,6 +52,7 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
     [S18] Footsteps
     [S19] Traders
     [S20] Ambience sounds
+    [S20a] Sounds still to add
   [S21] Volume Mix & Loading
   [S22] Channels
   [S23] Play & Stop Sounds
@@ -199,6 +200,22 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
         "'": "&#39;",
       }[c];
     });
+  }
+
+  // Shows a picture from assets/images/png/ in an <img>. `names` is one picture
+  // name or a list of them (see `art` in js/story.js): the first one that
+  // exists is shown, then `fallback` if none of them do. This lets the story
+  // name pictures before they've been drawn.
+  function showArt(img, names, fallback) {
+    var list = [].concat(names || [], fallback || []);
+    if (!img || !list.length) return;
+    var i = 0;
+    img.onerror = function () {
+      i += 1;
+      if (i < list.length) img.src = "assets/images/png/" + list[i] + ".png";
+      else img.onerror = null;
+    };
+    img.src = "assets/images/png/" + list[0] + ".png";
   }
   // #endregion [S3] Game Seed Generator
 
@@ -624,6 +641,7 @@ whole text straight away from a hidden copy, so nobody has to wait for it.
     apply: apply,
     makeRng: makeRng,
     escapeHtml: escapeHtml,
+    showArt: showArt,
     handoff: {
       setSetup: function (v) {
         put(SETUP_KEY, v);
@@ -826,6 +844,26 @@ whole text straight away from a hidden copy, so nobody has to wait for it.
     ambEvening: [A + "evening(ambiance).mp3", A + "evening(ambiance2).mp3"],
     ambNight: A + "night(ombiance).mp3",
     // #endregion [S20] Ambience sounds
+
+    // #region [S20a] Sounds still to add
+    // ---- Sounds still to add ----
+    // Events in story.js already use these names, and skip them until they're
+    // here. Put the file in assets/audio/ with this name (or change the name
+    // here to match yours), then remove the // at the start of the line.
+    // radioStatic: A + "radio_static.mp3", // radio events and checkpoints
+    // dogWhine: A + "dog_whine.mp3", // A dog at the fence
+    // dogBark: A + "dog_bark.mp3", // Good dog
+    // fireCrackle: A + "fire_crackle.mp3", // fires, kindling, burning the bloated one
+    // generator: A + "generator.mp3", // A generator in the basement
+    // cough: A + "cough.mp3", // fever and infected wounds
+    // wind: A + "wind.mp3", // fog, frost, the roof checkpoint
+    // rain: A + "rain_on_roof.mp3", // A storm rolls in
+    // birds: [A + "geese.mp3", A + "birdsong.mp3"], // geese, quiet morning
+    // squelch: A + "squelch.mp3", // A bloated one
+    // arguing: A + "muffled_arguing.mp3", // Missing rations
+    // guitar: A + "guitar_strum.mp3", // An old guitar
+    // rats: A + "rats_squeaking.mp3", // Rats in the stores
+    // #endregion [S20a] Sounds still to add
   };
   // #endregion [S10] Sound List
 

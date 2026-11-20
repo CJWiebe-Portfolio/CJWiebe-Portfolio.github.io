@@ -48,10 +48,11 @@ The full rules are on the in-game **How to play** page.
 - Eight map locations with different loot, danger and travel time. 2-day trips keep a survivor away overnight for a bigger haul, and the Military checkpoint starts locked (cut the fence or find a keycard)
 - New survivors join from scavenging trips and events, if there's a free bed
 - Six base facilities, each with three named tiers, all built from scratch on every difficulty
-- 11 night events and 3 morning events with skill, cost and mini-game choices, offered only when they fit the situation and never twice in a row
+- 26 night events and 12 morning events with skill, cost and mini-game choices, offered only when they fit the situation (after a story choice, once something is built, while someone is hurt, later in the run...) and never twice in a row. Some only happen once, and some lead into later events and the story checkpoints
 - Four wandering traders who come and go, each with their own stock and wants
 - Three mini-games (Defense, Lockpick, Search), with an option to auto-resolve them
-- A story told through an opening pop-up, four checkpoint events that land on set days for each run length, and six endings that depend on how the run went (all written in `js/story.js`)
+- A story told through an opening pop-up, four checkpoint events that land on set days for each run length, and six endings that depend on how the run went
+- Every event, checkpoint, ending and the opening are written in `js/story.js`, so all the story text can be edited in one place
 - Dusk and Dawn report pop-ups, plus a filterable log of everything that happened
 - A seed option in Options for repeatable runs
 - Sound: background music, looping ambience for each phase, and stacked sound effects for actions, events, mini-games and the night raid
@@ -94,7 +95,8 @@ VS Code's Live Server extension works too. Note that refreshing the game page en
 │   ├── new-game.js      # rolls the starting survivors and hands the setup to the game
 │   ├── game.js          # the game: state, rules, tabs, events, reports
 │   ├── minigames.js     # Defense, Lockpick and Search
-│   ├── story.js         # all story text: the opening pop-up, checkpoint events and endings
+│   ├── story.js         # all story text: the opening pop-up, every night and morning event,
+│   │                    #   the checkpoint events and the endings
 │   ├── options.js
 │   └── end.js
 └── assets/
@@ -135,7 +137,8 @@ The main rules and where to find them in `game.js`:
 - **Night raid:** `nightRaid()`. The horde is compared with your defense, and a breach injures survivors and can lower the walls.
 - **Dusk:** `endDay()`. Scavenging (including 2-day trips, which set `away` on the survivor), base production, construction, healing, fatigue, eating and drinking. `home()` is everyone at the shelter; survivors who are away don't work, eat or get hurt there.
 - **New survivors:** `recruit()` and `newSurvivor()`. Each location's `people` value is the chance a scavenger meets someone. A newcomer needs a free bed (`freeBeds()`).
-- **Events:** `EVENTS` (the comment above it lists every field a choice can use), `REWARDS` for what choices bring in, `pickEvent()` to choose one that fits, and `applyChoice()` to carry it out. `MORNING_EVENT_CHANCE` sets how often mornings bring one.
+- **Events:** the events themselves are written in `js/story.js` (the comment above the night events lists every field an event and its choices can use). In `game.js`, `REWARDS` holds the supplies that need working out in code, `pickEvent()` chooses one that fits, and `applyChoice()` carries it out. `MORNING_EVENT_CHANCE` sets how often mornings bring one.
+- **Pictures and sounds still to add:** an event's `art` can list several pictures, and the first one that exists is shown, so new events can name pictures before they're drawn. Sounds the events are waiting for are listed, commented out, under "Sounds still to add" in `common.js`.
 - **Locked places:** `isLocked()` and `unlock()`. `CHECKPOINT_CUT` sets the fence cost.
 - **Damage and death:** `hurt()` and `changeMorale()`.
 - **Traders:** the `TRADERS` list holds each trader's stock, wants and length of stay. `traderDawn()` runs the schedule each dawn, `buyValue()` adds the 50% bonus (`WANT_BONUS`) for wanted items, and `tradeNeed()` applies the markup and the Negotiator discount. One trade per day stops players from trading the same goods back and forth for profit.
