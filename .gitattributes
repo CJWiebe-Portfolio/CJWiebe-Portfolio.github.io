@@ -1,0 +1,9 @@
+# Keep text files with LF line endings on every computer
+* text=auto eol=lf
+
+# Images and audio are binary: never touch their bytes
+*.png binary
+*.jpg binary
+*.mp3 binary
+*.wav binary
+*.xlsx binary

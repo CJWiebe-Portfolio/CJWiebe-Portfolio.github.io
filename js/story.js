@@ -26,11 +26,11 @@ Placeholders you can use in any text, choice label or outcome
   {lost}      survivors lost
 
 Pictures and sounds that aren't in the game yet:
-Some events name pictures and sounds that haven't been added yet. They are
-safe to leave in:
+Every event and ending picture is now in assets/images/png/. Fallbacks are
+kept in case one goes missing:
   - `art` can be a list of picture names. The first one that exists in
-    assets/images/png/ is shown, so ["event_dog", "suburb"] shows suburb.png
-    until event_dog.png is added.
+    assets/images/png/ is shown, so ["event_dog", "suburb"] would show
+    suburb.png if event_dog.png were ever removed.
   - A sound name that isn't in SOUNDS (common.js) is skipped. The ones these
     events are waiting for are listed, commented out, at the end of the
     sound list in common.js: add the file, remove the // and they play.
