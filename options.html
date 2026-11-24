@@ -282,13 +282,24 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
 
         <!-- #region [S13] Sound -->
         <section class="card" aria-labelledby="sound-h">
-          <!-- Allows the user to turn on/off the sound effects the are featured in the game, and change the volume -->
+          <!-- Turns all the game's audio on or off, sets the main volume, and
+               sets each kind of sound on top of it (see SOUND_GROUPS in common.js) -->
           <h2 id="sound-h" class="eyebrow panel-title">Sound</h2>
           <label class="check"
             ><input type="checkbox" name="sound" /> All Another Tally Audio
             (Recommended)</label
           >
-          <label class="field-label" for="volume">Volume</label>
+          <p class="small muted" style="margin-top: 0.4rem">
+            The main volume sets how loud everything is. The sliders under it
+            set each kind of sound on top of that, so you can turn the music
+            down and keep the zombies loud. Letting go of a slider plays a
+            sample so you can hear it; the music just changes.
+            <br /><br />
+          </p>
+          <div class="volume-row">
+            <label class="field-label" for="volume">Main volume</label>
+            <output for="volume" data-for="volume"></output>
+          </div>
           <input
             type="range"
             id="volume"
@@ -296,6 +307,83 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
             min="0"
             max="100"
             step="5"
+          />
+          <div class="volume-row">
+            <label class="field-label" for="musicVolume">Music</label>
+            <output for="musicVolume" data-for="musicVolume"></output>
+          </div>
+          <input
+            type="range"
+            id="musicVolume"
+            name="musicVolume"
+            min="0"
+            max="100"
+            step="5"
+          />
+          <div class="volume-row">
+            <label class="field-label" for="ambienceVolume">Ambience</label>
+            <output for="ambienceVolume" data-for="ambienceVolume"></output>
+          </div>
+          <input
+            type="range"
+            id="ambienceVolume"
+            name="ambienceVolume"
+            min="0"
+            max="100"
+            step="5"
+            data-sample="rooster"
+          />
+          <div class="volume-row">
+            <label class="field-label" for="zombieVolume">Zombies</label>
+            <output for="zombieVolume" data-for="zombieVolume"></output>
+          </div>
+          <input
+            type="range"
+            id="zombieVolume"
+            name="zombieVolume"
+            min="0"
+            max="100"
+            step="5"
+            data-sample="zombieGroan"
+          />
+          <div class="volume-row">
+            <label class="field-label" for="effectsVolume">Sound effects</label>
+            <output for="effectsVolume" data-for="effectsVolume"></output>
+          </div>
+          <input
+            type="range"
+            id="effectsVolume"
+            name="effectsVolume"
+            min="0"
+            max="100"
+            step="5"
+            data-sample="doorOpen"
+          />
+          <div class="volume-row">
+            <label class="field-label" for="voicesVolume">Voices</label>
+            <output for="voicesVolume" data-for="voicesVolume"></output>
+          </div>
+          <input
+            type="range"
+            id="voicesVolume"
+            name="voicesVolume"
+            min="0"
+            max="100"
+            step="5"
+            data-sample="hurtMale"
+          />
+          <div class="volume-row">
+            <label class="field-label" for="interfaceVolume">Menus and typing</label>
+            <output for="interfaceVolume" data-for="interfaceVolume"></output>
+          </div>
+          <input
+            type="range"
+            id="interfaceVolume"
+            name="interfaceVolume"
+            min="0"
+            max="100"
+            step="5"
+            data-sample="click"
           />
         </section>
         <!-- #endregion [S13] Sound -->

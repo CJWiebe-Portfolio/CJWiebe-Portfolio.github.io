@@ -143,8 +143,8 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
             </label>
             <label class="choice-card">
               <span class="title"
-                ><input type="radio" name="difficulty" value="normal" />
-                Normal</span
+                ><input type="radio" name="difficulty" value="normal" /> Normal
+                (Recommended)</span
               >
               <p>
                 In this mode, you have a balanced experience with a reasonable
@@ -177,7 +177,8 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
               ><input type="radio" name="length" value="15" /> 15 days</label
             >
             <label class="choice"
-              ><input type="radio" name="length" value="30" /> 30 days</label
+              ><input type="radio" name="length" value="30" /> 30 days
+              (Recommended)</label
             >
             <label class="choice"
               ><input type="radio" name="length" value="45" /> 45 days</label
@@ -187,7 +188,9 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
         <!-- #endregion [S6] Step 3: Game Length -->
 
         <!-- #region [S7] Step 4: Survivors -->
-        <!-- Step 4: starting survivors, with a reroll if they don't like the initial selection -->
+        <!-- Step 4: starting survivors. Each one starts random; the player can
+             change their portrait, name, skill, trait and voice, roll one
+             again with the dice, or roll the whole group. -->
         <section class="card setup-step">
           <div class="section-head">
             <h2 class="step-title">
@@ -200,14 +203,21 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
               id="reroll"
               data-sound="turnPage"
             >
-              Reroll survivors
+              Roll everyone again
             </button>
           </div>
-          <ul
-            id="survivor-list"
-            class="grid-3 plain-list"
-            aria-live="polite"
-          ></ul>
+          <p class="small muted field-hint">
+            Everyone starts out random. Keep them, or pick a portrait, name,
+            skill, trait and voice yourself. The dice rolls one survivor
+            again.
+          </p>
+          <p
+            id="survivor-error"
+            class="small bad-text"
+            role="alert"
+            aria-live="assertive"
+          ></p>
+          <ul id="survivor-list" class="grid-3 plain-list"></ul>
         </section>
         <!-- #endregion [S7] Step 4: Survivors -->
 

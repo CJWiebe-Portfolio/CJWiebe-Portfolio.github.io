@@ -58,15 +58,18 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
   <!-- Body of the Page -->
   <body>
     <main class="title-screen">
-      <!-- Left column panel of the title screen: title and menu at the top,
-           profile links and the warning at the bottom -->
+      <!-- The title art fills the screen. The title label, tagline and menu sit
+           on top of it in the top-left, and the footer card sits in the bottom-left. -->
       <section class="title-menu" aria-labelledby="game-title">
         <div class="title-top">
           <!-- #region [S2] Title & Tagline -->
-          <img class="logo" src="assets/icons/anothertally_icon.png" alt="" />
-          <!-- Site logo (decorative, the title says the name) -->
-          <h1 id="game-title">Another Tally</h1>
-          <!-- Site title -->
+          <!-- Title label: the logo and the game's name on one card -->
+          <div class="title-brand">
+            <img class="logo" src="assets/icons/anothertally_icon.png" alt="" />
+            <!-- Site logo (decorative, the title says the name) -->
+            <h1 id="game-title">Another Tally</h1>
+            <!-- Site title -->
+          </div>
           <p class="tagline">
             This is a turn-based zombie survival game played in the browser. See
             how far you can make it! Will the zombies overwhelm you?
@@ -88,62 +91,60 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
           <!-- Navigation menu -->
           <!-- #endregion [S3] Main Menu -->
         </div>
-
-        <!-- #region [S4] Footer -->
-        <footer class="title-foot">
-          <p class="eyebrow">Made by Cygnus J. Wiebe</p>
-          <!-- #region [S5] Social Links -->
-          <!-- Links to the creator's profiles. They open in a new tab so the game stays open. -->
-          <nav class="social-links" aria-label="Cygnus J. Wiebe online">
-            <a
-              class="btn btn-sm social social-github"
-              href="https://github.com/CJWiebe-Portfolio"
-              target="_blank"
-              rel="noopener noreferrer"
-              >GitHub<span class="visually-hidden">
-                (opens in a new tab)</span
-              ></a
-            >
-            <a
-              class="btn btn-sm social social-linkedin"
-              href="https://www.linkedin.com/in/cygnus-j-wiebe"
-              target="_blank"
-              rel="noopener noreferrer"
-              >LinkedIn<span class="visually-hidden">
-                (opens in a new tab)</span
-              ></a
-            >
-            <a
-              class="btn btn-sm social social-portfolio"
-              href="https://projects.cjpwiebe-portfolio.ca/"
-              target="_blank"
-              rel="noopener noreferrer"
-              >Portfolio<span class="visually-hidden">
-                website (opens in a new tab)</span
-              ></a
-            >
-            <a
-              class="btn btn-sm social social-instagram"
-              href="https://www.instagram.com/c.j.wiebe/"
-              target="_blank"
-              rel="noopener noreferrer"
-              >Instagram<span class="visually-hidden">
-                (opens in a new tab)</span
-              ></a
-            >
-          </nav>
-          <!-- #endregion [S5] Social Links -->
-
-          <!-- #region [S6] Warning -->
-          <p class="title-note">
-            <strong>WARNING!!!</strong> This game exists only in your current
-            browser and will reset when the page is refreshed or closed.
-          </p>
-          <!-- Alert message of the game existing only in the browser -->
-          <!-- #endregion [S6] Warning -->
-        </footer>
-        <!-- #endregion [S4] Footer -->
       </section>
+
+      <!-- #region [S4] Footer -->
+      <footer class="title-foot">
+        <p class="eyebrow">Made by Cygnus J. Wiebe</p>
+        <!-- #region [S5] Social Links -->
+        <!-- Links to the creator's profiles. They open in a new tab so the game stays open. -->
+        <nav class="social-links" aria-label="Cygnus J. Wiebe online">
+          <a
+            class="btn btn-sm social social-github"
+            href="https://github.com/CJWiebe-Portfolio"
+            target="_blank"
+            rel="noopener noreferrer"
+            >GitHub<span class="visually-hidden"> (opens in a new tab)</span></a
+          >
+          <a
+            class="btn btn-sm social social-linkedin"
+            href="https://www.linkedin.com/in/cygnus-j-wiebe"
+            target="_blank"
+            rel="noopener noreferrer"
+            >LinkedIn<span class="visually-hidden">
+              (opens in a new tab)</span
+            ></a
+          >
+          <a
+            class="btn btn-sm social social-portfolio"
+            href="https://projects.cjpwiebe-portfolio.ca/"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Portfolio<span class="visually-hidden">
+              website (opens in a new tab)</span
+            ></a
+          >
+          <a
+            class="btn btn-sm social social-instagram"
+            href="https://www.instagram.com/c.j.wiebe/"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Instagram<span class="visually-hidden">
+              (opens in a new tab)</span
+            ></a
+          >
+        </nav>
+        <!-- #endregion [S5] Social Links -->
+
+        <!-- #region [S6] Warning -->
+        <p class="title-note">
+          <strong>WARNING!!!</strong> This game exists only in your current
+          browser and will reset when the page is refreshed or closed.
+        </p>
+        <!-- Alert message of the game existing only in the browser -->
+        <!-- #endregion [S6] Warning -->
+      </footer>
+      <!-- #endregion [S4] Footer -->
     </main>
     <!-- Background music is handled in js/common.js so it plays on every page. -->
   </body>

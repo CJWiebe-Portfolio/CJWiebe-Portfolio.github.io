@@ -10,8 +10,8 @@ DESCRIPTION:
   This is the options screen JavaScript file for Another Tally.
   It fills the form on options.html from the saved settings and saves every
   change straight away through AT.save() in common.js, which also applies the
-  display and sound settings to the page. Moving the Volume slider or turning
-  Sound on plays a click so the player can hear the new level.
+  display and sound settings to the page. Moving a volume slider or turning
+  Sound on plays a sample so the player can hear the new level.
 =========================================================
 TABLE OF CONTENTS
 Ctrl+F a tag such as "[S3]" to jump to that section.
@@ -38,6 +38,30 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
   // #region [S1] Setup
   var form = document.getElementById("options-form");
   var msg = document.getElementById("saved-msg");
+  // The main volume and the sliders for each kind of sound (see SOUND_GROUPS
+  // in common.js). Their names match the settings in AT.DEFAULTS.
+  var VOLUMES = [
+    "volume",
+    "musicVolume",
+    "ambienceVolume",
+    "zombieVolume",
+    "effectsVolume",
+    "voicesVolume",
+    "interfaceVolume",
+  ];
+  // Shows each slider's level as a percentage next to its label.
+  function showLevels() {
+    VOLUMES.forEach(function (k) {
+      var out = form.querySelector('output[data-for="' + k + '"]');
+      if (out) out.textContent = form.elements[k].value + "%";
+    });
+  }
+  // The sliders do nothing while Sound is off.
+  function lockVolumes(soundOn) {
+    VOLUMES.forEach(function (k) {
+      form.elements[k].disabled = !soundOn;
+    });
+  }
   // #endregion [S1] Setup
 
   // #region [S2] Fill Form From Settings
@@ -49,7 +73,8 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
       else if (el.type === "checkbox") el.checked = Boolean(s[el.name]);
       else el.value = s[el.name];
     });
-    form.elements.volume.disabled = !s.sound;
+    lockVolumes(s.sound);
+    showLevels();
   }
   // #endregion [S2] Fill Form From Settings
 
@@ -67,7 +92,9 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
     s.highContrast = form.elements.highContrast.checked;
     s.reduceMotion = form.elements.reduceMotion.checked;
     s.sound = form.elements.sound.checked;
-    s.volume = Number(form.elements.volume.value);
+    VOLUMES.forEach(function (k) {
+      s[k] = Number(form.elements[k].value);
+    });
     return s;
   }
   // #endregion [S3] Read Form Into Settings
@@ -77,16 +104,19 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
   function onChange(e) {
     var s = read();
     AT.save(s);
-    form.elements.volume.disabled = !s.sound;
+    lockVolumes(s.sound);
     msg.textContent = "Saved.";
-    // Let the player hear the new volume (silent if sound was just turned off).
-    if (e && (e.target.name === "volume" || e.target.name === "sound")) {
-      AT.playSound("click");
-    }
+    // Let the player hear the new level (silent if sound was just turned off).
+    // The music slider needs no sample: the music is already playing.
+    var name = e && e.target.name;
+    if (name === "sound" || name === "volume") AT.playSound("click");
+    else if (name && e.target.dataset.sample) AT.playSound(e.target.dataset.sample);
   }
 
   // Any change in the form saves; Enter in a field must not reload the page.
   form.addEventListener("change", onChange);
+  // The percentages follow a slider while it's being dragged.
+  form.addEventListener("input", showLevels);
   form.addEventListener("submit", function (e) {
     e.preventDefault();
   });

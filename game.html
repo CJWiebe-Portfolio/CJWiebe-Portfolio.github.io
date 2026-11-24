@@ -325,13 +325,15 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
       <!-- #region [S9] Report Dialog -->
       <!-- 
       ---------- Overlay for the Dusk, Dawn and Morning reports ----------
-      Lists what happened since the last report. Continue moves the turn on.
+      Shows what happened since the last report in sections (headline, event,
+      raid, supplies, your group, tips and the full log), filled in by
+      js/game.js [S42b]. Continue moves the turn on.
       -->
       <dialog id="report-dialog" aria-labelledby="report-title">
         <p class="eyebrow" id="report-kicker">Dusk · Day 01</p>
         <img class="art" id="report-art" src="" alt="" hidden />
         <h2 id="report-title">[Report title]</h2>
-        <ol class="report-list" id="report-list"></ol>
+        <div class="report-body" id="report-body"></div>
         <button
           class="btn btn-primary btn-block"
           type="button"

@@ -221,11 +221,11 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                     class="small muted"
                     style="margin-top: 0.4rem"
                   >
-                    Each survivor eats 1 food at dusk. A day without enough food
-                    raises everyone's hunger and lowers morale. At 80 hunger,
-                    survivors start losing health every day. Once built, the
-                    kitchen makes 2, 4 or 6 food a day depending on its
-                    tier.</span
+                    Each survivor eats 1 food at dusk. Short rations raise
+                    everyone's hunger (the shorter you are, the more) and lower
+                    morale. At 80 hunger, survivors start losing health every
+                    day. Kitchen and garden upgrades make 2 or 3 food a day
+                    each, and big stockpiles spoil without a Root Cellar.</span
                   ></span
                 >
               </li>
@@ -241,9 +241,10 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                     style="margin-top: 0.4rem"
                   >
                     Each survivor drinks 1 water at dusk. Running short costs
-                    everyone health right away, so water is the most urgent
-                    resource. Once built, the water collector gathers 2, 4 or 6
-                    water a day depending on its tier.</span
+                    health right away, shared across the group: the shorter you
+                    are, the more everyone loses. Water is the most urgent
+                    resource. Water supply upgrades gather 1 to 3 water a day
+                    each.</span
                   ></span
                 >
               </li>
@@ -258,9 +259,9 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                     class="small muted"
                     style="margin-top: 0.4rem"
                   >
-                    Building and upgrading facilities costs materials. Nothing
-                    is built at the start, each tier costs more than the one
-                    before, and a Workshop makes every build cheaper.</span
+                    Building facility upgrades costs materials. Nothing is built
+                    at the start, and a Workshop makes every build cheaper. A
+                    Reloading Bench turns them into ammo.</span
                   ></span
                 >
               </li>
@@ -275,8 +276,9 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                     class="small muted"
                     style="margin-top: 0.4rem"
                   >
-                    A survivor on Heal uses 1 medicine to treat the most injured
-                    person. Without medicine, only a Medic can help, and only a
+                    An Herb Garden grows a little. A survivor on Heal uses 1
+                    medicine to treat the most injured person. Without medicine,
+                    only someone with real training can help, and only a
                     little.</span
                   ></span
                 >
@@ -292,8 +294,9 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                     class="small muted"
                     style="margin-top: 0.4rem"
                   >
-                    Ammo adds to your night defense (up to 10 counts). Each
-                    guard uses 1 ammo every night, so keep restocking.</span
+                    Ammo adds to your night defense (up to 10 counts), but only
+                    when someone is on Guard to fire it. Each guard uses 1 ammo
+                    every night, so keep restocking.</span
                   ></span
                 >
               </li>
@@ -317,6 +320,11 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
               Survivors tab.
             </p>
             <p>
+              Your three starting survivors are rolled at random on the New Game
+              page. Keep them, roll again, or change a survivor's portrait,
+              name, skill, trait and voice.
+            </p>
+            <p>
               On the Survivors tab every bar reads "full is good": hunger shows
               as <strong>Fed</strong> and fatigue as <strong>Rested</strong>.
               Bars turn amber, then red, as they run low. Under each survivor's
@@ -334,15 +342,15 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                 <tr>
                   <td>Rest</td>
                   <td>
-                    Lowers fatigue by 25 and raises morale by 5. Better Beds
-                    recover more, and an Infirmary also heals.
+                    Lowers fatigue by 25, raises morale by 3 and heals 5 health.
+                    Beds upgrades recover more, and an Infirmary heals more.
                   </td>
                 </tr>
                 <tr>
                   <td>Scavenge</td>
                   <td>
-                    Brings back supplies from a location picked on the Map tab.
-                    Tiring and sometimes dangerous.
+                    Brings back supplies from a place you pick on the survivor's
+                    card or on the Map tab. Tiring and sometimes dangerous.
                   </td>
                 </tr>
                 <tr>
@@ -355,19 +363,23 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                 <tr>
                   <td>Guard</td>
                   <td>
-                    Adds 5 night defense (10 for a Fighter) and uses ammo.
+                    Adds night defense and fires your ammo, using 1 a night.
+                    Some survivors are better at it than others.
                   </td>
                 </tr>
                 <tr>
                   <td>Cook</td>
-                  <td>A Cook on this task saves 1 food at dusk.</td>
+                  <td>
+                    Cooks the group's dinner. Whether that saves anything
+                    depends on who's cooking.
+                  </td>
                 </tr>
                 <tr>
                   <td>Heal</td>
                   <td>
-                    Treats the most injured survivor using 1 medicine: +30
-                    health for a Medic, +10 for anyone else. A Sick Bay adds 10
-                    more, and a Field Hospital treats two people.
+                    Treats the most injured survivor using 1 medicine: +10
+                    health, more in trained hands. A Sick Bay adds 10 more, and
+                    a Field Hospital treats two people.
                   </td>
                 </tr>
               </tbody>
@@ -380,170 +392,377 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
             <p>
               Every task except Rest adds fatigue. A survivor at 80 fatigue or
               more is too tired to scavenge, guard or build, so plan rest days.
-              Morale drops when food runs short and when someone dies.
+            </p>
+            <p>
+              The days wear on everyone. Each dusk, everyone at the shelter
+              loses 3 morale, 3 more while they're hungry (60 hunger or more)
+              and 2 more while they're injured. Resting, a clean tally mark,
+              good events, newcomers and some facilities give it back. A
+              survivor under 30 morale is <strong>shaken</strong>: they find 1
+              less when scavenging and add 3 less defense on Guard. At 0 they
+              leave. A full meal only takes 10 hunger off, so a few short days
+              take a while to recover from.
             </p>
             <p>
               Facilities at the base cover those needs. On every difficulty you
-              start with nothing built, so the first days are about getting
-              water, food and walls up. Each facility has three tiers. Building
-              a tier is paid for up front in materials and only moves forward on
-              days when a rested survivor is on Build. You can have more than
-              one build going at once. A finished tier works from the next day.
+              start with nothing built. Instead of fixed tiers, each facility
+              has a handful of small upgrades, and you can't have them all:
             </p>
+            <ul>
+              <li>
+                <strong>Some need others first.</strong> A Bunk Room needs
+                Salvaged Cots; a Cistern needs a Rooftop Catchment or a Well.
+              </li>
+              <li>
+                <strong>Some are either/or.</strong> Pick a Quiet Room or a
+                Common Room, a Smokehouse or a Root Cellar, a Sick Bay or an
+                Herb Garden, a Fabrication Shop or a Reloading Bench, a
+                Fortified Wall or Gun Nests. Once one is built or started, the
+                other is gone for the run.
+              </li>
+              <li>
+                <strong>Room is limited.</strong> The roof holds 2 upgrades, the
+                yard 3 and the basement 2, shared between every facility. The
+                Base tab shows how full each one is.
+              </li>
+            </ul>
             <p>
-              Costs below are before discounts: a Builder on Build saves 2
-              materials, and a Workshop saves 1 to 3 more (never below 1).
+              An upgrade is paid for up front in materials and only moves
+              forward on days when a rested survivor is on Build. Each facility
+              works on one upgrade at a time, but different facilities can build
+              at once. A finished upgrade works from the next day. Costs below
+              are before discounts: the right person on Build can save
+              materials, and the Workshop saves up to 3 more (never below 1).
             </p>
             <div class="table-scroll">
               <table class="facility-table">
                 <caption class="visually-hidden">
-                  Facility tiers, what each gives and what it costs
+                  Facility upgrades: what each gives, what it costs, and what it
+                  needs
                 </caption>
                 <thead>
                   <tr>
-                    <th scope="col">Facility</th>
-                    <th scope="col">Tier 1</th>
-                    <th scope="col">Tier 2</th>
-                    <th scope="col">Tier 3</th>
+                    <th scope="col">Upgrade</th>
+                    <th scope="col">What it gives</th>
+                    <th scope="col">Cost</th>
+                    <th scope="col">Needs, room and choices</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
-                    <th scope="row">Beds</th>
-                    <td>
-                      <strong>Salvaged Cots</strong><br /><span
-                        class="small muted"
-                        >Rest recovers 35 fatigue. Sleeps 5.<br />3 materials, 1
-                        day.</span
+                    <th scope="rowgroup" colspan="4">
+                      Beds
+                      <span class="small muted"
+                        >· without it: Bedrolls on the floor. Rest recovers 25
+                        fatigue. Sleeps 3.</span
                       >
-                    </td>
-                    <td>
-                      <strong>Bunk Room</strong><br /><span class="small muted"
-                        >Rest recovers 45 fatigue. Sleeps 7.<br />5 materials, 1
-                        day.</span
-                      >
-                    </td>
-                    <td>
-                      <strong>Barracks</strong><br /><span class="small muted"
-                        >Rest recovers 55 fatigue and +10 morale. Sleeps 9.<br />8
-                        materials, 2 days.</span
-                      >
+                    </th>
+                  </tr>
+                  <tr>
+                    <td><strong>Salvaged Cots</strong></td>
+                    <td>Sleeps 2 more. Rest recovers 10 more fatigue.</td>
+                    <td>3 materials, 1 day</td>
+                    <td class="small">—</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Bunk Room</strong></td>
+                    <td>Sleeps 2 more.</td>
+                    <td>4 materials, 1 day</td>
+                    <td class="small">Needs Salvaged Cots</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Quiet Room</strong></td>
+                    <td>Rest recovers 15 more fatigue and 3 more morale.</td>
+                    <td>5 materials, 1 day</td>
+                    <td class="small">
+                      Needs Salvaged Cots. Takes room in the basement. Either/or
+                      with Common Room
                     </td>
                   </tr>
                   <tr>
-                    <th scope="row">Kitchen and garden</th>
-                    <td>
-                      <strong>Camp Kitchen</strong><br /><span
-                        class="small muted"
-                        >+2 food a day.<br />4 materials, 1 day.</span
-                      >
-                    </td>
-                    <td>
-                      <strong>Kitchen Garden</strong><br /><span
-                        class="small muted"
-                        >+4 food a day.<br />6 materials, 1 day.</span
-                      >
-                    </td>
-                    <td>
-                      <strong>Greenhouse and Smokehouse</strong><br /><span
-                        class="small muted"
-                        >+6 food a day.<br />9 materials, 2 days.</span
-                      >
+                    <td><strong>Common Room</strong></td>
+                    <td>Everyone at the shelter gains 2 morale each dusk.</td>
+                    <td>5 materials, 1 day</td>
+                    <td class="small">
+                      Needs Salvaged Cots. Either/or with Quiet Room
                     </td>
                   </tr>
                   <tr>
-                    <th scope="row">Water collector</th>
-                    <td>
-                      <strong>Basic Rain Catcher</strong><br /><span
-                        class="small muted"
-                        >+2 water a day.<br />4 materials, 1 day.</span
+                    <td><strong>Barracks</strong></td>
+                    <td>Sleeps 3 more.</td>
+                    <td>6 materials, 2 days</td>
+                    <td class="small">Needs Bunk Room</td>
+                  </tr>
+                </tbody>
+                <tbody>
+                  <tr>
+                    <th scope="rowgroup" colspan="4">
+                      Kitchen and garden
+                      <span class="small muted"
+                        >· without it: No kitchen. The base makes no food.</span
                       >
-                    </td>
-                    <td>
-                      <strong>Rooftop Collection System</strong><br /><span
-                        class="small muted"
-                        >+4 water a day.<br />6 materials, 2 days.</span
-                      >
-                    </td>
-                    <td>
-                      <strong>Advanced Water Harvesting Network</strong
-                      ><br /><span class="small muted"
-                        >+6 water a day.<br />9 materials, 2 days.</span
-                      >
+                    </th>
+                  </tr>
+                  <tr>
+                    <td><strong>Camp Kitchen</strong></td>
+                    <td>+2 food a day.</td>
+                    <td>4 materials, 1 day</td>
+                    <td class="small">—</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Vegetable Beds</strong></td>
+                    <td>+2 food a day.</td>
+                    <td>4 materials, 1 day</td>
+                    <td class="small">
+                      Needs Camp Kitchen. Takes room in the yard
                     </td>
                   </tr>
                   <tr>
-                    <th scope="row">Workshop</th>
-                    <td>
-                      <strong>Tool Bench</strong><br /><span class="small muted"
-                        >Builds cost 1 less material.<br />3 materials, 1
-                        day.</span
-                      >
-                    </td>
-                    <td>
-                      <strong>Repair Shop</strong><br /><span
-                        class="small muted"
-                        >Builds cost 2 less. Mechanics salvage +1 more.<br />6
-                        materials, 1 day.</span
-                      >
-                    </td>
-                    <td>
-                      <strong>Fabrication Shop</strong><br /><span
-                        class="small muted"
-                        >Builds cost 3 less and take 1 day less.<br />9
-                        materials, 2 days.</span
-                      >
+                    <td><strong>Rooftop Greenhouse</strong></td>
+                    <td>+3 food a day.</td>
+                    <td>6 materials, 2 days</td>
+                    <td class="small">
+                      Needs Camp Kitchen. Takes room on the roof
                     </td>
                   </tr>
                   <tr>
-                    <th scope="row">Infirmary</th>
-                    <td>
-                      <strong>First Aid Station</strong><br /><span
-                        class="small muted"
-                        >Resting survivors heal +10 health at dusk.<br />4
-                        materials, 1 day.</span
-                      >
-                    </td>
-                    <td>
-                      <strong>Sick Bay</strong><br /><span class="small muted"
-                        >Resting survivors heal +20. Heal treats +10 more.<br />7
-                        materials, 2 days.</span
-                      >
-                    </td>
-                    <td>
-                      <strong>Field Hospital</strong><br /><span
-                        class="small muted"
-                        >Resting survivors heal +30. Heal treats two people.<br />10
-                        materials, 2 days.</span
-                      >
+                    <td><strong>Smokehouse</strong></td>
+                    <td>+2 food a day.</td>
+                    <td>4 materials, 1 day</td>
+                    <td class="small">
+                      Needs Camp Kitchen. Takes room in the yard. Either/or with
+                      Root Cellar
                     </td>
                   </tr>
                   <tr>
-                    <th scope="row">Walls and watchtower</th>
+                    <td><strong>Root Cellar</strong></td>
                     <td>
-                      <strong>Scrap Barricades</strong><br /><span
-                        class="small muted"
-                        >+10 night defense.<br />4 materials, 1 day.</span
-                      >
+                      Food stops spoiling, and the group eats 1 less at dusk.
                     </td>
-                    <td>
-                      <strong>Palisade and Lookout</strong><br /><span
-                        class="small muted"
-                        >+20 night defense. Shows the exact horde size.<br />7
-                        materials, 2 days.</span
-                      >
+                    <td>4 materials, 1 day</td>
+                    <td class="small">
+                      Needs Camp Kitchen. Takes room in the basement. Either/or
+                      with Smokehouse
                     </td>
-                    <td>
-                      <strong>Fortified Wall and Watchtower</strong><br /><span
-                        class="small muted"
-                        >+30 night defense. Each guard adds +3 more.<br />10
-                        materials, 2 days.</span
+                  </tr>
+                  <tr>
+                    <td><strong>Chicken Coop</strong></td>
+                    <td>+2 food a day and 1 morale for everyone each dusk.</td>
+                    <td>5 materials, 1 day</td>
+                    <td class="small">
+                      Needs Vegetable Beds or Rooftop Greenhouse. Takes room in
+                      the yard
+                    </td>
+                  </tr>
+                </tbody>
+                <tbody>
+                  <tr>
+                    <th scope="rowgroup" colspan="4">
+                      Water supply
+                      <span class="small muted"
+                        >· without it: No water supply. The base gathers no
+                        water.</span
                       >
+                    </th>
+                  </tr>
+                  <tr>
+                    <td><strong>Rain Barrels</strong></td>
+                    <td>+2 water a day (less in a dry spell).</td>
+                    <td>3 materials, 1 day</td>
+                    <td class="small">—</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Rooftop Catchment</strong></td>
+                    <td>+3 water a day (less in a dry spell).</td>
+                    <td>6 materials, 2 days</td>
+                    <td class="small">
+                      Needs Rain Barrels. Takes room on the roof
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Hand-dug Well</strong></td>
+                    <td>+2 water a day, even in a dry spell.</td>
+                    <td>5 materials, 2 days</td>
+                    <td class="small">
+                      Needs Rain Barrels. Takes room in the yard
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Charcoal Filter</strong></td>
+                    <td>+1 water a day, and no more bad water.</td>
+                    <td>3 materials, 1 day</td>
+                    <td class="small">Needs Rain Barrels</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Cistern</strong></td>
+                    <td>+2 water a day.</td>
+                    <td>6 materials, 2 days</td>
+                    <td class="small">
+                      Needs Rooftop Catchment or Hand-dug Well. Takes room in
+                      the basement
+                    </td>
+                  </tr>
+                </tbody>
+                <tbody>
+                  <tr>
+                    <th scope="rowgroup" colspan="4">
+                      Workshop
+                      <span class="small muted"
+                        >· without it: No workshop. Builds cost full
+                        price.</span
+                      >
+                    </th>
+                  </tr>
+                  <tr>
+                    <td><strong>Tool Bench</strong></td>
+                    <td>Builds cost 1 less material.</td>
+                    <td>3 materials, 1 day</td>
+                    <td class="small">—</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Repair Shop</strong></td>
+                    <td>Builds cost 1 less again, and salvage goes further.</td>
+                    <td>5 materials, 1 day</td>
+                    <td class="small">Needs Tool Bench</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Bike Rack</strong></td>
+                    <td>Scavenging trips cost 5 less fatigue a day.</td>
+                    <td>4 materials, 1 day</td>
+                    <td class="small">
+                      Needs Tool Bench. Takes room in the yard
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Fabrication Shop</strong></td>
+                    <td>Builds cost 1 less again and take 1 day less.</td>
+                    <td>8 materials, 2 days</td>
+                    <td class="small">
+                      Needs Repair Shop. Takes room in the basement. Either/or
+                      with Reloading Bench
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Reloading Bench</strong></td>
+                    <td>Turns 1 material into 1 ammo every dusk.</td>
+                    <td>6 materials, 2 days</td>
+                    <td class="small">
+                      Needs Repair Shop. Takes room in the basement. Either/or
+                      with Fabrication Shop
+                    </td>
+                  </tr>
+                </tbody>
+                <tbody>
+                  <tr>
+                    <th scope="rowgroup" colspan="4">
+                      Infirmary
+                      <span class="small muted"
+                        >· without it: No infirmary. Resting survivors heal 5
+                        health at dusk.</span
+                      >
+                    </th>
+                  </tr>
+                  <tr>
+                    <td><strong>First Aid Station</strong></td>
+                    <td>Resting survivors heal 5 more health.</td>
+                    <td>4 materials, 1 day</td>
+                    <td class="small">—</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Sick Bay</strong></td>
+                    <td>Resting survivors heal 5 more. Heal treats 10 more.</td>
+                    <td>6 materials, 2 days</td>
+                    <td class="small">
+                      Needs First Aid Station. Either/or with Herb Garden
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Herb Garden</strong></td>
+                    <td>Makes 1 medicine every 2 days.</td>
+                    <td>4 materials, 1 day</td>
+                    <td class="small">
+                      Needs First Aid Station. Takes room in the yard. Either/or
+                      with Sick Bay
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Field Hospital</strong></td>
+                    <td>Heal treats two people. Resting heals 5 more.</td>
+                    <td>8 materials, 2 days</td>
+                    <td class="small">Needs Sick Bay</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Apothecary</strong></td>
+                    <td>1 more medicine every 2 days. Heal treats 5 more.</td>
+                    <td>6 materials, 2 days</td>
+                    <td class="small">Needs Herb Garden</td>
+                  </tr>
+                </tbody>
+                <tbody>
+                  <tr>
+                    <th scope="rowgroup" colspan="4">
+                      Walls and watch
+                      <span class="small muted"
+                        >· without it: No walls. Only guards and ammo hold the
+                        horde back.</span
+                      >
+                    </th>
+                  </tr>
+                  <tr>
+                    <td><strong>Scrap Barricades</strong></td>
+                    <td>+10 night defense.</td>
+                    <td>4 materials, 1 day</td>
+                    <td class="small">—</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Palisade</strong></td>
+                    <td>+10 night defense.</td>
+                    <td>6 materials, 2 days</td>
+                    <td class="small">Needs Scrap Barricades</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Lookout</strong></td>
+                    <td>Shows the exact horde size. Each guard adds 2 more.</td>
+                    <td>3 materials, 1 day</td>
+                    <td class="small">
+                      Needs Scrap Barricades. Takes room on the roof
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Spike Pit</strong></td>
+                    <td>+6 night defense.</td>
+                    <td>4 materials, 1 day</td>
+                    <td class="small">
+                      Needs Scrap Barricades. Takes room in the yard
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Fortified Wall</strong></td>
+                    <td>
+                      +10 night defense, and breaches can't damage the walls.
+                    </td>
+                    <td>9 materials, 2 days</td>
+                    <td class="small">
+                      Needs Palisade. Either/or with Gun Nests
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Gun Nests</strong></td>
+                    <td>Each guard adds 4 more. Up to 15 ammo counts.</td>
+                    <td>7 materials, 2 days</td>
+                    <td class="small">
+                      Needs Palisade. Either/or with Fortified Wall
                     </td>
                   </tr>
                 </tbody>
               </table>
             </div>
+            <p>
+              Food piles up, but it doesn't keep: each dusk, a tenth of the food
+              above 12 spoils, unless you have a Root Cellar. Rain Barrels and
+              the Rooftop Catchment make half as much water in a dry spell; a
+              Well doesn't care about the weather.
+            </p>
             <img
               class="howto-art"
               src="assets/images/png/howto_needs.png"
@@ -557,16 +776,138 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
             <!-- Explains how scavenging trips work -->
             <h2 id="scavenging-h">Scavenging</h2>
             <p>
-              Pick a location on the Map tab and send a survivor. They come back
-              at dusk with the kinds of supplies listed for that place: the farm
-              and supermarket have food and water, the police station has ammo
-              and medicine, and the gas station and school have materials.
+              The city has 14 places to scavenge in four districts. There are
+              two ways to send someone: pick <strong>Scavenge</strong> on their
+              card and choose a destination from the list right there, or select
+              a place on the Map tab and click the survivors who should go
+              (click again to call them back). They come back at dusk with the
+              kinds of supplies listed for that place.
             </p>
+            <div class="table-scroll">
+              <table>
+                <caption class="visually-hidden">
+                  Map locations by district
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Place</th>
+                    <th scope="col">Finds</th>
+                    <th scope="col">Danger</th>
+                    <th scope="col">Trip</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <th scope="rowgroup" colspan="4">Downtown</th>
+                  </tr>
+                  <tr>
+                    <td>Hospital</td>
+                    <td>Medicine, food</td>
+                    <td>Medium</td>
+                    <td>1 day</td>
+                  </tr>
+                  <tr>
+                    <td>Police station</td>
+                    <td>Ammo, medicine</td>
+                    <td>High</td>
+                    <td>1 day</td>
+                  </tr>
+                  <tr>
+                    <td>Pharmacy</td>
+                    <td>Medicine, bottled water. Small place.</td>
+                    <td>Medium</td>
+                    <td>1 day</td>
+                  </tr>
+                  <tr>
+                    <td>Church</td>
+                    <td>Food, medicine. People shelter here. Small place.</td>
+                    <td>Low</td>
+                    <td>1 day</td>
+                  </tr>
+                </tbody>
+                <tbody>
+                  <tr>
+                    <th scope="rowgroup" colspan="4">Riverside</th>
+                  </tr>
+                  <tr>
+                    <td>Supermarket</td>
+                    <td>Food, water</td>
+                    <td>Medium</td>
+                    <td>1 day</td>
+                  </tr>
+                  <tr>
+                    <td>Hardware store</td>
+                    <td>Materials</td>
+                    <td>Medium</td>
+                    <td>1 day</td>
+                  </tr>
+                  <tr>
+                    <td>Sporting goods</td>
+                    <td>Ammo, food. Small place.</td>
+                    <td>Medium</td>
+                    <td>1 day</td>
+                  </tr>
+                  <tr>
+                    <td>Waterworks</td>
+                    <td>Water, materials</td>
+                    <td>Medium</td>
+                    <td>2 days</td>
+                  </tr>
+                </tbody>
+                <tbody>
+                  <tr>
+                    <th scope="rowgroup" colspan="4">Westside</th>
+                  </tr>
+                  <tr>
+                    <td>Gas station</td>
+                    <td>Materials, bottled water</td>
+                    <td>Low</td>
+                    <td>1 day</td>
+                  </tr>
+                  <tr>
+                    <td>Farm</td>
+                    <td>Food, water</td>
+                    <td>Low</td>
+                    <td>2 days</td>
+                  </tr>
+                  <tr>
+                    <td>Suburb</td>
+                    <td>Materials, food</td>
+                    <td>Low</td>
+                    <td>1 day</td>
+                  </tr>
+                </tbody>
+                <tbody>
+                  <tr>
+                    <th scope="rowgroup" colspan="4">Southside</th>
+                  </tr>
+                  <tr>
+                    <td>School</td>
+                    <td>Materials, food</td>
+                    <td>Low</td>
+                    <td>1 day</td>
+                  </tr>
+                  <tr>
+                    <td>Warehouse</td>
+                    <td>Food, water, materials. Big site.</td>
+                    <td>Medium</td>
+                    <td>1 day</td>
+                  </tr>
+                  <tr>
+                    <td>Military checkpoint (starts locked)</td>
+                    <td>Ammo, medicine</td>
+                    <td>High</td>
+                    <td>2 days</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
             <ul>
               <li>
                 <strong>Danger pays, and hurts.</strong> Each danger level adds
                 to the haul, but also raises the chance your scavenger is
-                attacked and how badly.
+                attacked and how badly. Small places find 1 less, big sites 1
+                more.
               </li>
               <li>
                 <strong>Places run dry.</strong> Each trip to the same place
@@ -574,23 +915,36 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
               </li>
               <li>
                 <strong>Trips are tiring.</strong> Every day of travel adds 20
-                fatigue.
+                fatigue (less with a Bike Rack).
               </li>
               <li>
-                <strong>Long trips keep people away.</strong> The farm and the
-                military checkpoint are 2 days away. A survivor sent there
-                leaves at dusk and comes back at dusk the next day with 2 extra
-                supplies. While they're away they can't be given a task, don't
-                eat or drink from your stores, and are safe from whatever hits
-                the shelter.
+                <strong>Long trips keep people away.</strong> The farm, the
+                waterworks and the military checkpoint are 2 days away. A
+                survivor sent there leaves at dusk and comes back at dusk the
+                next day with 2 extra supplies. While they're away they can't be
+                given a task, don't eat or drink from your stores, and are safe
+                from whatever hits the shelter.
               </li>
               <li>
                 <strong>The military checkpoint starts locked.</strong> Select
-                it on the Map to cut through the fence with materials (half
-                price with a Builder or Mechanic at the shelter), or keep
-                scavenging: an event near the checkpoint can turn up a keycard.
+                it on the Map to cut through the fence with materials (cheaper
+                with someone handy at the shelter), or keep scavenging: an event
+                near the checkpoint can turn up a keycard.
               </li>
             </ul>
+            <h3>Around the city</h3>
+            <p>
+              Things happen in the city that last a few days: a fire closes
+              Riverside, a horde settles in Downtown, a supply plane drops
+              crates on the school, a dry spell, looters at the supermarket.
+              They can close a place or a whole district, make it more or less
+              dangerous, leave extra supplies, bring out more survivors, or make
+              some night events more likely after a trip there. The Dawn report
+              says when one starts, and the Map tab marks the places they touch
+              (⛔ closed, ▲ more dangerous, ★ extra supplies) and lists
+              everything going on under the map. Some night events only happen
+              after someone comes home from a particular district.
+            </p>
           </section>
           <!-- #endregion [S9] Scavenging -->
 
@@ -662,29 +1016,37 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
               </thead>
               <tbody>
                 <tr>
-                  <td>Walls and watchtower</td>
-                  <td>10, 20 or 30 by tier (none until built)</td>
+                  <td>Walls and watch</td>
+                  <td>
+                    10 each for the Scrap Barricades, Palisade and Fortified
+                    Wall, 6 for the Spike Pit (none until built)
+                  </td>
                 </tr>
                 <tr>
                   <td>Each rested survivor on Guard</td>
                   <td>
-                    5 (Fighter 10, Night owl +5, Coward 0). +3 more each with
-                    the Fortified Wall and Watchtower
+                    5, more or less depending on who they are (3 less while
+                    shaken). +2 more each with a Lookout, +4 with Gun Nests
                   </td>
                 </tr>
                 <tr>
                   <td>Ammo in stock</td>
                   <td>
-                    1 per ammo, up to 10 (double with a Sharpshooter on Guard)
+                    1 per ammo, up to 10 (15 with Gun Nests), only while someone
+                    is on Guard to fire it
                   </td>
                 </tr>
               </tbody>
             </table>
             <p>
-              If your defense is lower than the horde, it breaks through and
-              injures a survivor. A big breach injures two, and can knock your
-              walls back a tier. Once you build the Palisade and Lookout, you
-              see the exact size of tonight's horde instead of an estimate.
+              The horde grows each night, and a bigger group draws more of them:
+              +1 for every survivor at the shelter beyond the first three. If
+              your defense is lower than the horde, it breaks through and
+              injures a survivor. A big breach injures two and damages the
+              newest part of your walls, which gives nothing until you repair it
+              on the Base tab (half the cost, 1 day). A Fortified Wall can't be
+              damaged. With a Lookout you see the exact size of tonight's horde
+              instead of an estimate.
             </p>
           </section>
           <!-- #endregion [S12] Night Raids -->
@@ -751,8 +1113,8 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
               </li>
               <li>
                 <strong>Prices depend on difficulty.</strong> On Normal and
-                Hard, traders ask for more than their goods are worth. A
-                Negotiator in your group knocks 25% off what they ask.
+                Hard, traders ask for more than their goods are worth. Who's in
+                your group can change what they ask.
               </li>
             </ul>
           </section>
@@ -764,8 +1126,8 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
             <h2 id="difficulty-h">Difficulty</h2>
             <p>
               Pick a difficulty and run length when you start a new game. Longer
-              runs give the horde more nights to grow, and give you more nights
-              to run out of supplies.
+              runs end against a bigger horde, and give you more nights to run
+              out of supplies.
             </p>
             <table>
               <thead>
@@ -796,7 +1158,7 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                   <td>High</td>
                 </tr>
                 <tr>
-                  <td>Hunger and thirst damage</td>
+                  <td>Hunger and thirst damage (with nothing left)</td>
                   <td>10 a day</td>
                   <td>15 a day</td>
                   <td>20 a day</td>
@@ -829,40 +1191,12 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
             <!-- Explains the skills and traits -->
             <h2 id="skills-h">Skills and traits</h2>
             <p>
-              Every survivor has one skill and one trait. Skills help with a
-              task or unlock event choices; traits can help or hurt.
+              Every survivor has one skill and one trait. Some skills help with
+              a task or unlock event choices, and some were useful before the
+              world ended. Traits can help, hurt, or just be who someone is. All
+              you get is the description; the rest you find out by watching your
+              group.
             </p>
-            <h3 style="margin: 1rem 0 0.25rem">Skills</h3>
-            <table class="perk-table">
-              <tbody id="skill-rows"></tbody>
-            </table>
-            <h3 style="margin: 1.5rem 0 0.25rem">Traits</h3>
-            <table class="perk-table">
-              <tbody id="trait-rows"></tbody>
-            </table>
-            <script>
-              (function () {
-                function rows(list) {
-                  return Object.keys(list)
-                    .map(function (name) {
-                      return (
-                        "<tr><td>" +
-                        name +
-                        "</td><td>" +
-                        list[name] +
-                        "</td></tr>"
-                      );
-                    })
-                    .join("");
-                }
-                document.getElementById("skill-rows").innerHTML = rows(
-                  AT.SKILLS,
-                );
-                document.getElementById("trait-rows").innerHTML = rows(
-                  AT.TRAITS,
-                );
-              })();
-            </script>
           </section>
           <!-- #endregion [S15] Skills & Traits -->
 
@@ -875,15 +1209,23 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
               short mini-game. These mini-games can be turned off in Options to
               auto-resolve them instead.
             </p>
-            <p style="margin-bottom: 1rem">
-              <strong>Tally:</strong> every dawn you carve the new day's mark on
-              the shelter wall. Stop the sweeping blade over the marked spot
-              (Space, Enter or a click) within three tries. A clean mark lifts
-              everyone's morale (more for every fifth mark, the slash); a slip
-              leaves a crooked mark and lowers it a little. Your marks become
-              the Final Tally at the end of the run.
-            </p>
-            <div class="grid-3">
+            <div class="grid-4">
+              <div class="card">
+                <img
+                  class="mg-card-art"
+                  src="assets/images/png/tally_board.png"
+                  alt=""
+                />
+                <h3>Tally</h3>
+                <p class="small muted">
+                  Every dawn you carve the new day's mark on the shelter wall.
+                  Stop the sweeping blade over the marked spot (Space, Enter or
+                  a click) within three tries. A clean mark lifts everyone's
+                  morale (more for every fifth mark, the slash); a slip leaves a
+                  crooked mark and lowers it a little. Your marks become the
+                  Final Tally at the end of the run.
+                </p>
+              </div>
               <div class="card">
                 <img
                   class="mg-card-art"

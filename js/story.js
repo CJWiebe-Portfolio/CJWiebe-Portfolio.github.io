@@ -43,6 +43,7 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
 [S2] Events: how to write one
   [S3] Night events
   [S4] Morning events
+  [S4b] City events
 [S5] Checkpoints
 [S6] Endings
 [S7] Helpers
@@ -63,10 +64,11 @@ is one paragraph. Leave `paragraphs` empty to skip the pop-up.
     title: "Another Tally",
     art: "title_screen", // a picture from assets/images/png/
     paragraphs: [
-      "You can’t quite recall how many days it has been since it all started. It feels like forever at this point. Days, weeks, months… it doesn’t make any difference now.",
-      "As you search your memory, you recall that it started when you first noticed more and more people wearing masks as you passed them on your way to work. Back when you still had work, a job, and worries about whether the next paycheque would cover your rent that month, on top of the food you could no longer afford. News stories covered yet another strange infection that was spreading.",
-      "Your family… you lost contact with them in what felt like the flick of a light switch, as suddenly all long-distance communication was gone.",
-      "The whole city lost power weeks ago. Then the phones lost their connection, and the sirens stopped racing past your window. When you realized what was happening, you quickly filled everything in your house that could hold water, until it no longer came out of the pipes.",
+      "You can’t quite recall how many days it has been since it all started. It feels like forever at this point. Weeks, months, years… it doesn’t make any difference now.",
+      "It had all originally started so fast, within a matter of days, it all changed. What started as strange news stories that come out about far away foreign countries, quickly became a present reality.",
+      "A strange infection that was spreading, somehow, and no one knew where it came from or how to stop it. Your family… you lost contact with them in what felt like the flick of a light switch, as suddenly all long-distance communication was gone.",
+      "The whole city lost power a long time ago and now survivors rely on generators, and that is when the phones lost their connection. Followed by the sirens that not longer screamed as they would race past your window.",
+      "It was only then that you realized what was happening, the end of civilization, as you quickly filled every container in your house that could hold water, until it no longer came out of the pipes.",
       "At night, the screams and the sound of gunshots became familiar, until you eventually passed out from exhaustion.",
       "Now, when you look out your window, you see nothing but destruction and death. The dead still stand, shuffling through the streets and attacking anyone and anything that makes a noise.",
       "Eventually, you found some decent folks who share your understanding of what it takes to survive. Your group reached {shelter} just before dark. It will have to do.",
@@ -110,11 +112,18 @@ When it can happen (all optional; leave them out and it can happen any time):
                    water, workshop, infirmary, walls
   minDay           only on this day or later
   once             true: happens at most once a run
+  needsFrom        a district or location id: only after someone came home
+                   from there tonight (night events only)
+  blockedBy        an upgrade id: never happens once that upgrade is built
+  tags             words like "horde" or "loot". City events can make
+                   events with a tag more likely (see `boost` in [S4b])
 
 Each choice has a label, and a kind:
   "skill"     needs a rested survivor with that skill at the shelter.
               Skills: Scavenger, Builder, Medic, Fighter, Cook, Hunter,
-              Mechanic, Negotiator, Sharpshooter
+              Mechanic, Negotiator, Sharpshooter, Survivalist (the other
+              skills in common.js do nothing, so no choice should need them), Survivalist (the other
+              skills in common.js are no use, so no choice should need them)
   "minigame"  plays a mini-game (game: "Defense", "Lockpick" or "Search")
   "cost"      anyone can pick it, if the group can pay the cost
 
@@ -151,6 +160,7 @@ medicine and ammo.
   var nightEvents = [
     {
       title: "Knocking at the gate",
+      tags: ["survivor"],
       art: "event_gate",
       text: "Someone is pounding on the gate, begging to be let in. Behind them, shapes shuffle out of the dark.",
       from: "at the gate",
@@ -213,6 +223,7 @@ medicine and ammo.
     },
     {
       title: "Raid on the walls",
+      tags: ["horde"],
       art: "event_raid",
       text: "A crowd of the dead presses against the north wall. It will not hold for long.",
       sounds: ["hordeClose", ["zombieAttack", 800], ["knockHard", 1200]],
@@ -248,6 +259,7 @@ medicine and ammo.
     },
     {
       title: "A house worth searching",
+      tags: ["loot"],
       art: "event_house",
       text: "On the way back, your scavenger spotted a house with the door hanging open. The dead can't be far.",
       needsScavenging: true,
@@ -275,6 +287,7 @@ medicine and ammo.
     },
     {
       title: "A voice on the radio",
+      tags: ["survivor"],
       art: ["event_radio", "school"],
       text: "The old radio crackles to life. Someone is hiding in the school gym, out of food, asking if anyone can hear them.",
       from: "from the school gym",
@@ -315,6 +328,7 @@ medicine and ammo.
     },
     {
       title: "A fallen soldier",
+      tags: ["loot"],
       art: "military_checkpoint",
       text: "Near the checkpoint, your scavenger found a soldier slumped against the fence. A keycard hangs from his belt.",
       needsScavenging: true,
@@ -452,7 +466,8 @@ medicine and ammo.
     },
     {
       title: "Raiders at the gate",
-      art: "event_gate",
+      tags: ["raiders"],
+      art: ["event_raiders", "event_gate"],
       text: "Three armed strangers stand at the gate. They want food and water, or they'll come in and take it.",
       sounds: ["knockHard", ["cock", 900]],
       choices: [
@@ -541,6 +556,7 @@ medicine and ammo.
     },
     {
       title: "A bloated one",
+      tags: ["horde"],
       art: ["event_bloated", "event_raid"],
       text: "Something huge is dragging itself along the wall: one of the dead, swollen to twice the size of a man. Where it brushes the boards, they come away wet and soft.",
       sounds: ["zombieGroan", ["squelch", 700], ["woodSplitting", 1300]],
@@ -563,7 +579,11 @@ medicine and ammo.
             "You soaked a rag, lit it and threw it. The smell hung over the shelter all night.",
           sounds: ["match", ["fireCrackle", 400], ["zombieScream", 900]],
         },
-        { label: "Bring it down at the wall", kind: "minigame", game: "Defense" },
+        {
+          label: "Bring it down at the wall",
+          kind: "minigame",
+          game: "Defense",
+        },
       ],
     },
     {
@@ -586,7 +606,8 @@ medicine and ammo.
           kind: "cost",
           cost: {},
           lose: { food: 3 },
-          outcome: "You didn't take the chance. The bad tins went over the wall.",
+          outcome:
+            "You didn't take the chance. The bad tins went over the wall.",
           sounds: ["rubbish", ["canDrop", 500]],
         },
         {
@@ -632,7 +653,8 @@ medicine and ammo.
           kind: "cost",
           cost: {},
           gain: { materials: [2, 3] },
-          outcome: "You took it apart for wire, bolts and a good length of hose.",
+          outcome:
+            "You took it apart for wire, bolts and a good length of hose.",
           sounds: ["searchToolbox", ["rustyMetal", 600]],
         },
       ],
@@ -671,6 +693,7 @@ medicine and ammo.
     },
     {
       title: "In the yard",
+      tags: ["horde"],
       art: ["event_yard", "event_raid"],
       minDay: 5,
       text: "A crash from the yard. A few of the dead found a gap under the fence, and now they're stumbling between the woodpile and the water barrels.",
@@ -725,7 +748,8 @@ medicine and ammo.
           kind: "cost",
           cost: { medicine: 2 },
           healOne: 10,
-          outcome: "You used two doses and kept the wound clean. It will take time.",
+          outcome:
+            "You used two doses and kept the wound clean. It will take time.",
           sounds: ["pillCap", ["closeJar", 600]],
         },
         {
@@ -734,7 +758,8 @@ medicine and ammo.
           cost: {},
           hurtOne: 15,
           morale: -5,
-          outcome: "You wrapped it tight and waited. By morning, the fever had spread.",
+          outcome:
+            "You wrapped it tight and waited. By morning, the fever had spread.",
           sounds: ["cough", ["lightSwitch", 900]],
         },
       ],
@@ -776,6 +801,7 @@ medicine and ammo.
     },
     {
       title: "Followed home",
+      tags: ["horde"],
       art: ["event_followed", "event_house"],
       needsScavenging: true,
       text: "Your scavenger came home out of breath, sure they were followed. Out past the wall, something is shuffling closer, one step at a time.",
@@ -822,7 +848,8 @@ medicine and ammo.
           label: "Lock up the stores",
           kind: "cost",
           cost: { materials: 2 },
-          outcome: "You built a lockbox for the rations and kept the key on you.",
+          outcome:
+            "You built a lockbox for the rations and kept the key on you.",
           sounds: ["buildingHammering", ["closeJar", 900]],
         },
         {
@@ -966,7 +993,8 @@ medicine and ammo.
           kind: "cost",
           cost: {},
           morale: -10,
-          outcome: "You turned the volume down. You could still hear it anyway.",
+          outcome:
+            "You turned the volume down. You could still hear it anyway.",
           sounds: ["lightSwitch"],
         },
       ],
@@ -999,8 +1027,150 @@ medicine and ammo.
           label: "Put them back",
           kind: "cost",
           cost: {},
-          outcome: "You tied the string again and put them back for whoever comes next.",
+          outcome:
+            "You tied the string again and put them back for whoever comes next.",
           sounds: ["searchDesk"],
+        },
+      ],
+    },
+    // ---- District events: only after someone came home from that district ----
+    {
+      title: "An alarm downtown",
+      needsFrom: "downtown",
+      tags: ["horde"],
+      art: ["event_alarm", "event_followed", "event_generic"],
+      text: "On the way out of Downtown, {shelter}'s scavenger set off a car alarm. It wailed for an hour, and now a crowd of the dead is drifting this way.",
+      sounds: ["zombieGroan", ["horde", 900]],
+      choices: [
+        {
+          label: "Lead them off down the hill",
+          kind: "skill",
+          skill: "Fighter",
+          fatigue: 25,
+          outcome:
+            "Your fighter banged a pipe on the railings all the way to the river. The crowd followed the noise.",
+          sounds: ["footsteps", ["zombieShout", 800]],
+        },
+        {
+          label: "Hold them at the wall",
+          kind: "minigame",
+          game: "Defense",
+        },
+        {
+          label: "Kill the lights and wait",
+          kind: "cost",
+          cost: {},
+          fatigueAll: 10,
+          morale: -5,
+          outcome:
+            "Nobody slept. The dead pressed past the windows until dawn, then thinned out.",
+          sounds: ["lightSwitch", ["zombieGroan", 1200]],
+        },
+      ],
+    },
+    {
+      title: "A list in the stockroom",
+      needsFrom: "market",
+      tags: ["loot"],
+      art: ["event_notebook", "event_generic"],
+      text: "Tucked behind a till on Riverside was a stock list. Someone marked a back room that was never emptied.",
+      sounds: ["turnPage"],
+      choices: [
+        {
+          label: "Let the expert go back for it",
+          kind: "skill",
+          skill: "Scavenger",
+          fatigue: 20,
+          gain: { materials: [2, 3], food: [1, 2] },
+          outcome:
+            "Your scavenger went back before dark and came out with both arms full.",
+          sounds: ["footsteps", ["cardboardBox", 900]],
+        },
+        {
+          label: "Send someone quickly",
+          kind: "cost",
+          cost: {},
+          gain: { materials: [1, 2] },
+          hurtOne: 10,
+          outcome:
+            "They found the room, and something else found them on the way out.",
+          sounds: ["footsteps", ["zombieShout", 700]],
+        },
+        {
+          label: "Not worth the risk",
+          kind: "cost",
+          cost: {},
+          outcome: "You pinned the list to the wall for another day.",
+          sounds: ["turnPage"],
+        },
+      ],
+    },
+    {
+      title: "Smoke from a farmhouse",
+      needsFrom: "outskirts",
+      needsFreeBed: true,
+      tags: ["survivor"],
+      from: "from a farmhouse in Westside",
+      art: ["event_farmhouse_smoke", "event_fire", "farm"],
+      text: "Coming back through Westside, your scavenger saw cooking smoke from a farmhouse chimney. Someone out there is still alive.",
+      sounds: ["wind", ["fireCrackle", 600]],
+      choices: [
+        {
+          label: "Invite them to the shelter",
+          kind: "cost",
+          cost: { food: 2 },
+          recruit: true,
+          outcome:
+            "You left food on the step and a note with directions. Someone knocked the next night.",
+          sounds: ["knockSoft", ["doorOpen", 900]],
+        },
+        {
+          label: "Trade with them",
+          kind: "skill",
+          skill: "Negotiator",
+          gain: { water: [2, 3], food: [1, 2] },
+          outcome:
+            "They had a well and no medicine. Your negotiator made it worth both your whiles.",
+          sounds: ["canJiggle", ["pourWater", 700]],
+        },
+        {
+          label: "Leave them be",
+          kind: "cost",
+          cost: {},
+          outcome: "Some people want to be left alone. You let them.",
+          sounds: ["wind"],
+        },
+      ],
+    },
+    {
+      title: "Tracks near the checkpoint",
+      needsFrom: "southside",
+      tags: ["loot"],
+      art: ["event_tracks", "event_body", "military_checkpoint"],
+      text: "Boot prints in the mud lead away from the Southside checkpoint to a storm drain. Someone was hiding supplies down there.",
+      sounds: ["footsteps", ["rustyMetal", 900]],
+      choices: [
+        {
+          label: "Let the expert follow them",
+          kind: "skill",
+          skill: "Scavenger",
+          fatigue: 20,
+          gain: { ammo: [2, 3], medicine: [0, 1] },
+          outcome:
+            "Your scavenger followed the prints to a duffel bag wrapped in plastic.",
+          sounds: ["footsteps", ["cock", 900]],
+        },
+        {
+          label: "Search the drain",
+          kind: "minigame",
+          game: "Search",
+        },
+        {
+          label: "Leave it",
+          kind: "cost",
+          cost: {},
+          outcome: "Whoever hid it might come back for it. You left it.",
+          sounds: ["footsteps"],
         },
       ],
     },
@@ -1013,7 +1183,7 @@ medicine and ammo.
   var morningEvents = [
     {
       title: "A stranger on the road",
-      art: "event_gate",
+      art: ["event_stranger", "event_gate"],
       text: "At first light, a tired stranger waves from the road, hands raised to show they're unarmed.",
       from: "from the road",
       needsFreeBed: true,
@@ -1038,7 +1208,7 @@ medicine and ammo.
     },
     {
       title: "A broken cart",
-      art: "event_crate",
+      art: ["event_cart", "event_crate"],
       text: "A cart lies tipped over in the road outside, one wheel snapped. Its owner is nowhere to be seen.",
       sounds: ["rustyMetal", ["rustyHinges", 700]],
       choices: [
@@ -1107,7 +1277,7 @@ medicine and ammo.
     // ----- New morning events (November 2026) -----
     {
       title: "Good dog",
-      art: ["event_dog", "suburb"],
+      art: ["event_good_dog", "event_dog", "suburb"],
       needsFlag: "dog", // only after "Coax it inside" in "A dog at the fence"
       once: true,
       text: "The dog you took in has been scratching at the back fence since sunrise, tail going, looking back at you every few seconds.",
@@ -1127,7 +1297,8 @@ medicine and ammo.
           kind: "cost",
           cost: {},
           morale: 10,
-          outcome: "After a long argument, it got a name, and an extra blanket.",
+          outcome:
+            "After a long argument, it got a name, and an extra blanket.",
           sounds: ["dogBark"],
         },
       ],
@@ -1242,6 +1413,7 @@ medicine and ammo.
     },
     {
       title: "Something in the water",
+      blockedBy: "filter", // a Charcoal Filter keeps the water clean
       art: ["event_water", "watercollector"],
       needsBuilt: "water",
       text: "A dead crow is floating in the rain catcher, and the whole tank smells wrong.",
@@ -1351,7 +1523,8 @@ medicine and ammo.
           kind: "cost",
           cost: {},
           fatigueAll: -20,
-          outcome: "Everyone slept until the sun was high. It felt like a holiday.",
+          outcome:
+            "Everyone slept until the sun was high. It felt like a holiday.",
           sounds: ["lightSwitch"],
         },
         {
@@ -1376,7 +1549,8 @@ medicine and ammo.
           kind: "skill",
           skill: "Cook",
           gain: { food: [2, 3] },
-          outcome: "Your cook knew which ones were safe. Mushroom soup for lunch.",
+          outcome:
+            "Your cook knew which ones were safe. Mushroom soup for lunch.",
           sounds: ["stove", ["openJar", 700]],
         },
         {
@@ -1400,6 +1574,175 @@ medicine and ammo.
   ];
   // #endregion [S4] Morning events
 
+  // #region [S4b] City events
+  /*
+---------- City events ----------
+Things happening around the city that last a few days. Each dawn there's a
+chance one starts (CITY in game.js sets how often and how many at once).
+They show on the Map tab and in the Dawn report.
+
+Each city event has:
+  id        a short unique name
+  title     shown on the map and in the report
+  text      one or two sentences: what happened
+  ended     the line logged when it's over
+  where     "city" (everywhere), a district id (downtown, market = Riverside,
+            outskirts = Westside, southside) or a location id
+  days      [min, max] days it lasts
+  minDay    only on this day or later
+
+and what it does there (all optional):
+  closed    true: nobody can scavenge there
+  danger    added to the danger of every place there (scavenging risk only)
+  yield     hauls there are multiplied by this (0.5 = half)
+  extra     supplies added to every trip there, e.g. { ammo: 2 }
+  people    added to the chance of meeting someone there
+  drought   true: rain-fed water upgrades make half as much
+  boost     night events with these tags are this many times as likely
+            after a trip there, e.g. { horde: 3 }
+*/
+  var cityEvents = [
+    {
+      id: "marketFire",
+      title: "Smoke over Riverside",
+      text: "A fire is burning through the shops on Riverside. Nobody is getting in there until it burns out.",
+      ended: "The fire on Riverside has burned out.",
+      where: "market",
+      days: [2, 3],
+      closed: true,
+    },
+    {
+      id: "downtownHorde",
+      title: "The dead fill Downtown",
+      text: "A horde has drifted into Downtown and isn't moving on. Every trip there is more dangerous, and the dead may follow you home.",
+      ended: "The horde has finally moved out of Downtown.",
+      where: "downtown",
+      days: [3, 4],
+      danger: 1,
+      boost: { horde: 3 },
+    },
+    {
+      id: "airdrop",
+      title: "Crates from the sky",
+      text: "A plane flew low over the school and dropped supply crates across the playing field.",
+      ended: "The last of the crates at the school have been picked over.",
+      where: "school",
+      days: [2, 3],
+      extra: { ammo: 1, medicine: 1 },
+    },
+    {
+      id: "drySpell",
+      title: "A dry spell",
+      text: "No rain for days. Rain barrels and rooftop catchment make half as much water until it breaks.",
+      ended: "Rain at last. The dry spell is over.",
+      where: "city",
+      days: [3, 5],
+      minDay: 4,
+      drought: true,
+    },
+    {
+      id: "riverFlood",
+      title: "The river floods",
+      text: "The river burst its banks overnight. The waterworks is under water.",
+      ended: "The floodwater at the waterworks has gone down.",
+      where: "waterworks",
+      days: [2, 3],
+      closed: true,
+    },
+    {
+      id: "looters",
+      title: "Looters at the supermarket",
+      text: "Another group has moved into the supermarket. They're stripping the shelves and shooting at strangers.",
+      ended: "The looters have left the supermarket. Not much is left.",
+      where: "supermarket",
+      days: [3, 4],
+      danger: 1,
+      yield: 0.5,
+      boost: { raiders: 3 },
+    },
+    {
+      id: "reliefTruck",
+      title: "An overturned relief truck",
+      text: "A relief truck has tipped over outside the hospital, its back doors hanging open.",
+      ended: "The relief truck outside the hospital has been emptied.",
+      where: "hospital",
+      days: [2, 3],
+      extra: { medicine: 2, food: 1 },
+    },
+    {
+      id: "quietSouth",
+      title: "Southside goes quiet",
+      text: "Whatever was in Southside has wandered off. It's the safest it's been in weeks, and other survivors are coming out.",
+      ended: "The dead are back in Southside.",
+      where: "southside",
+      days: [2, 3],
+      danger: -1,
+      people: 0.15,
+      boost: { survivor: 2 },
+    },
+    {
+      id: "churchBells",
+      title: "Bells at the church",
+      text: "Someone is ringing the church bells every evening. Survivors are gathering there, and so are the dead.",
+      ended: "The church bells have stopped.",
+      where: "church",
+      days: [2, 3],
+      danger: 1,
+      people: 0.3,
+      boost: { survivor: 3 },
+    },
+    {
+      id: "policeSiege",
+      title: "Gunfire at the police station",
+      text: "Someone has barricaded themselves inside the police station and shoots at anything that moves.",
+      ended: "The shooting at the police station has stopped.",
+      where: "police",
+      days: [2, 3],
+      closed: true,
+    },
+    {
+      id: "gasLeak",
+      title: "A gas leak in Westside",
+      text: "The whole gas station reeks of fuel. One spark and it goes up.",
+      ended: "The fumes at the gas station have cleared.",
+      where: "gas",
+      days: [2, 3],
+      closed: true,
+    },
+    {
+      id: "rivalCrew",
+      title: "Another crew in Southside",
+      text: "A well-armed crew is working through Southside. There's less to find, and they've noticed you.",
+      ended: "The other crew has moved on from Southside.",
+      where: "southside",
+      days: [3, 4],
+      minDay: 5,
+      yield: 0.6,
+      boost: { raiders: 3 },
+    },
+    {
+      id: "migration",
+      title: "The horde migrates",
+      text: "Thousands of the dead are moving across the city from east to west. Every trip is more dangerous while they pass.",
+      ended: "The great horde has passed through.",
+      where: "city",
+      days: [2, 2],
+      minDay: 8,
+      danger: 1,
+      boost: { horde: 2 },
+    },
+    {
+      id: "hardwareTrucks",
+      title: "Delivery trucks on Riverside",
+      text: "Two delivery trucks sit abandoned outside the hardware store, still loaded.",
+      ended: "The trucks on Riverside have been stripped.",
+      where: "hardware",
+      days: [2, 3],
+      extra: { materials: 2 },
+    },
+  ];
+  // #endregion [S4b] City events
+
   // #region [S5] Checkpoints
   /*
 ---------- Checkpoints ----------
@@ -1415,7 +1758,7 @@ flag, needsFlag and needsNote on choices.
       // Act 1: a reason to hold out.
       title: "The radio wakes",
       days: { 15: 3, 30: 5, 45: 7 },
-      art: ["event_radio", "event_generic"],
+      art: ["event_broadcast", "event_radio", "event_generic"],
       text: "Static hisses from the old radio on the shelf, then a voice: 'This is Evacuation Command. A convoy will reach your district in {daysLeft} days. Survivors must signal from a rooftop on the final night. Signal, or we will not stop.' The message loops twice, then fades.",
       sounds: ["radioStatic", "lightSwitch", ["helloWoman", 900]],
       choices: [
@@ -1454,7 +1797,7 @@ flag, needsFlag and needsNote on choices.
       // Act 2: who kept the first tally.
       title: "The last page",
       days: { 15: 7, 30: 14, 45: 20 },
-      art: ["event_notebook", "event_house"],
+      art: ["event_last_page", "event_notebook", "event_house"],
       text: "Behind a loose panel under the old tally marks, you find a rusted tin. Inside is a notebook kept by the group who lived here before you. They heard the same broadcast. The last entry reads: 'Day 41. Going to the checkpoint to meet the convoy. Leaving the keycard for whoever comes next.'",
       sounds: ["rustyHinges", ["searchBooks", 700]],
       choices: [
@@ -1702,6 +2045,7 @@ Used by game.js and end.js. Nothing to edit here for the story itself.
   window.AT.STORY = {
     intro: intro,
     events: events,
+    cityEvents: cityEvents,
     checkpoints: checkpoints,
     endings: endings,
     checkpointDay: checkpointDay,

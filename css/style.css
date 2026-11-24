@@ -787,7 +787,7 @@ td {
 thead th {
   border-bottom: 2px solid var(--ink);
 }
-/* Wide tables (How to play's facility tiers) scroll sideways on small screens. */
+/* Wide tables (How to play's facility upgrades) scroll sideways on small screens. */
 .table-scroll {
   overflow-x: auto;
 }
@@ -1020,86 +1020,113 @@ dialog img.art {
 
 /* #region 8a. Title screen (index.html) */
 /* ---------- 8a. Title screen (index.html) ----------
-   A solid panel on the left over the title art. The title and menu sit at
-   the top; the profile links and the warning sit at the bottom. On phones
-   the art becomes a banner at the top and the panel slides up over it. */
+   The title art fills the whole screen. There is no panel: the pieces sit
+   on the art like stickers, with thick outlines and flat offset shadows to
+   match the drawings. The title is a tilted label, the tagline is a small
+   card and the menu is a stack of chunky buttons, all in the top-left. The
+   profile links and the warning sit on a card in the bottom-left. On phones
+   the art becomes a banner at the top and everything stacks below it. */
 .title-screen {
   background: url("../assets/images/png/title_screen.png") center / cover
     no-repeat;
   display: grid;
-  grid-template-columns: minmax(380px, 32%) 1fr;
+  grid-template-columns: minmax(0, 440px) 1fr;
+  grid-template-rows: auto 1fr auto; /* menu at the top, footer at the bottom */
   min-height: 100vh;
+  padding: clamp(1.25rem, 3vw, 2.75rem);
 }
 .title-menu {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 2.5rem;
-  padding: 3rem clamp(1.75rem, 3vw, 2.75rem) 2rem;
-  background: color-mix(in srgb, var(--surface) 94%, transparent);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
-  border-right: 3px solid var(--ink);
-  box-shadow: 10px 0 40px rgb(0 0 0 / 0.18);
+  grid-column: 1;
+  grid-row: 1;
 }
 .title-top {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-}
-.title-menu .logo {
-  width: 72px;
-  height: 72px;
-  object-fit: contain;
-  border-radius: 12px;
-  margin-bottom: 0.25rem;
-}
-.title-menu h1 {
-  font-size: clamp(2.6rem, 3.8vw, 3.75rem);
-  line-height: 1.05;
-}
-.title-menu .tagline {
-  color: var(--muted);
-  font-size: 1.1rem;
-  max-width: 34ch;
-  margin-bottom: 1rem;
+  align-items: flex-start;
+  gap: 1rem;
 }
 
-/* Main menu: the start button is the biggest thing on the page. */
+/* Title label: the logo and the name on one tilted card. */
+.title-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.65rem 1.4rem 0.65rem 0.7rem;
+  background: var(--surface);
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  box-shadow: 6px 6px 0 var(--ink);
+  transform: rotate(-1.5deg);
+}
+.title-brand .logo {
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
+  border-radius: 12px;
+}
+.title-brand h1 {
+  font-size: clamp(2.1rem, 2.9vw, 2.9rem);
+  line-height: 1.05;
+  white-space: nowrap; /* keeps the name on one line; the label grows to fit */
+}
+
+/* Tagline card */
+.title-menu .tagline {
+  max-width: 32ch;
+  margin: 0.25rem 0 0.5rem;
+  padding: 0.55rem 0.85rem;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  color: var(--ink);
+  font-size: 0.98rem;
+}
+
+/* Main menu: chunky buttons. The start button is the biggest thing on the page. */
 .title-nav {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
-  max-width: 340px;
+  gap: 0.7rem;
+  width: min(100%, 340px);
 }
 .title-nav .btn {
   text-align: center;
+  border-width: 3px;
+  box-shadow: 4px 4px 0 var(--ink);
 }
 .title-nav .btn-primary {
   min-height: 3.4rem;
   margin-bottom: 0.4rem;
+  border-color: var(--ink);
   font-size: 1.05rem;
-  box-shadow: 0 4px 0 color-mix(in srgb, var(--accent) 55%, black);
 }
-.title-nav .btn-primary:active {
-  box-shadow: none;
-  transform: translateY(3px);
+/* Pressing a button pushes it into its shadow. */
+.title-nav .btn:active {
+  box-shadow: 1px 1px 0 var(--ink);
+  transform: translate(3px, 3px);
 }
 
-/* Bottom of the panel: who made it, profile links, and the warning. */
+/* Footer card in the bottom-left: who made it, profile links, and the warning. */
 .title-foot {
+  grid-column: 1;
+  grid-row: 3;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid var(--line);
+  gap: 0.55rem;
+  max-width: 440px;
+  padding: 0.85rem 1rem 0.95rem;
+  background: color-mix(in srgb, var(--surface) 93%, transparent);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  box-shadow: 5px 5px 0 var(--ink);
 }
 .title-foot .social-links {
   justify-content: flex-start;
   margin-left: 0;
 }
 .title-note {
-  max-width: 40ch;
   padding: 0.6rem 0.8rem;
   border-left: 4px solid var(--accent-2);
   border-radius: 0 6px 6px 0;
@@ -1107,25 +1134,43 @@ dialog img.art {
   font-size: 0.85rem;
 }
 
+/* Short laptop screens: drop the tagline so the menu and the footer both fit
+   without scrolling. */
+@media (max-height: 820px) and (min-width: 761px) {
+  .title-menu .tagline {
+    display: none;
+  }
+}
+
 @media (max-width: 760px) {
   .title-screen {
     grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    gap: 1.25rem;
     /* The whole picture shows across the top (16:9, so its height is
-       56.25% of the width), and the panel's rounded top overlaps it a little. */
-    padding-top: calc(56.25vw - 1.25rem);
+       56.25% of the width), and the title label overlaps it a little. */
+    padding: calc(56.25vw - 2rem) 1rem 1.25rem;
     background-color: var(--bg);
     background-size: 100% auto;
     background-position: center top;
   }
-  .title-menu {
-    padding: 2rem 1.25rem 1.5rem;
-    border-right: 0;
-    border-top: 3px solid var(--ink);
-    border-radius: 18px 18px 0 0;
-    box-shadow: 0 -10px 30px rgb(0 0 0 / 0.18);
+  .title-menu,
+  .title-foot {
+    grid-row: auto;
+  }
+  .title-foot {
+    max-width: none;
+  }
+  .title-brand .logo {
+    width: 48px;
+    height: 48px;
+  }
+  .title-brand h1 {
+    font-size: clamp(1.6rem, 7.5vw, 2.3rem);
+    white-space: normal; /* lets the name wrap on very narrow phones */
   }
   .title-nav {
-    max-width: none;
+    width: 100%;
   }
   .key-art {
     min-height: 200px;
@@ -1296,6 +1341,87 @@ fieldset.setup-step > legend.step-title + * {
   flex-wrap: wrap;
   margin-top: 0.35rem;
 }
+
+/* Character creator: each starting survivor's card is a small form. */
+.survivor-editor {
+  display: block;
+}
+.editor-fields {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.editor-head {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+.editor-head .portrait {
+  width: 64px;
+  height: 64px;
+}
+.editor-name {
+  flex: 1;
+  min-width: 0;
+}
+.editor-name .field-label,
+.editor-row .field-label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.85rem;
+}
+.editor-name input {
+  width: 100%;
+}
+.roll-one {
+  flex: none;
+  font-size: 1.1rem;
+}
+/* Portrait choices: a row of small faces. Ones another survivor has fade out. */
+.portrait-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: 0.75rem 0;
+}
+.pic-option {
+  cursor: pointer;
+  border-radius: 50%;
+}
+.pic-option img {
+  display: block;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--line);
+  background: var(--surface-2);
+}
+.pic-option input:checked + img {
+  border: 3px solid var(--ink);
+}
+.pic-option input:focus-visible + img {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.pic-option.taken {
+  cursor: not-allowed;
+}
+.pic-option.taken img {
+  opacity: 0.35;
+  filter: grayscale(1);
+}
+.editor-row {
+  display: grid;
+  gap: 0.5rem;
+}
+.survivor-editor .perk-list .chip {
+  font-weight: 400;
+}
+#survivor-error:empty {
+  display: none;
+}
 /* #endregion 8c. New Game (new-game.html) */
 
 /* #region 8d. Options (options.html) */
@@ -1305,6 +1431,20 @@ fieldset.setup-step > legend.step-title + * {
   gap: 1rem;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   align-items: start;
+}
+/* A volume slider's label with its level (e.g. "Music 80%") on the right. */
+.volume-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: 1rem;
+}
+.volume-row .field-label {
+  margin-bottom: 0.25rem;
+}
+.volume-row output {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
 }
 /* #endregion 8d. Options (options.html) */
 
@@ -1736,32 +1876,87 @@ fieldset.setup-step > legend.step-title + * {
   font-size: 1rem;
 }
 
-/* Tier ladder: built tiers are ticked, the next one is highlighted, later ones fade. */
-.tier-ladder {
+/* Room in the shelter: how full the roof, yard and basement are (top of the Base tab). */
+.spaces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+}
+.space {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.25rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 0.85rem;
+}
+.space.full {
+  border-color: var(--ink);
+}
+.space-slots {
+  display: inline-flex;
+  gap: 3px;
+}
+.space-slots span {
+  width: 0.7rem;
+  height: 0.7rem;
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+}
+.space-slots span.on {
+  background: var(--ink);
+}
+
+/* Upgrade list: built ones are ticked, ones you can build stand out,
+   locked, full and either/or-lost ones fade, damaged ones turn red. */
+.upgrade-list {
   list-style: none;
   margin: 0 0 0.9rem;
   padding: 0;
   border-top: 1px solid var(--line);
 }
-.tier-ladder li {
+.upgrade-list .up {
   display: grid;
-  grid-template-columns: 1.5rem 1fr;
+  grid-template-columns: 1.5rem 1fr auto;
   gap: 0.6rem;
   align-items: start;
   padding: 0.45rem 0.4rem;
   border-bottom: 1px solid var(--line);
   font-size: 0.85rem;
 }
-.tier-text strong {
-  display: block;
+.up-text strong {
   line-height: 1.3;
 }
-.tier-text > span:last-child {
+.up-text > span {
   display: block;
+}
+.up-text .up-tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-left: 0.25rem;
+  vertical-align: 0.1em;
+}
+.up-tags .chip {
+  padding: 0 0.45rem;
+  font-size: 0.7rem;
+  border-color: var(--line);
+}
+.up-effect {
   color: var(--muted);
   font-size: 0.8rem;
 }
-.tier-mark {
+.up-why {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-style: italic;
+}
+.up-mark {
   display: grid;
   place-items: center;
   width: 1.5rem;
@@ -1771,23 +1966,46 @@ fieldset.setup-step > legend.step-title + * {
   font-size: 0.75rem;
   font-weight: 700;
 }
-.tier-ladder li.done .tier-mark {
+.up-btn {
+  white-space: nowrap;
+  align-self: center;
+}
+.up-built .up-mark {
   background: var(--ink);
   border-color: var(--ink);
   color: var(--surface);
 }
-.tier-ladder li.next {
+.up-open {
   background: color-mix(in srgb, var(--phase) 18%, var(--surface));
   border-radius: 6px;
 }
-.tier-ladder li.next .tier-mark {
+.up-open .up-mark,
+.up-building .up-mark {
   border-color: var(--ink);
 }
-.tier-ladder li.later {
-  opacity: 0.55;
+.up-building .up-mark {
+  border-style: dashed;
+}
+.up-damaged .up-mark {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+.up-damaged .up-why {
+  color: var(--danger);
+  font-style: normal;
+  font-weight: 700;
+}
+.up-locked,
+.up-full,
+.up-busy,
+.up-excluded {
+  opacity: 0.6;
+}
+.up-excluded .up-text strong {
+  text-decoration: line-through;
 }
 
-/* Work in progress on the next tier. */
+/* Work in progress on an upgrade (or a repair). */
 .build-progress {
   margin-bottom: 0.9rem;
 }
@@ -1860,6 +2078,31 @@ fieldset.setup-step > legend.step-title + * {
   display: block;
   height: 100%;
   background: var(--ink);
+}
+/* Where a scavenger is going, picked right on their card. */
+.dest-select {
+  display: block;
+  width: 100%;
+  margin: 0.5rem 0 0;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--ink);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.85rem;
+}
+/* Shaken, Hungry, Worn out. */
+.conditions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: 0 0 0.6rem;
+}
+.chip.warn {
+  border-color: var(--danger);
+  color: var(--danger);
+  font-weight: 700;
 }
 .free-bed {
   display: grid;
@@ -2164,17 +2407,367 @@ fieldset.setup-step > legend.step-title + * {
 /* #endregion 9j. Event cards */
 
 /* #region 9j-2. Report pop-up (dusk and dawn results) */
-/* ---------- 9j-2. Report pop-up (dusk and dawn results) ---------- */
-/* The report pop-up only shows a picture for wins and losses. */
+/* ---------- 9j-2. Report pop-up (dusk and dawn results) ----------
+   The report is built in sections by js/game.js [S42b]: a headline, the
+   night or morning event, the raid, supplies, your group, a few lines on
+   what's ahead, and the full log folded away at the bottom. Sections only
+   show when they have something to say. Everything uses the phase colours,
+   so it reads the same at dawn (light) and dusk or night (dark). */
+#report-dialog {
+  width: min(620px, calc(100vw - 2rem));
+}
+/* The report only shows a picture for wins and losses. */
 dialog img.art[hidden] {
   display: none;
 }
+/* The sections scroll; the Continue button stays in view below them. */
+.report-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
+  /* As tall as the screen allows after the title and the Continue button. */
+  max-height: max(16rem, calc(100vh - 15rem));
+  overflow-y: auto;
+  scrollbar-width: thin; /* a visible hint when a long report scrolls */
+  scrollbar-color: var(--line) transparent;
+  margin: 0.35rem -0.25rem 1.1rem 0;
+  padding-right: 0.25rem;
+}
+.rp-section h3 {
+  margin: 0 0 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.rp-note {
+  margin-left: 0.4rem;
+  letter-spacing: 0;
+  text-transform: none;
+  font-weight: 600;
+}
+.rp-none {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+/* Pills: a number pulled out of the sentence, with an icon or a reason. */
+.rp-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+.rp-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.12rem 0.55rem;
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+.rp-pill img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+.rp-pill.good {
+  border-color: var(--ink);
+  background: color-mix(in srgb, var(--accent) 30%, var(--surface));
+}
+.rp-pill.bad {
+  border-color: var(--ink);
+  background: color-mix(in srgb, var(--danger) 32%, var(--surface));
+}
+.rp-why {
+  font-weight: 500;
+  opacity: 0.85;
+}
+
+/* Headline: the one thing that mattered most. */
+.rp-headline {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin: 0;
+  padding: 0.65rem 0.85rem;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.rp-headline.bad {
+  background: color-mix(in srgb, var(--danger) 28%, var(--surface));
+}
+.rp-headline.good {
+  background: color-mix(in srgb, var(--accent) 28%, var(--surface));
+}
+.rp-mark {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--surface);
+  font-weight: 800;
+}
+
+/* The event, set apart as story. Only its text types out. */
+.rp-story {
+  padding: 0.5rem 0.85rem 0.6rem;
+  border-left: 4px solid var(--phase);
+  border-radius: 0 8px 8px 0;
+  background: color-mix(in srgb, var(--phase) 12%, var(--surface));
+  cursor: pointer; /* clicking shows all the text at once */
+}
+.rp-story strong {
+  display: block;
+}
+.rp-story-text {
+  margin: 0.2rem 0 0.45rem;
+  color: var(--muted);
+  font-style: italic;
+  line-height: 1.5;
+}
+.rp-story-text:last-child {
+  margin-bottom: 0;
+}
+
+/* The raid: defense against the horde, then where the defense came from. */
+.rp-raid {
+  padding: 0.7rem 0.9rem 0.75rem;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+}
+.rp-vs {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: end;
+  gap: 0.6rem;
+}
+.rp-side {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.rp-big {
+  display: block;
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+}
+.rp-right {
+  text-align: right;
+}
+.rp-vs-word {
+  padding-bottom: 0.2rem;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+}
+.rp-bar {
+  position: relative;
+  height: 12px;
+  margin: 0.5rem 0 0.6rem;
+  overflow: hidden;
+  border: 1.5px solid var(--ink);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--danger) 45%, var(--surface));
+}
+.rp-bar span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--accent);
+}
+.rp-parts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4rem;
+  margin: 0 0 0.55rem;
+  padding: 0;
+  list-style: none;
+}
+.rp-parts li {
+  padding: 0.35rem 0.5rem;
+  border: 1.5px dashed var(--line);
+  border-radius: 8px;
+  font-size: 0.82rem;
+  line-height: 1.25;
+}
+.rp-parts b {
+  display: block;
+  font-size: 0.95rem;
+}
+.rp-parts li.zero b {
+  color: color-mix(in srgb, var(--danger) 80%, var(--ink));
+}
+.rp-result {
+  margin: 0;
+  font-weight: 700;
+}
+
+/* Supplies: a tile each, the amount now and what came in and went out. */
+.rp-supplies {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.45rem;
+}
+.rp-res {
+  padding: 0.45rem 0.3rem 0.4rem;
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  text-align: center;
+}
+.rp-res img {
+  display: block;
+  width: 26px;
+  height: 26px;
+  margin: 0 auto 0.15rem;
+  object-fit: contain;
+}
+.rp-n {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.rp-d {
+  display: block;
+  min-height: 1.1em;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.rp-d .up {
+  color: color-mix(in srgb, var(--accent) 70%, var(--ink));
+}
+.rp-d .down {
+  color: color-mix(in srgb, var(--danger) 80%, var(--ink));
+}
+.rp-lbl {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.rp-res.alert {
+  border: 2px solid var(--danger);
+  background: color-mix(in srgb, var(--danger) 18%, var(--surface));
+}
+
+/* Your group: one row per survivor. */
+.rp-people {
+  display: grid;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rp-person {
+  display: grid;
+  grid-template-columns: 34px minmax(6rem, 8.5rem) 1fr;
+  gap: 0.6rem;
+  align-items: center;
+  padding: 0.3rem 0.4rem;
+  border-radius: 8px;
+}
+.rp-person:nth-child(odd) {
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+}
+.rp-face {
+  width: 34px;
+  height: 34px;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  background: #fff;
+  object-fit: cover;
+}
+.rp-who {
+  font-weight: 700;
+  line-height: 1.15;
+}
+.rp-who small {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+/* Someone who died or left tonight stays on the list, faded. */
+.rp-person.gone .rp-face {
+  filter: grayscale(1);
+  opacity: 0.6;
+}
+.rp-person.gone .rp-who {
+  opacity: 0.75;
+}
+
+/* Also: anything no other section shows. */
+.rp-news {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rp-news li {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.92rem;
+}
+.rp-dot {
+  flex: none;
+  width: 1rem;
+  text-align: center;
+  font-weight: 800;
+}
+.rp-news li.good .rp-dot {
+  color: color-mix(in srgb, var(--accent) 70%, var(--ink));
+}
+.rp-news li.bad .rp-dot {
+  color: color-mix(in srgb, var(--danger) 80%, var(--ink));
+}
+
+/* Ahead: tonight's odds at dusk, the day's warnings at dawn. */
+.rp-ahead {
+  display: grid;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0.6rem 0.8rem;
+  list-style: none;
+  border-left: 4px solid var(--accent-2);
+  border-radius: 0 8px 8px 0;
+  background: color-mix(in srgb, var(--accent-2) 16%, var(--surface));
+  font-size: 0.92rem;
+}
+.rp-ahead li.good b {
+  color: color-mix(in srgb, var(--accent) 70%, var(--ink));
+}
+.rp-ahead li.bad b {
+  color: color-mix(in srgb, var(--danger) 80%, var(--ink));
+}
+
+/* The full log, folded away at the bottom. */
+.rp-full summary {
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.rp-full .report-list {
+  margin-top: 0.4rem;
+}
 .report-list {
   list-style: none;
-  margin: 0 0 1.25rem;
+  margin: 0;
   padding: 0;
-  max-height: 50vh;
-  overflow-y: auto;
 }
 .report-list li {
   display: flex;
@@ -2183,6 +2776,7 @@ dialog img.art[hidden] {
   padding: 0.45rem 0 0.45rem 0.6rem;
   border-left: 3px solid transparent;
   border-bottom: 1px solid var(--line);
+  font-size: 0.9rem;
 }
 .report-list li.bad {
   border-left-color: var(--danger);
@@ -2192,6 +2786,32 @@ dialog img.art[hidden] {
 }
 .report-list .chip {
   flex: none;
+}
+
+/* Phones: smaller tiles, and pills move under the name. */
+@media (max-width: 520px) {
+  .rp-supplies {
+    gap: 0.3rem;
+  }
+  .rp-res {
+    padding: 0.35rem 0.15rem;
+  }
+  .rp-n {
+    font-size: 1.05rem;
+  }
+  .rp-lbl {
+    font-size: 0.65rem;
+  }
+  .rp-person {
+    grid-template-columns: 34px 1fr;
+  }
+  .rp-person .rp-pills,
+  .rp-person .rp-none {
+    grid-column: 2;
+  }
+  .rp-parts {
+    grid-template-columns: 1fr;
+  }
 }
 /* #endregion 9j-2. Report pop-up (dusk and dawn results) */
 
@@ -2497,6 +3117,104 @@ dialog .warn-list {
 }
 .map-legend .pin-who {
   margin-left: 0;
+}
+/* District names sit on the roads, like street signs. */
+.district-label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #f7e8c7;
+  text-shadow: 0 0 3px #000;
+  white-space: nowrap;
+  pointer-events: none;
+}
+/* Closed by a city event, more dangerous (▲) or holding extra supplies (★). */
+.loc.closed {
+  border-style: dotted;
+  color: var(--muted);
+}
+.loc-flag.bad {
+  color: var(--danger);
+}
+.loc-flag.good {
+  color: var(--good-text);
+}
+.loc-detail .eyebrow {
+  margin: 0;
+}
+.loc-city {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  font-size: 0.85rem;
+}
+.loc-city li {
+  padding: 0.3rem 0.5rem;
+  border-left: 3px solid var(--accent-2);
+  background: var(--surface-2);
+  border-radius: 0 6px 6px 0;
+}
+.loc-city li + li {
+  margin-top: 0.3rem;
+}
+/* What's going on around the city, under the map. */
+.city-news {
+  margin-top: 0.75rem;
+}
+.city-news h3 {
+  margin: 0 0 0.4rem;
+}
+.city-news ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.3rem;
+}
+/* Who goes: one button per survivor. Pressed = going here. */
+.send-list {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
+}
+.who-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+}
+.who-chip .avatar {
+  width: 2rem;
+  height: 2rem;
+  flex: none;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.who-chip > span {
+  display: grid;
+}
+.who-chip:hover:not(:disabled) {
+  border-color: var(--ink);
+}
+.who-chip.going {
+  border: 2px solid var(--ink);
+  background: color-mix(in srgb, var(--phase) 25%, var(--surface));
+}
+.who-chip:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 .loc-detail dd .danger-label {
   vertical-align: 0.1em;

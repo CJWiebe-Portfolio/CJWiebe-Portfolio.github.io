@@ -36,6 +36,7 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
 [S2] Display Settings
 [S3] Game Seed Generator
 [S4] Game Attributes
+[S4b] Volume Groups
 [S5] Background Music
 [S6] Ambience
 [S7] Text Speed
@@ -79,7 +80,7 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
   //This is the default (settings) variable of the game, also used for resetting
   var DEFAULTS = {
     difficulty: "normal", // easy | normal | hard
-    length: 15, // 15 | 30 | 45 days
+    length: 30, // 15 | 30 | 45 days
     minigames: "play", // play | auto
     seed: "",
     textSize: "medium", // small | medium | large
@@ -87,7 +88,15 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
     highContrast: false,
     reduceMotion: false,
     sound: true,
-    volume: 70, // 0–100
+    volume: 70, // 0–100, the main volume
+    // Each kind of sound has its own level on top of the main volume (0–100).
+    // SOUND_GROUPS (in the Volume Mix section) says which sounds are which.
+    musicVolume: 100,
+    ambienceVolume: 100,
+    zombieVolume: 100,
+    effectsVolume: 100,
+    voicesVolume: 100,
+    interfaceVolume: 100,
   };
 
   // This function loads the game settings from localStorage or returns the default settings
@@ -121,7 +130,7 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
     apply(DEFAULTS);
     return Object.assign({}, DEFAULTS);
   }
-// #endregion [S1] Game Settings
+  // #endregion [S1] Game Settings
 
   // #region [S2] Display Settings
   /* 
@@ -139,6 +148,7 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
     root.dataset.motion = s.reduceMotion ? "reduce" : "full";
     syncMusic(s);
     syncAmbience(s);
+    syncLoops(s);
   }
 
   // These functions manage sessionStorage for handing off the game setup
@@ -230,32 +240,119 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
   // in the game. The new-game.js will randomly pick from these,
   // game.js applies them, and how-to-play.html also lists them.
   var SKILLS = {
-    Scavenger: "Brings back 2 extra supplies when scavenging.",
-    Builder: "Upgrades cost 2 fewer materials while they are on Build.",
-    Medic: "On Heal, restores 30 health instead of 10.",
-    Fighter: "Adds 10 night defense on Guard instead of 5.",
-    Cook: "On Cook, the group eats 1 less food at dusk.",
-    Hunter: "Also brings back 2 food when scavenging.",
-    Mechanic: "On Build, salvages 2 materials each day.",
-    Negotiator: "The trader accepts offers worth 25% less.",
-    Sharpshooter: "On Guard, ammo counts double toward night defense.",
+    // Special
+    // 10 - Positive Skills, these will have a positive effect on gameplay.
+    Scavenger:
+      "Can find useful supplies in places most people wouldn't dare look. Apparently, one person's garbage is another person's survival.", //Brings back 2 extra supplies when scavenging.
+    Builder:
+      "Can stretch a handful of materials into a surprisingly sturdy structure. Apparently, watching DIY videos finally paid off.", //Upgrades cost 2 fewer materials while they are on Build.
+    Medic:
+      "Knows their way around a first-aid kit. Somehow more qualified than Googling your symptoms.", //On Heal, restores 30 health instead of 10.
+    Fighter:
+      "Has a knack for keeping the undead at bay. Violence really is the answer sometimes.", //Adds 10 night defense on Guard instead of 5.
+    Cook: "Can make a little food go a long way. Has mastered the ancient art of convincing people they're full.", //On Cook, the group eats 1 less food at dusk.
+    Hunter:
+      "Can track and catch food in the wild. Finally, someone who knows animals aren't just things you pet.", //Also brings back 2 food when scavenging.
+    Mechanic:
+      "Can take apart just about anything and somehow put it back together. Usually with fewer leftover screws.", //On Build, salvages 2 materials each day.
+    Negotiator:
+      "Has a silver tongue and a talent for getting deals. Even the apocalypse has room for a little haggling.", //The trader accepts offers worth 25% less.
+    Sharpshooter:
+      "Rarely misses a shot. Has excellent aim and a concerning amount of confidence with firearms.", //On Guard, ammo counts double toward night defense.
+    Survivalist:
+      "Knows how to make a little water last. Has apparently mastered the art of being slightly less thirsty.", //Only 1 drinks water every other day.
+    // 10 - Filler Skills, these will not have an effect on gameplay.
+    Entertainer:
+      "Can sing, dance, and tell jokes. Unfortunately, none of these things stop zombies.", // Doesn't bring any skills relevant to the zombie apocalypse
+    "Professional Wine Taster":
+      "Can identify 200 different wine varieties. Unfortunately, all the good vintages are probably infected.", // Doesn't bring any skills relevant to the zombie apocalypse
+    "Ice sculptor":
+      "Can turn a block of ice into a beautiful swan. Shame it melts faster than your survival chances.", // Doesn't bring any skills relevant to the zombie apocalypse
+    "Competitive chess":
+      "Can think 15 moves ahead, but somehow didn't think to bring a weapon.", // Doesn't bring any skills relevant to the zombie apocalypse
+    "Interior decorating":
+      "Can make any abandoned building feel like home. Even if home is currently surrounded by zombies.", // Doesn't bring any skills relevant to the zombie apocalypse
+    Tiktoker:
+      "Had 2 million followers and knows every viral dance. Unfortunately, the Wi-Fi is down.", // Doesn't bring any skills relevant to the zombie apocalypse
+    "Piano tuning":
+      "Can tune a grand piano to perfection. Unfortunately, the only thing playing now is the sound of approaching zombies.", // Doesn't bring any skills relevant to the zombie apocalypse
+    Calligraphy:
+      "Can write beautifully crafted letters by hand. Perfect for leaving an elegant goodbye note.", // Doesn't bring any skills relevant to the zombie apocalypse
+    "Video game streaming":
+      "Has spent thousands of hours surviving virtual apocalypses. Unfortunately, this one doesn't have a respawn button.", // Doesn't bring any skills relevant to the zombie apocalypse
+    "Puzzle solver":
+      "Can solve a Rubik's Cube in under 10 seconds. Still can't figure out why everyone keeps eating each other.", // Doesn't bring any skills relevant to the zombie apocalypse
   };
   var TRAITS = {
-    "Night owl": "Adds 5 extra night defense on Guard.",
-    Optimist: "Recovers 5 health every morning.",
-    Coward: "Never the one injured, but adds no defense on Guard.",
-    Tough: "Takes half damage when injured.",
-    Lucky: "Rolls twice when scavenging and keeps the better haul.",
-    Loner: "Brings back 1 extra supply when scavenging alone.",
-    "Big eater": "Eats 2 food at dusk instead of 1.",
-    Clumsy: "Brings back 1 less supply when scavenging.",
-    "Quick healer": "Recovers 10 health when resting.",
-    Hoarder: "Also brings back 1 material when scavenging.",
+    // Special; these have abilities within the game.
+    // 10 - Positive Traits, these will have a positive effect on gameplay.
+    "Night owl":
+      "Is surprisingly energetic at night. While everyone else is sleeping, they're busy making sure nothing eats the group.", //Adds 5 extra night defense on Guard.
+    Optimist:
+      "Always looks on the bright side. Even when surrounded by zombies, they insist things could be worse.", //Recovers 5 health every morning.
+    Tough:
+      "Has an unusually high pain tolerance. Probably the type to walk off a broken leg and complain about the weather.", //Takes half damage when injured.
+    Lucky:
+      "Seems to have luck on their side. Somehow manages to find the good stuff while everyone else finds garbage.", //Rolls twice when scavenging and keeps the better haul.
+    Loner:
+      "Prefers working alone and actively avoids company. At least they're more productive without people around.", //Brings back 1 extra supply when scavenging alone.
+    Extrovert:
+      "Thrives in the company of others. Apparently, even scavenging is more fun with a friend.", //Brings back 1 extra supply when scavenging with another survivor.
+    "Quick healer":
+      "Has an impressive ability to bounce back from injuries. Must have really good genetics.", //Recovers 10 health when resting.
+    Hoarder:
+      "Can't resist collecting useful materials. Their pockets are full, their backpack is overflowing, and they're still not satisfied.", //Also brings back 1 material when scavenging.
+    Motivational:
+      "Always knows what to say to lift someone's spirits. Basically, the group's unpaid motivational speaker.", //Slightly brings up the moral of the survivors with the current least moral
+    Athletic:
+      "Is in excellent physical condition. All those years of running finally have a practical application.", //All tasks take slightly less fatigue to preform.
+    // 10 - Negative Traits, these will have a negative effect on gameplay.
+    Coward:
+      "Has perfected the art of being somewhere else when trouble starts. Unfortunately, standing guard isn't their strong suit.", //Never the one injured, but adds no defense on Guard.
+    "Big eater":
+      "Has an enormous appetite and absolutely no concept of rationing. The group's food supply is getting nervous.", //Eats 2 food at dusk instead of 1.
+    Forgetful:
+      "Frequently misplaces things. Nobody knows where the supplies went, including them.", //Each day they complete a roll that is 1/6 odds, if successful they will misplace and lose some random 2 supplies.
+    Clumsy:
+      "Has two left feet and somehow manages to trip over absolutely nothing. Scavenging with them is a liability.", //Brings back 1 less supply when scavenging.
+    Smoker:
+      "Has a persistent cough that could wake the dead. Unfortunately, that's exactly what you're trying to avoid.", //Their excessive coughing, they have a 1/6 chance to slightly increases the nightly horde strength.
+    Alcoholic:
+      "Can't resist a drink, even during the apocalypse. Sometimes disappears on a scavenging trip for reasons nobody wants to ask about.", //When scavenging, they have a 1/6 change to (find a bottle) and spend a extra day before returning to camp.
+    "Drug addict":
+      "Struggles with their personal demons. The apocalypse has certainly not made things easier.", //With them having to forcefully break free of their addition, every night they have a chance to take some damage.
+    Argumentative:
+      "Has an opinion about absolutely everything and isn't afraid to share it. The zombies aren't the only thing threatening the group's survival.", //Gets in fights with other survivors, lowering the moral of one other survivor by 10
+    Lazy: "Has mastered the art of doing absolutely nothing. Somehow manages to get exhausted just thinking about work.", //All tasks take more fatigue to complete
+    Splurger:
+      "Has absolutely no self-control when it comes to spending. Apparently, the apocalypse is no excuse to stop shopping.", //They will slightly make all trades a worse deal for the all survivors.
+    // 10 - Filler Traits, these will not have an effect on gameplay.
+    Kind: "Has a heart of gold. Unfortunately, zombies don't accept kindness as payment.", // Doesn't bring any traits relevant to the zombie apocalypse
+    Brave:
+      "Is always first to volunteer for a task. Usually before finding out what the task is.", // Doesn't bring any traits relevant to the zombie apocalypse
+    Fearless:
+      "Does not fear death. This is either incredibly admirable or deeply concerning.", // Doesn't bring any traits relevant to the zombie apocalypse
+    Peaceful:
+      "Avoids arguments at all costs. Would rather negotiate with a zombie than raise their voice.", // Doesn't bring any traits relevant to the zombie apocalypse
+    "Open Minded":
+      "Is open to new ideas and perspectives. Even the occasional suggestion to befriend the zombies.", // Doesn't bring any traits relevant to the zombie apocalypse
+    Religious:
+      "Spends time each day in prayer. Has been negotiating with the Almighty for better survival odds.", // Doesn't bring any traits relevant to the zombie apocalypse
+    Selfish:
+      "Always puts themselves first. At least someone is looking out for them.", // Doesn't bring any traits relevant to the zombie apocalypse
+    Resilient:
+      "Never gives up, even when everyone else has accepted that things are hopeless.", // Doesn't bring any traits relevant to the zombie apocalypse
+    Logical:
+      "Always likes to have a plan. Unfortunately, the zombies haven't agreed to follow it.", // Doesn't bring any traits relevant to the zombie apocalypse
+    Sympathetic:
+      "Feels deeply for those who are suffering. Which is unfortunate, considering the current population.", // Doesn't bring any traits relevant to the zombie apocalypse
   };
 
   // Names for survivors. new-game.js picks the starting group from this list,
   // and game.js picks from it again for anyone recruited during a run.
   var NAMES = [
+    // Male
+    // Female
     "Liam",
     "Olivia",
     "Noah",
@@ -358,9 +455,83 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
     "Leah",
   ];
 
-  // Portrait numbers: assets/images/png/survivor-1.png to survivor-6.png.
-  var AVATARS = [1, 2, 3, 4, 5, 6];
+  // Portrait numbers: assets/images/png/survivor-1.png to survivor-17.png.
+  var AVATARS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
   // #endregion [S4] Game Attributes
+
+  // #region [S4b] Volume Groups
+  /*
+===============================================================
+---------- Volume Groups ----------
+===============================================================
+*/
+  // These come before the music and ambience because apply() uses them as
+  // soon as the page loads.
+  // Which slider on the Options page controls each sound. Anything not listed
+  // is a sound effect ("effects"). The music has its own slider too, and the
+  // occasional sounds layered over the ambience (a far-off groan) count as
+  // ambience whatever they are.
+  var SOUND_GROUPS = {
+    ambience: [
+      "ambMorning",
+      "rooster",
+      "ambDay",
+      "ambDayExtra",
+      "ambEvening",
+      "ambNight",
+      "wind",
+      "rain",
+      "birds",
+    ],
+    zombie: [
+      "zombie",
+      "horde",
+      "hordeClose",
+      "zombieGroan",
+      "zombieShout",
+      "zombieScream",
+      "zombieAttack",
+      "zombieDying",
+      "zombieSpotted",
+    ],
+    voices: [
+      "helloWoman",
+      "arguing",
+      "cough",
+      "hurtMale",
+      "hurtFemale",
+      "dyingMale",
+      "dyingFemale",
+    ],
+    interface: ["click", "menu", "turnPage", "typewriter"],
+  };
+  // The setting (in DEFAULTS) that holds each group's level.
+  var GROUP_SETTING = {
+    music: "musicVolume",
+    ambience: "ambienceVolume",
+    zombie: "zombieVolume",
+    effects: "effectsVolume",
+    voices: "voicesVolume",
+    interface: "interfaceVolume",
+  };
+  // The group a sound name belongs to.
+  function groupOf(name) {
+    var found = "effects";
+    Object.keys(SOUND_GROUPS).forEach(function (g) {
+      if (SOUND_GROUPS[g].indexOf(name) !== -1) found = g;
+    });
+    return found;
+  }
+  // A group's level from the settings, 0 to 1 (full if it's never been set).
+  function groupLevel(group, s) {
+    var v = s[GROUP_SETTING[group]];
+    return v == null || v === "" || isNaN(v) ? 1 : clamp(Number(v) / 100);
+  }
+
+  // Looping sounds still playing (the typewriter, rain in an event...), so a
+  // volume change on the Options page reaches them straight away.
+  var loops = [];
+  // #endregion [S4b] Volume Groups
 
   // #region [S5] Background Music
   /*
@@ -411,7 +582,7 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
   // Applies the Sound and Volume settings, and starts the music if it's allowed.
   function syncMusic(s) {
     if (!music) return;
-    music.volume = Math.min(1, Math.max(0, Number(s.volume) / 100));
+    music.volume = clamp((Number(s.volume) / 100) * groupLevel("music", s));
     if (!s.sound) {
       music.pause();
       return;
@@ -749,10 +920,7 @@ whole text straight away from a hidden copy, so nobody has to wait for it.
     zombie: A + "zombie_individual.mp3",
     horde: A + "zombie_horde.mp3",
     hordeClose: A + "zombie_horde(closeup).mp3",
-    zombieGroan: [
-      A + "zombie_male(call).mp3",
-      A + "zombie_individual.mp3",
-    ],
+    zombieGroan: [A + "zombie_male(call).mp3", A + "zombie_individual.mp3"],
     zombieShout: [
       A + "zombie_male(shout).mp3",
       A + "zombie_male(call).mp3",
@@ -885,7 +1053,7 @@ whole text straight away from a hidden copy, so nobody has to wait for it.
   // #endregion [S10] Sound List
 
   // #region [S21] Volume Mix & Loading
-  // How loud each sound plays compared to the Volume setting (1 = full volume).
+  // How loud each sound plays compared to its group's level (1 = full volume).
   // Anything not listed plays at 1. Turn these up or down to balance the mix.
   var SOUND_VOLUME = {
     ambMorning: 0.5,
@@ -923,10 +1091,13 @@ whole text straight away from a hidden copy, so nobody has to wait for it.
     return src;
   }
 
-  // The Volume setting times the sound's own level from SOUND_VOLUME.
-  function volumeFor(name, s) {
+  // The main volume, times the sound's group level, times its own level from
+  // SOUND_VOLUME. Pass group to override the sound's usual group.
+  function volumeFor(name, s, group) {
     var own = name in SOUND_VOLUME ? SOUND_VOLUME[name] : 1;
-    return clamp((Number(s.volume) / 100) * own);
+    return clamp(
+      (Number(s.volume) / 100) * groupLevel(group || groupOf(name), s) * own,
+    );
   }
 
   // Each file is loaded once and then copied for every play.
@@ -1001,6 +1172,20 @@ whole text straight away from a hidden copy, so nobody has to wait for it.
   //   fade:    how fast (ms) replace fades out the old sounds
   // Returns the playing copy so it can be stopped, or null.
   var lastPlayed = {};
+  // Re-applies the volume settings to every loop that's still playing.
+  function syncLoops(s) {
+    loops = loops.filter(function (l) {
+      return !l.a.paused;
+    });
+    loops.forEach(function (l) {
+      if (!s.sound) {
+        l.a.pause();
+        return;
+      }
+      clearInterval(l.a.fadeTimer);
+      l.a.volume = clamp(volumeFor(l.name, s, l.group) * l.extra);
+    });
+  }
   // See the opts list above.
   function playSound(name, opts) {
     opts = opts || {};
@@ -1010,7 +1195,8 @@ whole text straight away from a hidden copy, so nobody has to wait for it.
       var id = setTimeout(function () {
         if (later.channel) {
           var waiting = channel(later.channel).timers;
-          if (waiting.indexOf(id) !== -1) waiting.splice(waiting.indexOf(id), 1);
+          if (waiting.indexOf(id) !== -1)
+            waiting.splice(waiting.indexOf(id), 1);
         }
         playSound(name, later);
       }, opts.delay);
@@ -1024,10 +1210,12 @@ whole text straight away from a hidden copy, so nobody has to wait for it.
     lastPlayed[name] = now;
     // A copy lets the same sound overlap itself (e.g. two quick shots).
     var a = loadFile(pickSrc(name)).cloneNode();
-    a.volume = clamp(
-      volumeFor(name, s) * (opts.volume == null ? 1 : opts.volume),
-    );
+    // Sounds layered over the ambience follow the Ambience slider.
+    var group = opts.channel === "ambienceExtras" ? "ambience" : groupOf(name);
+    var extra = opts.volume == null ? 1 : opts.volume;
+    a.volume = clamp(volumeFor(name, s, group) * extra);
     a.loop = Boolean(opts.loop);
+    if (a.loop) loops.push({ a: a, name: name, group: group, extra: extra });
     if (SOUND_START[name]) a.currentTime = SOUND_START[name];
     if (opts.channel) {
       var ch = channel(opts.channel);
@@ -1116,6 +1304,7 @@ whole text straight away from a hidden copy, so nobody has to wait for it.
   window.AT.preloadAmbience = preloadAmbience;
   window.AT.preloadSounds = preloadSounds;
   window.AT.setAmbience = setAmbience;
+  window.AT.SOUND_GROUPS = SOUND_GROUPS;
   // #endregion [S24] Preload & Button Sounds
   // #endregion [S9] Sound Effects
 

@@ -44,18 +44,21 @@ The full rules are on the in-game **How to play** page.
 ## Features
 
 - Three difficulties and three run lengths, chosen on the New Game page
-- Randomly rolled survivors, each with one skill and one trait that change the rules for them
-- Eight map locations with different loot, danger and travel time. 2-day trips keep a survivor away overnight for a bigger haul, and the Military checkpoint starts locked (cut the fence or find a keycard)
+- Randomly rolled survivors, each with one of 20 skills and one of 30 traits. On the New Game page the player can keep the roll, reroll everyone or one survivor, or change each survivor's portrait, name, skill, trait and voice. Some help, some hurt and some are just flavour, and the player only ever sees a description, so they have to work out what each one does by playing (the effects are in comments in `js/common.js`)
+- 14 map locations in four districts (Downtown, Riverside, Westside, Southside) with different loot, danger, size and travel time. 2-day trips keep a survivor away overnight for a bigger haul, and the Military checkpoint starts locked (cut the fence or find a keycard)
+- 14 city events that run for a few days: they close a place or a whole district, make it more or less dangerous, leave extra supplies, bring out survivors, cause a dry spell, or make some night events more likely after a trip there
+- Scavengers can be sent from their own card (a destination list grouped by district) or from the Map (click who goes, click again to call them back)
 - New survivors join from scavenging trips and events, if there's a free bed
-- Six base facilities, each with three named tiers, all built from scratch on every difficulty
-- 26 night events and 12 morning events with skill, cost and mini-game choices, offered only when they fit the situation (after a story choice, once something is built, while someone is hurt, later in the run...) and never twice in a row. Some only happen once, and some lead into later events and the story checkpoints
+- Six base facilities with 32 small upgrades between them, all built from scratch on every difficulty. Some need others first, five pairs are either/or for the run, and the roof, yard and basement only hold so many, so no two shelters end up the same. Big breaches damage the walls until they're repaired
+- Survivors' morale wears down every day and hunger is slow to recover, so keeping the group steady takes work. Shaken survivors (under 30 morale) find less and guard worse, and stockpiled food spoils without a Root Cellar
+- 30 night events (4 of them only after a trip to a particular district) and 12 morning events with skill, cost and mini-game choices, offered only when they fit the situation (after a story choice, once something is built, while someone is hurt, later in the run...) and never twice in a row. Some only happen once, and some lead into later events and the story checkpoints
 - Four wandering traders who come and go, each with their own stock and wants
 - Three mini-games (Defense, Lockpick, Search), with an option to auto-resolve them
 - A story told through an opening pop-up, four checkpoint events that land on set days for each run length, and six endings that depend on how the run went
 - Every event, checkpoint, ending and the opening are written in `js/story.js`, so all the story text can be edited in one place
-- Dusk and Dawn report pop-ups, plus a filterable log of everything that happened
+- Dusk and Dawn report pop-ups in sections (a headline, the night's event, a breakdown of the night raid, supplies in and out, what happened to each survivor, and what to watch next), plus a filterable log of everything that happened
 - A seed option in Options for repeatable runs
-- Sound: background music, looping ambience for each phase, and stacked sound effects for actions, events, mini-games and the night raid
+- Sound: background music, looping ambience for each phase, and stacked sound effects for actions, events, mini-games and the night raid. The Options page has a main volume and separate sliders for music, ambience, zombies, sound effects, voices, and menus and typing (`SOUND_GROUPS` in `common.js` says which sound is which)
 - Accessibility options: text size, text speed, high contrast and reduce motion. The whole game can be played with the keyboard, and screen readers get typed-out text in full straight away.
 
 ## Running it locally
@@ -75,9 +78,9 @@ VS Code's Live Server extension works too. Note that refreshing the game page en
 | #   | File               | Purpose                                                                                                                                 |
 | --- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
 | 1   | `index.html`       | Title screen and main menu                                                                                                              |
-| 2   | `options.html`     | Difficulty, game length, mini-games, seed, text size, text speed, high contrast, reduce motion, sound                                   |
+| 2   | `options.html`     | Difficulty, game length, mini-games, seed, text size, text speed, high contrast, reduce motion, sound and volume for each kind of sound |
 | 3   | `how-to-play.html` | Goal, turn order, resources, tasks, scavenging, new survivors, events, night raids, difficulty, skills and traits, mini-games, controls |
-| 4   | `new-game.html`    | Shelter name, difficulty, length, 3 starting survivors (reroll)                                                                         |
+| 4   | `new-game.html`    | Shelter name, difficulty, length, 3 starting survivors (random or edited: portrait, name, skill, trait, voice)                          |
 | 5   | `game.html`        | The game: top bar, 5 tabs (Base, Survivors, Map, Trade, Log), side panel, and pop-ups for reports, events, mini-games and pause         |
 | 6   | `end.html`         | Run summary; Play again or Back to title                                                                                                |
 | 7   | `credits.html`     | Credits, assets, contact, accessibility notes                                                                                           |
@@ -92,7 +95,7 @@ VS Code's Live Server extension works too. Note that refreshing the game page en
 ├── js/
 │   ├── common.js        # loaded on every page: settings, page hand-off, seeded RNG, skills, traits and
 │   │                    #   names, music, ambience, sound effects and text speed
-│   ├── new-game.js      # rolls the starting survivors and hands the setup to the game
+│   ├── new-game.js      # rolls or edits the starting survivors and hands the setup to the game
 │   ├── game.js          # the game: state, rules, tabs, events, reports
 │   ├── minigames.js     # Defense, Lockpick and Search
 │   ├── story.js         # all story text: the opening pop-up, every night and morning event,
@@ -121,9 +124,9 @@ All the numbers for each difficulty are in the `DIFFICULTY` and `START_RESOURCES
 | Setting       | Easy | Normal | Hard | What it does                                      |
 | ------------- | ---- | ------ | ---- | ------------------------------------------------- |
 | `yield`       | 95%  | 85%    | 80%  | Share of a scavenged haul that makes it home      |
-| `threatBase`  | 9    | 8      | 7    | Horde strength on night 1                         |
-| `threatPeak`  | 18   | 22     | 23   | Added by the last night, spread over the run      |
-| `starveDmg`   | 10   | 15     | 20   | Health lost per day while starving or dehydrated  |
+| `threatBase`  | 9    | 8      | 7    | Horde strength on night 1 (+1 for every survivor beyond three) |
+| `threatPeak`  | 18   | 22     | 23   | Added by the last night (×1.15 on 30-day runs, ×1.3 on 45-day runs) |
+| `starveDmg`   | 10   | 15     | 20   | Health lost per day while starving, or with no water at all (short rations take a share of it) |
 | `scavRisk`    | 10%  | 15%    | 20%  | Chance of attack per danger level when scavenging |
 | `autoWin`     | 70%  | 55%    | 40%  | Chance an auto-resolved mini-game is won          |
 | `moraleLoss`  | 10   | 15     | 20   | Morale everyone loses when a survivor dies        |
@@ -132,26 +135,38 @@ All the numbers for each difficulty are in the `DIFFICULTY` and `START_RESOURCES
 
 The main rules and where to find them in `game.js`:
 
-- **Facilities:** `FACILITIES` holds each facility's three tiers (name, effect text, cost, days) and what the base does without it. `FX` holds the numbers each level gives (level 0 = not built), so the rules and the descriptions stay in one place. `fx(id, key)` reads the current value, and `upgradeCost()` / `buildDays()` apply the Builder and Workshop discounts.
-- **Night defense:** `nightDefense()`. Walls give 0/10/20/30 by tier, 5 per guard (10 for a Fighter, +3 each with the tier 3 walls), plus up to 10 ammo. The horde's random part is rolled at dawn (`state.hordeRoll`) so the Palisade and Lookout can show the exact size.
-- **Night raid:** `nightRaid()`. The horde is compared with your defense, and a breach injures survivors and can lower the walls.
-- **Dusk:** `endDay()`. Scavenging (including 2-day trips, which set `away` on the survivor), base production, construction, healing, fatigue, eating and drinking. `home()` is everyone at the shelter; survivors who are away don't work, eat or get hurt there.
+- **Facilities:** `FACILITIES` lists each facility's upgrades. An upgrade has a name, an effect line, a cost and days, and optionally `needs` / `needsAny` (what must be built first), `excludes` (its either/or partner, written on one side only), `space` (roof, yard or basement, with room set in `SPACES`), `rain` (halved in a dry spell) and `gives` (what it adds). `BASE` holds what the shelter has with nothing built, and `bonus(key)` adds up `BASE` and every working upgrade, so the numbers and the descriptions stay in one place. `upgradeState()` says whether an upgrade can be built and why not, and `upgradeCost()` / `buildDays()` apply the Builder and Workshop discounts. Each facility's progress is in `state.facilities` (`built`, `damaged`, `building`).
+- **Night defense:** `nightDefense()`. Walls upgrades give their `defense`, each guard gives 5 (10 for a Fighter, more with a Lookout or Gun Nests, 3 less while shaken), plus up to `ammoCap` ammo while at least one guard is able to fire it (`shooters()`). The horde's random part is rolled at dawn (`state.hordeRoll`) so the Lookout can show the exact size.
+- **Night raid:** `nightRaid()`. The horde is compared with your defense, each active guard fires 1 ammo, and a breach injures survivors. A big one damages the newest working walls upgrade (never the last), unless a Fortified Wall is built. `threatTonight()` grows the horde over the run; `HORDE_LENGTH_SCALE` makes the last night bigger on longer runs, `HORDE_PER_SURVIVOR` adds to it for a bigger group, and `GUARD_NIGHT_FATIGUE` is what a night on watch costs a guard.
+- **Map and city events:** `LOCATIONS` (each with a `district`, `loot`, `size` and `people` chance) and `DISTRICTS` are in game.js; the city events themselves are written in `js/story.js` [S4b]. `cityDawn()` counts them down and starts new ones (`CITY` sets how often), and `cityAt()`, `isClosed()` and `dangerAt()` say what's going on at a place. `pickEvent()` weights night events by the city events' `boost`.
+- **Survivor upkeep:** `UPKEEP` (daily morale loss, hunger, a full meal), `SHAKEN` (low morale) and `SPOIL` (food going off) are near the top of game.js.
+- **Skills and traits:** what each one does is written as a comment next to its description in `js/common.js`; the game only ever shows the description. The older ones are applied where they matter in game.js (search for the skill or trait name), and the numbers for the newer traits (Athletic, Lazy, Extrovert, Motivational, Argumentative, Forgetful, Smoker, Alcoholic, Drug addict, Splurger) are in `TRAIT_FX`. A Survivalist only needs water every other day (`waterNeeded()`). Skills and traits without an effect are never needed by an event choice.
+- **Dusk:** `endDay()`. Scavenging (including 2-day trips, which set `away` on the survivor), base production (fractions build up in `state.bank`), construction and repairs, healing, fatigue, eating, drinking, spoilage and daily morale. Short food or water is shared out, so the damage and hunger depend on how short the group is. Everyone who rests heals 5 health, more with an Infirmary. `home()` is everyone at the shelter; survivors who are away don't work, eat or get hurt there.
 - **New survivors:** `recruit()` and `newSurvivor()`. Each location's `people` value is the chance a scavenger meets someone. A newcomer needs a free bed (`freeBeds()`).
 - **Events:** the events themselves are written in `js/story.js` (the comment above the night events lists every field an event and its choices can use). In `game.js`, `REWARDS` holds the supplies that need working out in code, `pickEvent()` chooses one that fits, and `applyChoice()` carries it out. `MORNING_EVENT_CHANCE` sets how often mornings bring one.
-- **Pictures and sounds still to add:** all event and ending pictures are in. An event's `art` can still list several pictures, and the first one that exists is shown, so new events can name pictures before they're drawn. Sounds the events are waiting for are listed, commented out, under "Sounds still to add" in `common.js`.
+- **Pictures and sounds still to add:** the six new places (`pharmacy`, `church`, `hardware`, `sporting_goods`, `waterworks`, `warehouse`) show a stand-in picture until their own is drawn; a location's `img` can list several names and the first one that exists is shown. All event and ending pictures are in. An event's `art` can still list several pictures, and the first one that exists is shown, so new events can name pictures before they're drawn. Sounds the events are waiting for are listed, commented out, under "Sounds still to add" in `common.js`.
 - **Locked places:** `isLocked()` and `unlock()`. `CHECKPOINT_CUT` sets the fence cost.
 - **Damage and death:** `hurt()` and `changeMorale()`.
 - **Traders:** the `TRADERS` list holds each trader's stock, wants and length of stay. `traderDawn()` runs the schedule each dawn, `buyValue()` adds the 50% bonus (`WANT_BONUS`) for wanted items, and `tradeNeed()` applies the markup and the Negotiator discount. One trade per day stops players from trading the same goods back and forth for profit.
 
-The difficulty was tuned by simulating full runs. Playing sensibly on a 15-day run, about 98% of Easy runs, 90% of Normal and 20% of Hard were won. Doing nothing loses most Normal runs and every Hard run.
+The difficulty was tuned by simulating full runs of the real game code with bots: a good player, a medium one (no trading, a third of event choices at random), a casual player (fixed roles, random event choices, never heals) and one that does nothing. Mini-games were auto-resolved. Win rates from 200 runs each (24 Nov 2026, with the upgrade trees, the bigger map, the city events and the full set of skills and traits):
 
-After the facility rework (nothing built at the start), starting materials, tier costs and the kitchen's output were retuned with a simple bot playing 30 runs per difficulty. It won about 100% of Easy, 90% of Normal and 37% of Hard runs, against 100%, 80% and 50% for the same bot on the old version, so Normal plays about the same and Hard is a little tougher.
+| Bot     | Easy 15 / 30 / 45 | Normal 15 / 30 / 45 | Hard 15 / 30 / 45 |
+| ------- | ----------------- | ------------------- | ----------------- |
+| Good    | 100 / 100 / 100%  | 92 / 85 / 83%       | 50 / 26 / 39%     |
+| Medium  | 99 / 100 / 100%   | 77 / 67 / 72%       | 37 / 23 / 30%     |
+| Casual  | 99 / 77 / 73%     | 52 / 14 / 7%        | 7 / 2 / 1%        |
+| Nothing | 0 / 0 / 0%        | 0 / 0 / 0%          | 0 / 0 / 0%        |
+
+The new negative traits and the skills that do nothing make every group a little weaker, so Normal and Hard went back to their original hordes (8 + 22 and 7 + 23, with Hard keeping 80% of each haul). Morale now averages about 62 on a 30-day Normal run, against 90 before the upgrade trees, and sits at 80 or more about a quarter of the time. Tested one trait at a time on the whole starting group, Tough, Optimist and Quick healer are the strongest traits and Big eater and Forgetful the most costly.
+
+Earlier on 24 Nov: short rations are shared out instead of hurting everyone at full strength, ammo only counts with someone on Guard, a night on watch costs 5 fatigue instead of 15, resting heals 5 health without an Infirmary, and the last night's horde is bigger on 30- and 45-day runs.
 
 ## Mini-games
 
 Built in `js/minigames.js`. Their speed, size and time limits scale with the run's difficulty. Auto-resolve (the button in the mini-game, or Options → Mini-games) rolls a win using the difficulty's `autoWin` chance.
 
-- **Defense** (night raids): zombies walk along 4 lanes toward the wall. Click them, or press 1–4 to shoot the closest one in a lane. The wall's strength comes from the Walls level, and the game is lost if the wall breaks.
+- **Defense** (night raids): zombies walk along 4 lanes toward the wall. Click them, or press 1–4 to shoot the closest one in a lane. The wall's strength comes from the walls' defense (every 10 counts as a level), and the game is lost if the wall breaks.
 - **Lockpick** (locked crate): find the hidden pin order. A right pin stays up; a wrong one drops them all. Winning gives loot of 2 resource types.
 - **Search** (only after someone scavenged): 5 supplies are hidden in a 5×4 grid and you have limited searches. Empty spots show how many supplies are next to them. You keep everything you find, and finding enough is a win.
 
@@ -160,8 +175,8 @@ Losing a mini-game injures one survivor for 30 health (15 if they're Tough).
 ## Known limitations and next steps
 
 - No saves or accounts yet. The disabled Continue button and the Options entries are reserved for them.
-- The Workshop doesn't craft items yet. It makes building cheaper and faster.
-- The balance numbers marked `[TUNE THESE]` in `game.js` need another round of playtesting now that survivors can join, trips can last 2 days, and there are more events.
+- Upgrades can't be torn down to free up room in the shelter.
+- The balance numbers marked `[TUNE THESE]` in `game.js` were tuned with simulated players. Real playtests will still find things the bots don't, especially in the mini-games, which the bots always auto-resolve.
 
 ## Credits
 
