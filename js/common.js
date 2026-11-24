@@ -372,8 +372,7 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
   // One looping track that carries across every page. Each page is a new
   // document, so the current position is saved in sessionStorage when the
   // page is left and picked up again on the next page.
-  var MUSIC_SRC =
-    "assets/audio/636147__emilybbarrios__zombie-eating-a-carcus.mp3";
+  var MUSIC_SRC = "assets/audio/another_tally_background_music.mp3";
   var MUSIC_TIME_KEY = "anotherTally.musicTime";
   // Pages opened from the pause menu (new tab) stay silent so the music doesn't double up.
   var musicAllowed =
@@ -592,6 +591,7 @@ whole text straight away from a hidden copy, so nobody has to wait for it.
       if (finished) return;
       finished = true;
       clearInterval(timer);
+      stopChannel("typing", 150);
       els.forEach(function (el, i) {
         el.textContent = texts[i];
       });
@@ -604,6 +604,8 @@ whole text straight away from a hidden copy, so nobody has to wait for it.
     var shown = els.map(function (el, i) {
       return prepareTyping(el, texts[i]);
     });
+    // The typewriter clacks along until the text is done (or skipped).
+    playSound("typewriter", { loop: true, channel: "typing", replace: true });
     var line = 0,
       letter = 0;
     var timer = setInterval(function () {
@@ -748,7 +750,6 @@ whole text straight away from a hidden copy, so nobody has to wait for it.
     horde: A + "zombie_horde.mp3",
     hordeClose: A + "zombie_horde(closeup).mp3",
     zombieGroan: [
-      A + "zombie_male.mp3",
       A + "zombie_male(call).mp3",
       A + "zombie_individual.mp3",
     ],
@@ -762,20 +763,26 @@ whole text straight away from a hidden copy, so nobody has to wait for it.
     zombieScream: [
       A + "zombie_male(screams).mp3",
       A + "zombie_female(screams).mp3",
+      A + "zombie_male_scream_1.mp3",
+      A + "zombie_male_scream_2.mp3",
+      A + "zombie_male_scream_3.mp3",
+      A + "zombie_male_scream_4.mp3",
     ],
-    zombieAttack: A + "213509__soykevin__zombie-attack.wav",
+    zombieAttack: A + "zombie_individual.mp3",
     zombieDying: A + "zombie_dying.mp3",
+    zombieSpotted: A + "zombie_male_spotting_enemy.mp3", // a failed mini-game gets you seen
     // #endregion [S13] Zombies
 
     // #region [S14] Doors
     // ---- Doors ----
     doorOpen: A + "door_opening.mp3",
     doorClose: A + "door_closing.mp3",
-    knock: A + "door_knock.wav",
+    knock: A + "door_knock.mp3",
     knockSoft: A + "door_knocking(soft).mp3",
     knockHard: A + "door_knocking(intense).mp3",
     rustyDoor: A + "rusty_door.mp3",
     rustyHinges: A + "rusty_hindges.mp3",
+    lockClick: A + "lock-click.mp3", // a lock pin setting
     // #endregion [S14] Doors
 
     // #region [S15] Searching
@@ -798,9 +805,9 @@ whole text straight away from a hidden copy, so nobody has to wait for it.
     // ---- Building and materials ----
     buildingHammering: A + "building(hammering).mp3",
     woodCutting: A + "wood_cutting.mp3",
-    tally: A + "tally.mp3", // carving a tally mark (add assets/audio/tally.mp3)
+    tally: A + "tally.mp3", // carving a tally mark
     woodSplitting: A + "wood_splitting.mp3",
-    rustyMetal: A + "rusty_metalmp3.mp3",
+    rustyMetal: A + "rusty_metal.mp3",
     shovel: A + "shovel_digging.mp3",
     cardboardBox: A + "cardboard_box.mp3",
     rubbish: A + "rubbish_pile.mp3",
@@ -811,7 +818,7 @@ whole text straight away from a hidden copy, so nobody has to wait for it.
     lightSwitch: A + "light_switch.mp3",
     match: A + "lighting_a_match.mp3",
     stove: A + "turning_on_stove.mp3",
-    fridge: A + "old_fridge.mp3",
+    fridge: A + "old_fridge(ambiance).mp3",
     pourWater: A + "water_into_glass.mp3",
     openJar: A + "opening_jar.mp3",
     closeJar: A + "closing_jar.mp3",
@@ -842,28 +849,38 @@ whole text straight away from a hidden copy, so nobody has to wait for it.
     ambDay: A + "day(ambiance).mp3",
     ambDayExtra: A + "day(occational-ambiance).mp3",
     ambEvening: [A + "evening(ambiance).mp3", A + "evening(ambiance2).mp3"],
-    ambNight: A + "night(ombiance).mp3",
+    ambNight: A + "night(ambiance).mp3",
     // #endregion [S20] Ambience sounds
 
-    // #region [S20a] Sounds still to add
-    // ---- Sounds still to add ----
-    // Events in story.js already use these names, and skip them until they're
-    // here. Put the file in assets/audio/ with this name (or change the name
-    // here to match yours), then remove the // at the start of the line.
-    // radioStatic: A + "radio_static.mp3", // radio events and checkpoints
-    // dogWhine: A + "dog_whine.mp3", // A dog at the fence
-    // dogBark: A + "dog_bark.mp3", // Good dog
-    // fireCrackle: A + "fire_crackle.mp3", // fires, kindling, burning the bloated one
-    // generator: A + "generator.mp3", // A generator in the basement
-    // cough: A + "cough.mp3", // fever and infected wounds
-    // wind: A + "wind.mp3", // fog, frost, the roof checkpoint
-    // rain: A + "rain_on_roof.mp3", // A storm rolls in
-    // birds: [A + "geese.mp3", A + "birdsong.mp3"], // geese, quiet morning
-    // squelch: A + "squelch.mp3", // A bloated one
-    // arguing: A + "muffled_arguing.mp3", // Missing rations
-    // guitar: A + "guitar_strum.mp3", // An old guitar
-    // rats: A + "rats_squeaking.mp3", // Rats in the stores
-    // #endregion [S20a] Sounds still to add
+    // #region [S20a] Events, weather and survivors
+    // ---- Events and weather (used by events in story.js) ----
+    radioStatic: A + "radio_static.mp3", // radio events and checkpoints
+    dogWhine: A + "dog_whinning.mp3", // A dog at the fence
+    dogBark: A + "dog_barking.mp3", // Good dog
+    fireCrackle: A + "fire_cracking.mp3", // fires, kindling, burning the bloated one
+    generator: A + "generator(pull-cord).mp3", // A generator in the basement
+    generatorOff: A + "generator(shuttingdown).mp3", // not used yet
+    wind: A + "windy_ambiance.mp3", // fog, frost, the roof checkpoint
+    rain: A + "rain.mp3", // A storm rolls in
+    birds: A + "frogs_and_goose(ambiance).mp3", // geese, quiet morning
+    arguing: A + "arguing.mp3", // Missing rations
+    guitar: A + "guitar.mp3", // An old guitar
+    rats: A + "rats.mp3", // Rats in the stores
+    freezing: A + "freezing.mp3", // Frost
+    snowSteps: A + "walking_on_snow.mp3", // Frost
+    // squelch: A + "squelch.mp3", // A bloated one (no squelch file in assets/audio yet)
+
+    // ---- Survivors (game.js picks Male or Female from the survivor's name) ----
+    cough: [A + "male(cough).mp3", A + "female(cough).mp3"], // fever and infected wounds
+    hurtMale: A + "male-grunt.mp3",
+    hurtFemale: A + "female-grunt.mp3",
+    dyingMale: A + "male-dying.mp3",
+    dyingFemale: A + "female-dying.mp3",
+    healing: A + "healing.mp3", // a Heal task treats someone
+
+    // ---- Story text ----
+    typewriter: A + "type-writer.mp3", // loops while story text types out
+    // #endregion [S20a] Events, weather and survivors
   };
   // #endregion [S10] Sound List
 
@@ -880,10 +897,24 @@ whole text straight away from a hidden copy, so nobody has to wait for it.
     zombieGroan: 0.6,
     horde: 0.8,
     hordeClose: 0.7,
+    typewriter: 0.35,
   };
 
+  // Seconds to skip at the start of a file that opens with silence,
+  // so the sound lands the moment it's triggered, e.g. { lockClick: 0.45 }.
+  var SOUND_START = {};
+
   // The ambience tracks are long, so they only load when they are played.
-  var NO_PRELOAD = ["ambMorning", "ambDay", "ambDayExtra", "ambEvening", "ambNight"];
+  // So do the two big weather loops.
+  var NO_PRELOAD = [
+    "ambMorning",
+    "ambDay",
+    "ambDayExtra",
+    "ambEvening",
+    "ambNight",
+    "wind",
+    "rain",
+  ];
 
   // Picks the file for a name (a random one if the name lists several).
   function pickSrc(name) {
@@ -997,6 +1028,7 @@ whole text straight away from a hidden copy, so nobody has to wait for it.
       volumeFor(name, s) * (opts.volume == null ? 1 : opts.volume),
     );
     a.loop = Boolean(opts.loop);
+    if (SOUND_START[name]) a.currentTime = SOUND_START[name];
     if (opts.channel) {
       var ch = channel(opts.channel);
       ch.playing.push(a);

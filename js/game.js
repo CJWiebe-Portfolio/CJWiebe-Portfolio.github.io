@@ -676,12 +676,12 @@ stacked on top of each other; [name, ms] starts that one a little later.
       lost: ["zombieAttack", ["woodSplitting", 400], ["zombieScream", 800]],
     },
     Lockpick: {
-      won: ["lightSwitch", ["rustyHinges", 400]],
-      lost: ["rustyMetal", ["glassBreak", 300], ["zombieShout", 700]],
+      won: ["lockClick", ["rustyHinges", 400]],
+      lost: ["rustyMetal", ["glassBreak", 300], ["zombieSpotted", 700]],
     },
     Search: {
       won: ["rummage", ["canJiggle", 600]],
-      lost: ["rummage", ["zombieScream", 600]],
+      lost: ["rummage", ["zombieSpotted", 600]],
     },
     Tally: {
       won: ["tally"],
@@ -1031,6 +1031,11 @@ they can't stay. Names, skills, traits and portraits come from common.js.
     s.health = Math.min(100, s.health + amount);
     if (s.health >= 60) s.status = "Healthy";
   }
+  // "Male" or "Female", for voice sounds like hurtMale or dyingFemale.
+  // AT.NAMES alternates (Liam, Olivia, Noah, Emma...), so odd places are female.
+  function voice(s) {
+    return AT.NAMES.indexOf(s.name) % 2 === 1 ? "Female" : "Male";
+  }
   // Hurts a survivor. At 0 health they die, and everyone else loses morale.
   function hurt(s, amount, cat, why) {
     if (!s || !s.alive) return;
@@ -1039,6 +1044,9 @@ they can't stay. Names, skills, traits and portraits come from common.js.
     if (s.health > 0) {
       if (s.health < 60) s.status = "Injured";
       addLog(cat, s.name + " " + why + " (-" + amount + " health).", "bad");
+      // A pained grunt plays with the next report (just one, however many are hurt).
+      if (!cued("hurtMale") && !cued("hurtFemale"))
+        cue("hurt" + voice(s), 1500);
       return;
     }
     s.alive = false;
@@ -1048,7 +1056,8 @@ they can't stay. Names, skills, traits and portraits come from common.js.
     alive().forEach(function (o) {
       changeMorale(o, -D.moraleLoss);
     });
-    // Whoever is left buries them: a shovel plays with the next report.
+    // Their last breath, then whoever is left buries them: both play with the next report.
+    if (!cued("dying" + voice(s))) cue("dying" + voice(s), 1000);
     if (alive().length && !cued("shovel")) cue("shovel", 3000);
   }
 
@@ -3145,6 +3154,7 @@ Small counts on the tabs show where something needs a look.
           }
           if (meds) state.resources.medicine -= 1;
           heal(p, amount);
+          if (!cued("healing")) cue("healing", 2000);
           addLog(
             "base",
             s.name + " treated " + p.name + " (+" + amount + " health).",
@@ -3516,7 +3526,10 @@ Small counts on the tabs show where something needs a look.
     heal(patient, amount);
     addLog(
       cat,
-      patient.name + " was treated (+" + (patient.health - before) + " health).",
+      patient.name +
+        " was treated (+" +
+        (patient.health - before) +
+        " health).",
       "good",
     );
   }
@@ -3735,7 +3748,7 @@ Small counts on the tabs show where something needs a look.
       cue("zombieDying", 2700);
       addLog(
         "night",
-        "The horde hit the walls and broke (defense " +
+        "The horde hit the walls but were not able to break through, the horde then disbursed (defense " +
           def +
           " vs " +
           threat +

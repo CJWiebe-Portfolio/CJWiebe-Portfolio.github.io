@@ -473,7 +473,7 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
         btn.classList.add("set");
         btn.setAttribute("aria-label", "Pin " + (i + 1) + ", set");
         setCount += 1;
-        sfx("lightSwitch"); // a crisp click as the pin sets
+        sfx("lockClick"); // a crisp click as the pin sets
         msg.textContent = "Click. Pin " + (i + 1) + " is set.";
         stats();
         if (setCount === count) finish(true);
@@ -545,7 +545,7 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
         sfx("cardboardBox", { delay: 700 });
       } else {
         sfx("glassBreak");
-        sfx("zombieShout", { delay: 400 });
+        sfx("zombieSpotted", { delay: 400 }); // the noise got you spotted
       }
       showBanner(o.arena, won, summary);
       o.done({ won: won, summary: summary, reward: reward });
@@ -828,7 +828,7 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
         }
       });
       var won = found.length >= need;
-      if (!won) sfx("zombieShout", { delay: 300 }); // the dead caught up
+      if (!won) sfx("zombieSpotted", { delay: 300 }); // spotted: the dead caught up
       var reward = {};
       found.forEach(function (i) {
         addReward(reward, loot[i], randInt(o.rng, 1, 2));

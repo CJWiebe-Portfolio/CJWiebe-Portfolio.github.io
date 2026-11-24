@@ -1136,7 +1136,7 @@ medicine and ammo.
       title: "Frost",
       art: "event_frost",
       text: "Everyone wakes up to frost on the inside of the windows. Breath hangs in the air. Nobody wants to get up.",
-      sounds: ["wind", ["footsteps", 900]],
+      sounds: ["wind", ["freezing", 900]],
       choices: [
         {
           label: "Make something hot",
@@ -1163,7 +1163,7 @@ medicine and ammo.
           fatigueAll: 10,
           outcome:
             "You pulled on every layer you had and got to work. The cold stayed in your bones all day.",
-          sounds: ["footsteps"],
+          sounds: ["snowSteps"],
         },
       ],
     },

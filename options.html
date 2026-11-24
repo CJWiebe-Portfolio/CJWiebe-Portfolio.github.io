@@ -116,22 +116,23 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
               <!-- Allows the user to select a difficulty level -->
               <legend>Change the Game Difficulty</legend>
               <p class="small muted" style="margin-top: 0.4rem">
-                Change the difficulty level of the game and see how long you can
-                survive in the zombie apocalypse.
+                Change the difficulty level of the game which effects stats
+                within the game; such as mini-games, damages, resource
+                requirements and expenditures.
                 <br /><br />
               </p>
               <div class="choices">
                 <label class="choice"
-                  ><input type="radio" name="difficulty" value="easy" />
-                  Easy</label
+                  ><input type="radio" name="difficulty" value="easy" /> Easy
+                  (Story-focused)</label
                 >
                 <label class="choice"
                   ><input type="radio" name="difficulty" value="normal" />
-                  Normal</label
+                  Normal (Recommended)</label
                 >
                 <label class="choice"
-                  ><input type="radio" name="difficulty" value="hard" />
-                  Hard</label
+                  ><input type="radio" name="difficulty" value="hard" /> Hard
+                  (Realism)</label
                 >
               </div>
             </fieldset>
@@ -142,22 +143,25 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
               <!-- Options for change in game length -->
               <legend>Game length</legend>
               <p class="small muted" style="margin-top: 0.4rem">
-                Change the game length and see how long you can survive in the
-                zombie apocalypse.
+                Change the game length to increase the total amount of days a
+                run has. The longer a run will give the horde more nights to
+                grow, and give you more nights to run out of supplies. The story
+                will continue to play scripted events regardless of the game
+                length.
                 <br /><br />
               </p>
               <div class="choices">
                 <label class="choice"
-                  ><input type="radio" name="length" value="15" /> 15
-                  days</label
+                  ><input type="radio" name="length" value="15" /> 15 days
+                  (Story-focused)</label
                 >
                 <label class="choice"
-                  ><input type="radio" name="length" value="30" /> 30
-                  days</label
+                  ><input type="radio" name="length" value="30" /> 30 days
+                  (Recommended)</label
                 >
                 <label class="choice"
-                  ><input type="radio" name="length" value="45" /> 45
-                  days</label
+                  ><input type="radio" name="length" value="45" /> 45 days
+                  (Realism)</label
                 >
               </div>
             </fieldset>
@@ -168,13 +172,14 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
               <!-- Selection for mini-games, with options for playing or auto-resolving -->
               <legend>Mini-games</legend>
               <p class="small muted" style="margin-top: 0.4rem">
-                Change the way you interact with mini-games.
+                If this option is activated you will not be prompted to play the
+                mini-games.
                 <br /><br />
               </p>
               <div class="choices">
                 <label class="choice"
                   ><input type="radio" name="minigames" value="play" />Manually
-                  play Mini-games</label
+                  play Mini-games (Recommended)</label
                 >
                 <label class="choice"
                   ><input type="radio" name="minigames" value="auto" />
@@ -188,8 +193,9 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
             <label class="field-label" for="seed">Seed (optional)</label>
             <!-- Allows the user to specify a seed for reproducible gameplay -->
             <p class="small muted" style="margin-top: 0.4rem">
-              Write a game-seed to generate the same game world each time. Or,
-              leave blank for a random seed each game.
+              Write a game-seed to generate the same game world each time,
+              allowing for events to repeat in the same order. Or, leave blank
+              for a random seed each game.
               <br /><br />
             </p>
             <input
@@ -227,8 +233,8 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                 Small</label
               >
               <label class="choice"
-                ><input type="radio" name="textSize" value="medium" />
-                Medium</label
+                ><input type="radio" name="textSize" value="medium" /> Medium
+                (Recommended)</label
               >
               <label class="choice"
                 ><input type="radio" name="textSize" value="large" />
@@ -279,7 +285,8 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
           <!-- Allows the user to turn on/off the sound effects the are featured in the game, and change the volume -->
           <h2 id="sound-h" class="eyebrow panel-title">Sound</h2>
           <label class="check"
-            ><input type="checkbox" name="sound" /> Sound on</label
+            ><input type="checkbox" name="sound" /> All Another Tally Audio
+            (Recommended)</label
           >
           <label class="field-label" for="volume">Volume</label>
           <input
