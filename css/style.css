@@ -975,30 +975,37 @@ dialog .ph.art {
   border: 1px solid var(--line);
 }
 
+/* Each frame takes the shape of its picture, so nothing gets cut off.
+   Scenes are 16:9 (1920x1080); the mini-game banners are 1920x580.
+   On short screens a max-height keeps the picture from pushing the buttons
+   off screen; it then shrinks to fit (contain) instead of being cropped. */
 dialog img.art,
 .end-art,
 .howto-art,
 .mg-card-art {
   display: block;
   width: 100%;
-  object-fit: cover;
+  height: auto;
+  object-fit: contain;
+  background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: 6px;
 }
 dialog img.art {
-  height: 160px;
+  aspect-ratio: 16 / 9;
+  max-height: 36vh;
   margin: 0.75rem 0 1rem;
 }
 .end-art {
-  height: 130px;
+  aspect-ratio: 16 / 9;
+  max-height: 45vh;
   margin-bottom: 1.5rem;
 }
 .howto-art {
-  height: auto;
   margin-top: 1rem;
 }
 .mg-card-art {
-  height: 80px;
+  aspect-ratio: 1920 / 580;
   margin-bottom: 0.75rem;
 }
 /* #endregion 7h. Portraits and art */
@@ -1103,9 +1110,11 @@ dialog img.art {
 @media (max-width: 760px) {
   .title-screen {
     grid-template-columns: 1fr;
-    padding-top: 30vh;
+    /* The whole picture shows across the top (16:9, so its height is
+       56.25% of the width), and the panel's rounded top overlaps it a little. */
+    padding-top: calc(56.25vw - 1.25rem);
     background-color: var(--bg);
-    background-size: auto 48vh;
+    background-size: 100% auto;
     background-position: center top;
   }
   .title-menu {
@@ -1669,7 +1678,8 @@ fieldset.setup-step > legend.step-title + * {
 .facility .fac-art {
   display: block;
   width: calc(100% + 2.2rem);
-  height: 130px;
+  height: auto;
+  aspect-ratio: 16 / 9; /* the facility pictures are 1920x1080 */
   object-fit: cover;
   margin: -1.1rem -1.1rem 0.9rem;
   border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0;
@@ -1869,13 +1879,18 @@ fieldset.setup-step > legend.step-title + * {
   gap: 1rem;
   align-items: start;
 }
+/* map.png is square, so the frame is square too and the whole map shows.
+   The pins use % of this square, so they stay on their buildings at any size.
+   It's capped at 75% of the screen height and centred in its column. */
 .map-area {
   position: relative;
-  aspect-ratio: 5 / 4;
-  min-height: 360px;
+  aspect-ratio: 1 / 1;
+  width: min(100%, 75vh);
+  margin-inline: auto;
   border-radius: var(--radius);
   border: 1px solid var(--line);
-  background: url("../assets/images/png/map.png") center / cover no-repeat;
+  background: var(--surface-2) url("../assets/images/png/map.png") center /
+    contain no-repeat;
 }
 .map-area .label {
   position: absolute;
@@ -1933,7 +1948,8 @@ fieldset.setup-step > legend.step-title + * {
 .loc-art {
   display: block;
   width: 100%;
-  height: 100px;
+  height: auto;
+  aspect-ratio: 16 / 9; /* the location pictures are 1920x1080 */
   object-fit: cover;
   border-radius: 6px;
   margin: 0.75rem 0;

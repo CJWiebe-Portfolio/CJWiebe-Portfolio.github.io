@@ -444,6 +444,7 @@ are in the FX table below so the rules and the descriptions stay together.
   // #region [S4] Map Locations
   /* 
 ---------- Map Locations and there button x/y coordinates [WORK IN PROGRESS NEEDS TUNING] ----------
+x and y are % across and down the square map.png (0,0 is the top-left corner).
 */
   var LOCATIONS = [
     {
@@ -452,7 +453,7 @@ are in the FX table below so the rules and the descriptions stay together.
       img: "gas_station",
       name: "Gas station",
       x: 13,
-      y: 12,
+      y: 19.6,
       danger: 1,
       travel: 1,
       finds: "Materials, fuel",
@@ -463,7 +464,7 @@ are in the FX table below so the rules and the descriptions stay together.
       people: 0.15, // chance a scavenger meets someone who wants to join
       name: "Hospital",
       x: 42,
-      y: 8,
+      y: 16.4,
       danger: 2,
       travel: 1,
       finds: "Medicine, food",
@@ -475,7 +476,7 @@ are in the FX table below so the rules and the descriptions stay together.
       img: "police_station",
       name: "Police station",
       x: 69,
-      y: 20,
+      y: 26,
       danger: 3,
       travel: 1,
       finds: "Ammo, medicine",
@@ -486,7 +487,7 @@ are in the FX table below so the rules and the descriptions stay together.
       people: 0.25, // chance a scavenger meets someone who wants to join
       name: "Farm",
       x: 11,
-      y: 38,
+      y: 40.4,
       danger: 1,
       travel: 2,
       finds: "Food, water",
@@ -497,7 +498,7 @@ are in the FX table below so the rules and the descriptions stay together.
       people: 0.12, // chance a scavenger meets someone who wants to join
       name: "Supermarket",
       x: 69,
-      y: 55,
+      y: 54,
       danger: 2,
       travel: 1,
       finds: "Food, water",
@@ -508,7 +509,7 @@ are in the FX table below so the rules and the descriptions stay together.
       people: 0.2, // chance a scavenger meets someone who wants to join
       name: "Suburb",
       x: 10,
-      y: 72,
+      y: 67.6,
       danger: 1,
       travel: 1,
       finds: "Materials, food",
@@ -519,7 +520,7 @@ are in the FX table below so the rules and the descriptions stay together.
       people: 0.2, // chance a scavenger meets someone who wants to join
       name: "School",
       x: 38,
-      y: 68,
+      y: 64.4,
       danger: 1,
       travel: 1,
       finds: "Materials",
@@ -531,7 +532,7 @@ are in the FX table below so the rules and the descriptions stay together.
       img: "military_checkpoint",
       name: "Military checkpoint",
       x: 58,
-      y: 86,
+      y: 78.8,
       danger: 3,
       travel: 2,
       finds: "Ammo, medicine",
@@ -539,7 +540,7 @@ are in the FX table below so the rules and the descriptions stay together.
       locked: true, // starts locked: cut the fence (Map) or find a keycard (event)
     },
   ];
-  var SHELTER_POS = { x: 41, y: 45 };
+  var SHELTER_POS = { x: 41, y: 46 };
   // #endregion [S4] Map Locations
 
   // #region [S5] Events
