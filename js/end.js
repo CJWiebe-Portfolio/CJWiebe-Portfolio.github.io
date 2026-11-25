@@ -118,6 +118,7 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
       values,
     );
     document.getElementById("ending").hidden = false;
+    showEndingsFound(ending);
     var skipEnding = AT.typeLines(
       paras,
       ending.paragraphs.map(function (t) {
@@ -127,6 +128,51 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
     box.addEventListener("click", function () {
       skipEnding();
     });
+  }
+  // Which ending this is ("Ending 4 of 6"), and every ending this browser
+  // has reached so far. The ones not found yet stay hidden as "???".
+  function showEndingsFound(ending) {
+    var all = AT.STORY.endings;
+    var KEY = "anotherTally.endingsFound";
+    var found = [];
+    try {
+      found = JSON.parse(localStorage.getItem(KEY) || "[]");
+    } catch (e) {
+      // storage blocked
+    }
+    if (found.indexOf(ending.title) === -1) {
+      found.push(ending.title);
+      try {
+        localStorage.setItem(KEY, JSON.stringify(found));
+      } catch (e) {
+        // storage blocked
+      }
+    }
+    document.getElementById("ending-kicker").textContent =
+      "Ending " + (all.indexOf(ending) + 1) + " of " + all.length;
+    var got = all.filter(function (e) {
+      return found.indexOf(e.title) !== -1;
+    }).length;
+    document.getElementById("endings-found").innerHTML =
+      '<p class="eyebrow">Endings found: ' +
+      got +
+      " of " +
+      all.length +
+      "</p><ol>" +
+      all
+        .map(function (e) {
+          var seen = found.indexOf(e.title) !== -1;
+          return (
+            '<li class="' +
+            (e === ending ? "this" : seen ? "seen" : "unseen") +
+            '">' +
+            (seen ? esc(AT.STORY.fill(e.title, {})) : "???") +
+            (e === ending ? ' <span class="visually-hidden">(this run)</span>' : "") +
+            "</li>"
+          );
+        })
+        .join("") +
+      "</ol>";
   }
   // #endregion [S3a] Ending
 

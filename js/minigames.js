@@ -76,9 +76,18 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
     }
     return a;
   }
-  // Picks the value for the run's difficulty.
-  function byDifficulty(difficulty, easy, normal, hard) {
-    return difficulty === "easy" ? easy : difficulty === "hard" ? hard : normal;
+  // Every number the mini-games use is in js/balance.js [B12], read when a
+  // game starts (so changes made in the ?debug panel apply to the next one).
+  function tune(name) {
+    return AT.BALANCE.minigames[name];
+  }
+  // Picks the value for the run's difficulty from { easy, normal, hard }.
+  function byDifficulty(difficulty, table) {
+    return table[difficulty] !== undefined ? table[difficulty] : table.normal;
+  }
+  // A whole number from a [min, max] pair in balance.js.
+  function rollPair(rng, pair) {
+    return randInt(rng, pair[0], pair[1]);
   }
   // Adds n of a resource to a reward object, e.g. { food: 2 }.
   function addReward(reward, res, n) {
@@ -152,20 +161,31 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
 =============================================================== 
 */
 
+  // The zombie picture for the Defense mini-game. Save it as
+  // assets/images/png/zombie.png; until it's there, the 🧟 emoji is used.
+  var ZOMBIE_ART = "assets/images/png/zombie.png";
+  var zombieImg = new Image();
+  zombieImg.src = ZOMBIE_ART;
+  function zombieArtReady() {
+    return zombieImg.complete && zombieImg.naturalWidth > 0;
+  }
+
   // Creates the various elements of the Defense minigame, including the wall, lanes, and zombies.
   function Defense(o) {
+    var T = tune("defense");
     var LANES = 4;
-    var total = byDifficulty(o.difficulty, 15, 25, 50);
-    var crossMs = byDifficulty(o.difficulty, 4750, 3000, 2400);
-    var spawnMs = byDifficulty(o.difficulty, 800, 700, 500);
-    var hitDamage = byDifficulty(o.difficulty, 25, 35, 45);
-    var wallMax = 100;
-    var wall = Math.min(wallMax, 40 + (o.wallLevel || 0) * 30);
+    var laneKeys = Boolean(T.laneKeys); // keys 1-4 (off by default: mouse only)
+    var total = byDifficulty(o.difficulty, T.zombies);
+    var crossMs = byDifficulty(o.difficulty, T.crossMs);
+    var spawnMs = byDifficulty(o.difficulty, T.spawnMs);
+    var hitDamage = byDifficulty(o.difficulty, T.hitDamage);
+    var wallMax = T.wallMax;
+    var wall = Math.min(wallMax, T.wallStart + (o.wallLevel || 0) * T.wallPerLevel);
     var WALL_X = 6; // percent: where a zombie hits the wall
     // Missing a shot (clicking empty space, or a lane key with no zombie in that lane)
     // jams the gun for missJamMs and chips missDamage off the wall.
-    var missJamMs = byDifficulty(o.difficulty, 200, 300, 400);
-    var missDamage = byDifficulty(o.difficulty, 0, 5, 10);
+    var missJamMs = byDifficulty(o.difficulty, T.missJamMs);
+    var missDamage = byDifficulty(o.difficulty, T.missDamage);
     var jammedUntil = 0,
       jamTimer = null,
       misses = 0;
@@ -191,15 +211,20 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
             (i * 100) / LANES +
             "%;height:" +
             100 / LANES +
-            '%"><span class="mg-lane-key" aria-hidden="true">' +
-            (i + 1) +
-            "</span></div>"
+            '%">' +
+            (laneKeys
+              ? '<span class="mg-lane-key" aria-hidden="true">' + (i + 1) + "</span>"
+              : "") +
+            "</div>"
           );
         })
         .join("") +
-      '<p class="mg-hint">Click a zombie to take it down, or press <kbd>1</kbd>–<kbd>' +
-      LANES +
-      "</kbd> to shoot the closest one in that lane. Missing jams your gun for a moment.</p>";
+      (laneKeys
+        ? '<p class="mg-hint">Click a zombie to take it down, or press <kbd>1</kbd>–<kbd>' +
+          LANES +
+          "</kbd> to shoot the closest one in that lane. Missing jams your gun for a moment.</p>"
+        : '<p class="mg-hint">Click a zombie to take it down. Missing jams your gun for a moment. ' +
+          "Playing by keyboard? Use Skip to auto-resolve.</p>");
 
     // This function updates the UI with the current number of zombies left and the wall's health percentage.
     function stats() {
@@ -208,7 +233,7 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
     }
     stats();
 
-    var clock = makeClock(30, o.ui, function () {
+    var clock = makeClock(T.seconds, o.ui, function () {
       finish(wall > 0);
     });
 
@@ -222,7 +247,10 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
       el.dataset.sound = "none"; // the gunshot is played in kill()
       el.tabIndex = -1; // moving targets: keyboard players use the lane keys instead
       el.setAttribute("aria-label", "Zombie in lane " + (lane + 1));
-      el.textContent = "🧟";
+      if (zombieArtReady()) {
+        el.classList.add("has-art");
+        el.innerHTML = '<img src="' + ZOMBIE_ART + '" alt="" draggable="false">';
+      } else el.textContent = "🧟";
       el.style.top = ((lane + 0.5) * 100) / LANES + "%";
       var z = {
         el: el,
@@ -243,7 +271,9 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
       o.arena.appendChild(el);
       spawned += 1;
       // Some of them shout as they come out (not all, or it's a wall of noise).
-      if (Math.random() < 0.35) sfx("zombieShout", { gap: 900, volume: 0.7 });
+      // Quieter than they were: playtesters found them much louder than the other zombies.
+      if (Math.random() < (T.shoutChance == null ? 0.2 : T.shoutChance))
+        sfx("zombieShout", { gap: 1200, volume: T.shoutVolume == null ? 0.35 : T.shoutVolume });
       if (spawned < total)
         spawnTimer = setTimeout(spawn, spawnMs * (0.6 + o.rng() * 0.8));
     }
@@ -389,7 +419,7 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
       start: function () {
         running = true;
         last = performance.now();
-        document.addEventListener("keydown", onKey);
+        if (laneKeys) document.addEventListener("keydown", onKey);
         o.arena.addEventListener("pointerdown", onArenaClick);
         o.arena.querySelector(".mg-hint").classList.add("faded");
         sfx("cock");
@@ -412,8 +442,9 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
 
   // This function creates the Lockpick minigame.
   function Lockpick(o) {
-    var count = byDifficulty(o.difficulty, 4, 5, 6);
-    var seconds = byDifficulty(o.difficulty, 25, 20, 18);
+    var T = tune("lockpick");
+    var count = byDifficulty(o.difficulty, T.pins);
+    var seconds = byDifficulty(o.difficulty, T.seconds);
     var order = shuffle(
       o.rng,
       Array.apply(null, Array(count)).map(function (_, i) {
@@ -523,8 +554,8 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
       var reward = {};
       if (won) {
         var kinds = shuffle(o.rng, ["materials", "ammo", "medicine", "food"]);
-        addReward(reward, kinds[0], randInt(o.rng, 2, 3));
-        addReward(reward, kinds[1], randInt(o.rng, 1, 2));
+        addReward(reward, kinds[0], rollPair(o.rng, T.firstReward));
+        addReward(reward, kinds[1], rollPair(o.rng, T.secondReward));
       }
       var summary = won
         ? "The lock gave way" +
@@ -579,15 +610,16 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
   function Search(o) {
     var COLS = 5,
       ROWS = 4;
-    var hidden = 5;
-    var need = byDifficulty(o.difficulty, 2, 3, 3);
-    var searchesMax = byDifficulty(o.difficulty, 10, 8, 7);
+    var T = tune("search");
+    var hidden = T.hidden;
+    var need = byDifficulty(o.difficulty, T.need);
+    var searchesMax = byDifficulty(o.difficulty, T.searches);
     var searches = searchesMax;
     // Zombies hide in the room too. Opening one costs an extra search, and each
     // bite hurts a survivor after the mini-game (game.js applies the damage).
-    var zombieCount = byDifficulty(o.difficulty, 1, 2, 3);
-    var biteDamage = byDifficulty(o.difficulty, 10, 15, 20);
-    var biteSearchCost = 1; // extra searches lost fighting a zombie off
+    var zombieCount = byDifficulty(o.difficulty, T.zombies);
+    var biteDamage = byDifficulty(o.difficulty, T.biteDamage);
+    var biteSearchCost = T.biteSearchCost; // extra searches lost fighting a zombie off
     var order = shuffle(
       o.rng,
       Array.apply(null, Array(COLS * ROWS)).map(function (_, i) {
@@ -663,7 +695,7 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
     }
     stats();
 
-    var clock = makeClock(30, o.ui, function () {
+    var clock = makeClock(T.seconds, o.ui, function () {
       finish();
     });
 
@@ -831,7 +863,7 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
       if (!won) sfx("zombieSpotted", { delay: 300 }); // spotted: the dead caught up
       var reward = {};
       found.forEach(function (i) {
-        addReward(reward, loot[i], randInt(o.rng, 1, 2));
+        addReward(reward, loot[i], rollPair(o.rng, T.perFind));
       });
       var summary =
         (found.length
@@ -901,10 +933,14 @@ The result adds mark (the new mark's number) and fifth (true for a slash).
     var marks = (o.marks || []).slice();
     var n = marks.length; // index of the mark being carved
     var fifth = n % 5 === 4;
-    var zoneW = byDifficulty(o.difficulty, 0.22, 0.16, 0.11) * (fifth ? 0.75 : 1); // [TUNE THESE]
-    var period = byDifficulty(o.difficulty, 1500, 1200, 950) * (fifth ? 0.85 : 1); // ms for one sweep there and back
-    var seconds = 8;
-    var tries = 3;
+    var T = tune("tally");
+    var zoneW = byDifficulty(o.difficulty, T.zone) * (fifth ? T.fifthZone : 1);
+    var period = byDifficulty(o.difficulty, T.period) * (fifth ? T.fifthPeriod : 1); // ms for one sweep there and back
+    // Slow on the first dawns, faster as the run goes on (rampStart to rampEnd).
+    var progress = o.length > 1 ? Math.min(1, n / (o.length - 1)) : 0;
+    period *= (T.rampStart || 1) + ((T.rampEnd || 1) - (T.rampStart || 1)) * progress;
+    var seconds = T.seconds;
+    var tries = T.tries;
     var running = false,
       cooling = false,
       raf = null,
@@ -1048,14 +1084,16 @@ The result adds mark (the new mark's number) and fifth (true for a slash).
   function autoResult(name, won, rng) {
     var reward = {};
     if (name === "Lockpick" && won) {
+      var L = tune("lockpick");
       var kinds = shuffle(rng, ["materials", "ammo", "medicine", "food"]);
-      addReward(reward, kinds[0], randInt(rng, 2, 3));
-      addReward(reward, kinds[1], randInt(rng, 1, 2));
+      addReward(reward, kinds[0], rollPair(rng, L.firstReward));
+      addReward(reward, kinds[1], rollPair(rng, L.secondReward));
     }
     if (name === "Search") {
-      var n = won ? randInt(rng, 3, 4) : randInt(rng, 0, 2);
+      var S = tune("search");
+      var n = rollPair(rng, won ? S.autoWin : S.autoLose);
       for (var i = 0; i < n; i++)
-        addReward(reward, pick(rng, RES_IDS), randInt(rng, 1, 2));
+        addReward(reward, pick(rng, RES_IDS), rollPair(rng, S.perFind));
     }
     return { won: won, reward: reward, summary: "" };
   }

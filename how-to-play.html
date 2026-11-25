@@ -55,7 +55,9 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
       href="assets/icons/anothertally_icon.png"
     />
     <script src="js/common.js"></script>
+    <script src="js/balance.js"></script>
     <script src="js/mobile.js"></script>
+    <script src="js/debug.js" defer></script>
   </head>
   <!-- Link to the common JavaScript files, css, fonts and other resources, site Icon, etc...-->
   <!-- #endregion [S1] Head -->
@@ -223,11 +225,14 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                     class="small muted"
                     style="margin-top: 0.4rem"
                   >
-                    Each survivor eats 1 food at dusk. Short rations raise
-                    everyone's hunger (the shorter you are, the more) and lower
-                    morale. At 80 hunger, survivors start losing health every
-                    day. Kitchen and garden upgrades make 2 or 3 food a day
-                    each, and big stockpiles spoil without a Root Cellar.</span
+                    Each survivor eats
+                    <span data-bal="survivors.eats">1</span> food at dusk. Short
+                    rations raise everyone's hunger (the shorter you are, the
+                    more) and lower morale. At
+                    <span data-bal="survivors.starvingAt">80</span> hunger,
+                    survivors start losing health every day. Kitchen and garden
+                    upgrades make 2 or 3 food a day each, and big stockpiles
+                    spoil without a Root Cellar.</span
                   ></span
                 >
               </li>
@@ -242,11 +247,12 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                     class="small muted"
                     style="margin-top: 0.4rem"
                   >
-                    Each survivor drinks 1 water at dusk. Running short costs
-                    health right away, shared across the group: the shorter you
-                    are, the more everyone loses. Water is the most urgent
-                    resource. Water supply upgrades gather 1 to 3 water a day
-                    each.</span
+                    Each survivor drinks
+                    <span data-bal="survivors.drinks">1</span> water at dusk.
+                    Running short costs health right away, shared across the
+                    group: the shorter you are, the more everyone loses. Water
+                    is the most urgent resource. Water supply upgrades gather 1
+                    to 3 water a day each.</span
                   ></span
                 >
               </li>
@@ -278,7 +284,8 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                     class="small muted"
                     style="margin-top: 0.4rem"
                   >
-                    An Herb Garden grows a little. A survivor on Heal uses 1
+                    An Herb Garden grows a little. A survivor on Heal uses
+                    <span data-bal="tasks.medicinePerTreatment">1</span>
                     medicine to treat the most injured person. Without medicine,
                     only someone with real training can help, and only a
                     little.</span
@@ -296,9 +303,11 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                     class="small muted"
                     style="margin-top: 0.4rem"
                   >
-                    Ammo adds to your night defense (up to 10 counts), but only
-                    when someone is on Guard to fire it. Each guard uses 1 ammo
-                    every night, so keep restocking.</span
+                    Ammo adds to your night defense (up to
+                    <span data-bal="facilities.base.ammoCap">10</span> counts),
+                    but only when someone is on Guard to fire it. Each guard
+                    uses <span data-bal="horde.ammoPerGuard">1</span> ammo every
+                    night, so keep restocking.</span
                   ></span
                 >
               </li>
@@ -344,7 +353,12 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                 <tr>
                   <td>Rest</td>
                   <td>
-                    Lowers fatigue by 25, raises morale by 3 and heals 5 health.
+                    Lowers fatigue by
+                    <span data-bal="facilities.base.rest">25</span>, raises
+                    morale by
+                    <span data-bal="facilities.base.restMorale">3</span> and
+                    heals
+                    <span data-bal="facilities.base.restHeal">5</span> health.
                     Beds upgrades recover more, and an Infirmary heals more.
                   </td>
                 </tr>
@@ -365,23 +379,31 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                 <tr>
                   <td>Guard</td>
                   <td>
-                    Adds night defense and fires your ammo, using 1 a night.
-                    Some survivors are better at it than others.
+                    Adds night defense and fires your ammo, using
+                    <span data-bal="horde.ammoPerGuard">1</span> a night. Some
+                    survivors are better at it than others.
                   </td>
                 </tr>
                 <tr>
                   <td>Cook</td>
                   <td>
-                    Cooks the group's dinner. Whether that saves anything
-                    depends on who's cooking.
+                    Cooks a hot meal: if there's food for everyone, the whole
+                    group gets +<span data-bal="tasks.cookMorale">4</span>
+                    morale at dusk. One cook is enough. Some survivors stretch
+                    the food further, too.
                   </td>
                 </tr>
                 <tr>
                   <td>Heal</td>
                   <td>
-                    Treats the most injured survivor using 1 medicine: +10
-                    health, more in trained hands. A Sick Bay adds 10 more, and
-                    a Field Hospital treats two people.
+                    Treats the most injured survivor using
+                    <span data-bal="tasks.medicinePerTreatment">1</span>
+                    medicine: +<span data-bal="tasks.heal">10</span> health,
+                    more in trained hands. A Sick Bay adds
+                    <span data-bal="facilities.upgrades.sickBay.gives.healBonus"
+                      >10</span
+                    >
+                    more, and a Field Hospital treats two people.
                   </td>
                 </tr>
               </tbody>
@@ -392,18 +414,29 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
               alt="Survivor needs and the facilities that meet them: hunger, the kitchen; thirst, the water collector; fatigue, the beds; health, the infirmary; safety, the walls."
             />
             <p>
-              Every task except Rest adds fatigue. A survivor at 80 fatigue or
-              more is too tired to scavenge, guard or build, so plan rest days.
+              Every task except Rest adds fatigue. A survivor at
+              <span data-bal="survivors.tired">80</span> fatigue or more is too
+              tired to scavenge, guard or build, so plan rest days.
             </p>
             <p>
               The days wear on everyone. Each dusk, everyone at the shelter
-              loses 3 morale, 3 more while they're hungry (60 hunger or more)
-              and 2 more while they're injured. Resting, a clean tally mark,
-              good events, newcomers and some facilities give it back. A
-              survivor under 30 morale is <strong>shaken</strong>: they find 1
-              less when scavenging and add 3 less defense on Guard. At 0 they
-              leave. A full meal only takes 10 hunger off, so a few short days
-              take a while to recover from.
+              loses <span data-bal="survivors.upkeep.morale">3</span> morale,
+              <span data-bal="survivors.upkeep.hungryMorale">3</span> more while
+              they're hungry (<span data-bal="survivors.upkeep.hungryAt"
+                >60</span
+              >
+              hunger or more) and
+              <span data-bal="survivors.upkeep.hurtMorale">2</span> more while
+              they're injured. Resting, a clean tally mark, good events,
+              newcomers and some facilities give it back. A survivor under
+              <span data-bal="survivors.shaken.below">30</span> morale is
+              <strong>shaken</strong>: they find
+              <span data-bal="survivors.shaken.find">1</span> less when
+              scavenging and add
+              <span data-bal="survivors.shaken.guard">3</span> less defense on
+              Guard. At 0 they leave. A full meal only takes
+              <span data-bal="survivors.fed">10</span> hunger off, so a few
+              short days take a while to recover from.
             </p>
             <p>
               Facilities at the base cover those needs. On every difficulty you
@@ -423,9 +456,12 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                 other is gone for the run.
               </li>
               <li>
-                <strong>Room is limited.</strong> The roof holds 2 upgrades, the
-                yard 3 and the basement 2, shared between every facility. The
-                Base tab shows how full each one is.
+                <strong>Room is limited.</strong> The roof holds
+                <span data-bal="facilities.spaces.roof">2</span> upgrades, the
+                yard <span data-bal="facilities.spaces.yard">3</span> and the
+                basement <span data-bal="facilities.spaces.basement">2</span>,
+                shared between every facility. The Base tab shows how full each
+                one is.
               </li>
             </ul>
             <p>
@@ -434,7 +470,8 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
               works on one upgrade at a time, but different facilities can build
               at once. A finished upgrade works from the next day. Costs below
               are before discounts: the right person on Build can save
-              materials, and the Workshop saves up to 3 more (never below 1).
+              materials, and the Workshop saves up to 3 more (never below
+              <span data-bal="facilities.minCost">1</span>).
             </p>
             <div class="table-scroll">
               <table class="facility-table">
@@ -455,27 +492,33 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                     <th scope="rowgroup" colspan="4">
                       Beds
                       <span class="small muted"
-                        >· without it: Bedrolls on the floor. Rest recovers 25
-                        fatigue. Sleeps 3.</span
+                        >· without it: Bedrolls on the floor. Rest recovers
+                        <span data-bal="facilities.base.rest">25</span> fatigue.
+                        Sleeps
+                        <span data-bal="facilities.base.sleeps">3</span>.</span
                       >
                     </th>
                   </tr>
                   <tr>
                     <td><strong>Salvaged Cots</strong></td>
-                    <td>Sleeps 2 more. Rest recovers 10 more fatigue.</td>
-                    <td>3 materials, 1 day</td>
+                    <td data-bal-effect="cots">
+                      Sleeps 2 more. Rest recovers 10 more fatigue.
+                    </td>
+                    <td data-bal-cost="cots">3 materials, 1 day</td>
                     <td class="small">—</td>
                   </tr>
                   <tr>
                     <td><strong>Bunk Room</strong></td>
-                    <td>Sleeps 2 more.</td>
-                    <td>4 materials, 1 day</td>
+                    <td data-bal-effect="bunks">Sleeps 2 more.</td>
+                    <td data-bal-cost="bunks">4 materials, 1 day</td>
                     <td class="small">Needs Salvaged Cots</td>
                   </tr>
                   <tr>
                     <td><strong>Quiet Room</strong></td>
-                    <td>Rest recovers 15 more fatigue and 3 more morale.</td>
-                    <td>5 materials, 1 day</td>
+                    <td data-bal-effect="quiet">
+                      Rest recovers 15 more fatigue and 3 more morale.
+                    </td>
+                    <td data-bal-cost="quiet">5 materials, 1 day</td>
                     <td class="small">
                       Needs Salvaged Cots. Takes room in the basement. Either/or
                       with Common Room
@@ -483,16 +526,18 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                   </tr>
                   <tr>
                     <td><strong>Common Room</strong></td>
-                    <td>Everyone at the shelter gains 2 morale each dusk.</td>
-                    <td>5 materials, 1 day</td>
+                    <td data-bal-effect="common">
+                      Everyone at the shelter gains 2 morale each dusk.
+                    </td>
+                    <td data-bal-cost="common">5 materials, 1 day</td>
                     <td class="small">
                       Needs Salvaged Cots. Either/or with Quiet Room
                     </td>
                   </tr>
                   <tr>
                     <td><strong>Barracks</strong></td>
-                    <td>Sleeps 3 more.</td>
-                    <td>6 materials, 2 days</td>
+                    <td data-bal-effect="barracks">Sleeps 3 more.</td>
+                    <td data-bal-cost="barracks">6 materials, 2 days</td>
                     <td class="small">Needs Bunk Room</td>
                   </tr>
                 </tbody>
@@ -507,30 +552,30 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                   </tr>
                   <tr>
                     <td><strong>Camp Kitchen</strong></td>
-                    <td>+2 food a day.</td>
-                    <td>4 materials, 1 day</td>
+                    <td data-bal-effect="campKitchen">+2 food a day.</td>
+                    <td data-bal-cost="campKitchen">4 materials, 1 day</td>
                     <td class="small">—</td>
                   </tr>
                   <tr>
                     <td><strong>Vegetable Beds</strong></td>
-                    <td>+2 food a day.</td>
-                    <td>4 materials, 1 day</td>
+                    <td data-bal-effect="vegBeds">+2 food a day.</td>
+                    <td data-bal-cost="vegBeds">4 materials, 1 day</td>
                     <td class="small">
                       Needs Camp Kitchen. Takes room in the yard
                     </td>
                   </tr>
                   <tr>
                     <td><strong>Rooftop Greenhouse</strong></td>
-                    <td>+3 food a day.</td>
-                    <td>6 materials, 2 days</td>
+                    <td data-bal-effect="greenhouse">+3 food a day.</td>
+                    <td data-bal-cost="greenhouse">6 materials, 2 days</td>
                     <td class="small">
                       Needs Camp Kitchen. Takes room on the roof
                     </td>
                   </tr>
                   <tr>
                     <td><strong>Smokehouse</strong></td>
-                    <td>+2 food a day.</td>
-                    <td>4 materials, 1 day</td>
+                    <td data-bal-effect="smokehouse">+2 food a day.</td>
+                    <td data-bal-cost="smokehouse">4 materials, 1 day</td>
                     <td class="small">
                       Needs Camp Kitchen. Takes room in the yard. Either/or with
                       Root Cellar
@@ -538,10 +583,10 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                   </tr>
                   <tr>
                     <td><strong>Root Cellar</strong></td>
-                    <td>
+                    <td data-bal-effect="rootCellar">
                       Food stops spoiling, and the group eats 1 less at dusk.
                     </td>
-                    <td>4 materials, 1 day</td>
+                    <td data-bal-cost="rootCellar">4 materials, 1 day</td>
                     <td class="small">
                       Needs Camp Kitchen. Takes room in the basement. Either/or
                       with Smokehouse
@@ -549,8 +594,10 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                   </tr>
                   <tr>
                     <td><strong>Chicken Coop</strong></td>
-                    <td>+2 food a day and 1 morale for everyone each dusk.</td>
-                    <td>5 materials, 1 day</td>
+                    <td data-bal-effect="coop">
+                      +2 food a day and 1 morale for everyone each dusk.
+                    </td>
+                    <td data-bal-cost="coop">5 materials, 1 day</td>
                     <td class="small">
                       Needs Vegetable Beds or Rooftop Greenhouse. Takes room in
                       the yard
@@ -569,36 +616,44 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                   </tr>
                   <tr>
                     <td><strong>Rain Barrels</strong></td>
-                    <td>+2 water a day (less in a dry spell).</td>
-                    <td>3 materials, 1 day</td>
+                    <td data-bal-effect="barrels">
+                      +2 water a day (less in a dry spell).
+                    </td>
+                    <td data-bal-cost="barrels">3 materials, 1 day</td>
                     <td class="small">—</td>
                   </tr>
                   <tr>
                     <td><strong>Rooftop Catchment</strong></td>
-                    <td>+3 water a day (less in a dry spell).</td>
-                    <td>6 materials, 2 days</td>
+                    <td data-bal-effect="catchment">
+                      +3 water a day (less in a dry spell).
+                    </td>
+                    <td data-bal-cost="catchment">6 materials, 2 days</td>
                     <td class="small">
                       Needs Rain Barrels. Takes room on the roof
                     </td>
                   </tr>
                   <tr>
                     <td><strong>Hand-dug Well</strong></td>
-                    <td>+2 water a day, even in a dry spell.</td>
-                    <td>5 materials, 2 days</td>
+                    <td data-bal-effect="well">
+                      +2 water a day, even in a dry spell.
+                    </td>
+                    <td data-bal-cost="well">5 materials, 2 days</td>
                     <td class="small">
                       Needs Rain Barrels. Takes room in the yard
                     </td>
                   </tr>
                   <tr>
                     <td><strong>Charcoal Filter</strong></td>
-                    <td>+1 water a day, and no more bad water.</td>
-                    <td>3 materials, 1 day</td>
+                    <td data-bal-effect="filter">
+                      +1 water a day, and no more bad water.
+                    </td>
+                    <td data-bal-cost="filter">3 materials, 1 day</td>
                     <td class="small">Needs Rain Barrels</td>
                   </tr>
                   <tr>
                     <td><strong>Cistern</strong></td>
-                    <td>+2 water a day.</td>
-                    <td>6 materials, 2 days</td>
+                    <td data-bal-effect="cistern">+2 water a day.</td>
+                    <td data-bal-cost="cistern">6 materials, 2 days</td>
                     <td class="small">
                       Needs Rooftop Catchment or Hand-dug Well. Takes room in
                       the basement
@@ -617,28 +672,36 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                   </tr>
                   <tr>
                     <td><strong>Tool Bench</strong></td>
-                    <td>Builds cost 1 less material.</td>
-                    <td>3 materials, 1 day</td>
+                    <td data-bal-effect="toolBench">
+                      Builds cost 1 less material.
+                    </td>
+                    <td data-bal-cost="toolBench">3 materials, 1 day</td>
                     <td class="small">—</td>
                   </tr>
                   <tr>
                     <td><strong>Repair Shop</strong></td>
-                    <td>Builds cost 1 less again, and salvage goes further.</td>
-                    <td>5 materials, 1 day</td>
+                    <td data-bal-effect="repairShop">
+                      Builds cost 1 less again, and salvage goes further.
+                    </td>
+                    <td data-bal-cost="repairShop">5 materials, 1 day</td>
                     <td class="small">Needs Tool Bench</td>
                   </tr>
                   <tr>
                     <td><strong>Bike Rack</strong></td>
-                    <td>Scavenging trips cost 5 less fatigue a day.</td>
-                    <td>4 materials, 1 day</td>
+                    <td data-bal-effect="bikeRack">
+                      Scavenging trips cost 5 less fatigue a day.
+                    </td>
+                    <td data-bal-cost="bikeRack">4 materials, 1 day</td>
                     <td class="small">
                       Needs Tool Bench. Takes room in the yard
                     </td>
                   </tr>
                   <tr>
                     <td><strong>Fabrication Shop</strong></td>
-                    <td>Builds cost 1 less again and take 1 day less.</td>
-                    <td>8 materials, 2 days</td>
+                    <td data-bal-effect="fabShop">
+                      Builds cost 1 less again and take 1 day less.
+                    </td>
+                    <td data-bal-cost="fabShop">8 materials, 2 days</td>
                     <td class="small">
                       Needs Repair Shop. Takes room in the basement. Either/or
                       with Reloading Bench
@@ -646,8 +709,10 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                   </tr>
                   <tr>
                     <td><strong>Reloading Bench</strong></td>
-                    <td>Turns 1 material into 1 ammo every dusk.</td>
-                    <td>6 materials, 2 days</td>
+                    <td data-bal-effect="armory">
+                      Turns 1 material into 1 ammo every dusk.
+                    </td>
+                    <td data-bal-cost="armory">6 materials, 2 days</td>
                     <td class="small">
                       Needs Repair Shop. Takes room in the basement. Either/or
                       with Fabrication Shop
@@ -659,29 +724,36 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                     <th scope="rowgroup" colspan="4">
                       Infirmary
                       <span class="small muted"
-                        >· without it: No infirmary. Resting survivors heal 5
+                        >· without it: No infirmary. Resting survivors heal
+                        <span data-bal="facilities.base.restHeal">5</span>
                         health at dusk.</span
                       >
                     </th>
                   </tr>
                   <tr>
                     <td><strong>First Aid Station</strong></td>
-                    <td>Resting survivors heal 5 more health.</td>
-                    <td>4 materials, 1 day</td>
+                    <td data-bal-effect="firstAid">
+                      Resting survivors heal 5 more health.
+                    </td>
+                    <td data-bal-cost="firstAid">4 materials, 1 day</td>
                     <td class="small">—</td>
                   </tr>
                   <tr>
                     <td><strong>Sick Bay</strong></td>
-                    <td>Resting survivors heal 5 more. Heal treats 10 more.</td>
-                    <td>6 materials, 2 days</td>
+                    <td data-bal-effect="sickBay">
+                      Resting survivors heal 5 more. Heal treats 10 more.
+                    </td>
+                    <td data-bal-cost="sickBay">6 materials, 2 days</td>
                     <td class="small">
                       Needs First Aid Station. Either/or with Herb Garden
                     </td>
                   </tr>
                   <tr>
                     <td><strong>Herb Garden</strong></td>
-                    <td>Makes 1 medicine every 2 days.</td>
-                    <td>4 materials, 1 day</td>
+                    <td data-bal-effect="herbGarden">
+                      Makes 1 medicine every 2 days.
+                    </td>
+                    <td data-bal-cost="herbGarden">4 materials, 1 day</td>
                     <td class="small">
                       Needs First Aid Station. Takes room in the yard. Either/or
                       with Sick Bay
@@ -689,14 +761,18 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                   </tr>
                   <tr>
                     <td><strong>Field Hospital</strong></td>
-                    <td>Heal treats two people. Resting heals 5 more.</td>
-                    <td>8 materials, 2 days</td>
+                    <td data-bal-effect="fieldHospital">
+                      Heal treats two people. Resting heals 5 more.
+                    </td>
+                    <td data-bal-cost="fieldHospital">8 materials, 2 days</td>
                     <td class="small">Needs Sick Bay</td>
                   </tr>
                   <tr>
                     <td><strong>Apothecary</strong></td>
-                    <td>1 more medicine every 2 days. Heal treats 5 more.</td>
-                    <td>6 materials, 2 days</td>
+                    <td data-bal-effect="apothecary">
+                      1 more medicine every 2 days. Heal treats 5 more.
+                    </td>
+                    <td data-bal-cost="apothecary">6 materials, 2 days</td>
                     <td class="small">Needs Herb Garden</td>
                   </tr>
                 </tbody>
@@ -712,46 +788,50 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                   </tr>
                   <tr>
                     <td><strong>Scrap Barricades</strong></td>
-                    <td>+10 night defense.</td>
-                    <td>4 materials, 1 day</td>
+                    <td data-bal-effect="barricades">+10 night defense.</td>
+                    <td data-bal-cost="barricades">4 materials, 1 day</td>
                     <td class="small">—</td>
                   </tr>
                   <tr>
                     <td><strong>Palisade</strong></td>
-                    <td>+10 night defense.</td>
-                    <td>6 materials, 2 days</td>
+                    <td data-bal-effect="palisade">+10 night defense.</td>
+                    <td data-bal-cost="palisade">6 materials, 2 days</td>
                     <td class="small">Needs Scrap Barricades</td>
                   </tr>
                   <tr>
                     <td><strong>Lookout</strong></td>
-                    <td>Shows the exact horde size. Each guard adds 2 more.</td>
-                    <td>3 materials, 1 day</td>
+                    <td data-bal-effect="lookout">
+                      Shows the exact horde size. Each guard adds 2 more.
+                    </td>
+                    <td data-bal-cost="lookout">3 materials, 1 day</td>
                     <td class="small">
                       Needs Scrap Barricades. Takes room on the roof
                     </td>
                   </tr>
                   <tr>
                     <td><strong>Spike Pit</strong></td>
-                    <td>+6 night defense.</td>
-                    <td>4 materials, 1 day</td>
+                    <td data-bal-effect="spikePit">+6 night defense.</td>
+                    <td data-bal-cost="spikePit">4 materials, 1 day</td>
                     <td class="small">
                       Needs Scrap Barricades. Takes room in the yard
                     </td>
                   </tr>
                   <tr>
                     <td><strong>Fortified Wall</strong></td>
-                    <td>
+                    <td data-bal-effect="fortified">
                       +10 night defense, and breaches can't damage the walls.
                     </td>
-                    <td>9 materials, 2 days</td>
+                    <td data-bal-cost="fortified">9 materials, 2 days</td>
                     <td class="small">
                       Needs Palisade. Either/or with Gun Nests
                     </td>
                   </tr>
                   <tr>
                     <td><strong>Gun Nests</strong></td>
-                    <td>Each guard adds 4 more. Up to 15 ammo counts.</td>
-                    <td>7 materials, 2 days</td>
+                    <td data-bal-effect="gunNests">
+                      Each guard adds 4 more. Up to 15 ammo counts.
+                    </td>
+                    <td data-bal-cost="gunNests">7 materials, 2 days</td>
                     <td class="small">
                       Needs Palisade. Either/or with Fortified Wall
                     </td>
@@ -760,10 +840,13 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
               </table>
             </div>
             <p>
-              Food piles up, but it doesn't keep: each dusk, a tenth of the food
-              above 12 spoils, unless you have a Root Cellar. Rain Barrels and
-              the Rooftop Catchment make half as much water in a dry spell; a
-              Well doesn't care about the weather.
+              Food piles up, but it doesn't keep: each dusk,
+              <span data-bal="tasks.spoil.rate" data-bal-as="pct">10%</span> of
+              the food above
+              <span data-bal="tasks.spoil.above">12</span> spoils, unless you
+              have a Root Cellar. Rain Barrels and the Rooftop Catchment make
+              half as much water in a dry spell; a Well doesn't care about the
+              weather.
             </p>
             <img
               class="howto-art"
@@ -805,26 +888,66 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                   <tr>
                     <td>Hospital</td>
                     <td>Medicine, food</td>
-                    <td>Medium</td>
-                    <td>1 day</td>
+                    <td
+                      data-bal="scavenging.locations.hospital.danger"
+                      data-bal-as="danger"
+                    >
+                      Medium
+                    </td>
+                    <td
+                      data-bal="scavenging.locations.hospital.travel"
+                      data-bal-as="days"
+                    >
+                      1 day
+                    </td>
                   </tr>
                   <tr>
                     <td>Police station</td>
                     <td>Ammo, medicine</td>
-                    <td>High</td>
-                    <td>1 day</td>
+                    <td
+                      data-bal="scavenging.locations.police.danger"
+                      data-bal-as="danger"
+                    >
+                      High
+                    </td>
+                    <td
+                      data-bal="scavenging.locations.police.travel"
+                      data-bal-as="days"
+                    >
+                      1 day
+                    </td>
                   </tr>
                   <tr>
                     <td>Pharmacy</td>
                     <td>Medicine, bottled water. Small place.</td>
-                    <td>Medium</td>
-                    <td>1 day</td>
+                    <td
+                      data-bal="scavenging.locations.pharmacy.danger"
+                      data-bal-as="danger"
+                    >
+                      Medium
+                    </td>
+                    <td
+                      data-bal="scavenging.locations.pharmacy.travel"
+                      data-bal-as="days"
+                    >
+                      1 day
+                    </td>
                   </tr>
                   <tr>
                     <td>Church</td>
                     <td>Food, medicine. People shelter here. Small place.</td>
-                    <td>Low</td>
-                    <td>1 day</td>
+                    <td
+                      data-bal="scavenging.locations.church.danger"
+                      data-bal-as="danger"
+                    >
+                      Low
+                    </td>
+                    <td
+                      data-bal="scavenging.locations.church.travel"
+                      data-bal-as="days"
+                    >
+                      1 day
+                    </td>
                   </tr>
                 </tbody>
                 <tbody>
@@ -834,26 +957,66 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                   <tr>
                     <td>Supermarket</td>
                     <td>Food, water</td>
-                    <td>Medium</td>
-                    <td>1 day</td>
+                    <td
+                      data-bal="scavenging.locations.supermarket.danger"
+                      data-bal-as="danger"
+                    >
+                      Medium
+                    </td>
+                    <td
+                      data-bal="scavenging.locations.supermarket.travel"
+                      data-bal-as="days"
+                    >
+                      1 day
+                    </td>
                   </tr>
                   <tr>
                     <td>Hardware store</td>
-                    <td>Materials</td>
-                    <td>Medium</td>
-                    <td>1 day</td>
+                    <td>Materials, some ammo</td>
+                    <td
+                      data-bal="scavenging.locations.hardware.danger"
+                      data-bal-as="danger"
+                    >
+                      Medium
+                    </td>
+                    <td
+                      data-bal="scavenging.locations.hardware.travel"
+                      data-bal-as="days"
+                    >
+                      1 day
+                    </td>
                   </tr>
                   <tr>
                     <td>Sporting goods</td>
-                    <td>Ammo, food. Small place.</td>
-                    <td>Medium</td>
-                    <td>1 day</td>
+                    <td>Ammo, food, water. Small place.</td>
+                    <td
+                      data-bal="scavenging.locations.sporting.danger"
+                      data-bal-as="danger"
+                    >
+                      Medium
+                    </td>
+                    <td
+                      data-bal="scavenging.locations.sporting.travel"
+                      data-bal-as="days"
+                    >
+                      1 day
+                    </td>
                   </tr>
                   <tr>
                     <td>Waterworks</td>
                     <td>Water, materials</td>
-                    <td>Medium</td>
-                    <td>2 days</td>
+                    <td
+                      data-bal="scavenging.locations.waterworks.danger"
+                      data-bal-as="danger"
+                    >
+                      Medium
+                    </td>
+                    <td
+                      data-bal="scavenging.locations.waterworks.travel"
+                      data-bal-as="days"
+                    >
+                      2 days
+                    </td>
                   </tr>
                 </tbody>
                 <tbody>
@@ -863,20 +1026,50 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                   <tr>
                     <td>Gas station</td>
                     <td>Materials, bottled water</td>
-                    <td>Low</td>
-                    <td>1 day</td>
+                    <td
+                      data-bal="scavenging.locations.gas.danger"
+                      data-bal-as="danger"
+                    >
+                      Low
+                    </td>
+                    <td
+                      data-bal="scavenging.locations.gas.travel"
+                      data-bal-as="days"
+                    >
+                      1 day
+                    </td>
                   </tr>
                   <tr>
                     <td>Farm</td>
                     <td>Food, water</td>
-                    <td>Low</td>
-                    <td>2 days</td>
+                    <td
+                      data-bal="scavenging.locations.farm.danger"
+                      data-bal-as="danger"
+                    >
+                      Low
+                    </td>
+                    <td
+                      data-bal="scavenging.locations.farm.travel"
+                      data-bal-as="days"
+                    >
+                      2 days
+                    </td>
                   </tr>
                   <tr>
                     <td>Suburb</td>
                     <td>Materials, food</td>
-                    <td>Low</td>
-                    <td>1 day</td>
+                    <td
+                      data-bal="scavenging.locations.suburb.danger"
+                      data-bal-as="danger"
+                    >
+                      Low
+                    </td>
+                    <td
+                      data-bal="scavenging.locations.suburb.travel"
+                      data-bal-as="days"
+                    >
+                      1 day
+                    </td>
                   </tr>
                 </tbody>
                 <tbody>
@@ -885,21 +1078,51 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                   </tr>
                   <tr>
                     <td>School</td>
-                    <td>Materials, food</td>
-                    <td>Low</td>
-                    <td>1 day</td>
+                    <td>Materials, food, medicine</td>
+                    <td
+                      data-bal="scavenging.locations.school.danger"
+                      data-bal-as="danger"
+                    >
+                      Low
+                    </td>
+                    <td
+                      data-bal="scavenging.locations.school.travel"
+                      data-bal-as="days"
+                    >
+                      1 day
+                    </td>
                   </tr>
                   <tr>
                     <td>Warehouse</td>
                     <td>Food, water, materials. Big site.</td>
-                    <td>Medium</td>
-                    <td>1 day</td>
+                    <td
+                      data-bal="scavenging.locations.warehouse.danger"
+                      data-bal-as="danger"
+                    >
+                      Medium
+                    </td>
+                    <td
+                      data-bal="scavenging.locations.warehouse.travel"
+                      data-bal-as="days"
+                    >
+                      1 day
+                    </td>
                   </tr>
                   <tr>
                     <td>Military checkpoint (starts locked)</td>
                     <td>Ammo, medicine</td>
-                    <td>High</td>
-                    <td>2 days</td>
+                    <td
+                      data-bal="scavenging.locations.military.danger"
+                      data-bal-as="danger"
+                    >
+                      High
+                    </td>
+                    <td
+                      data-bal="scavenging.locations.military.travel"
+                      data-bal-as="days"
+                    >
+                      2 days
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -913,19 +1136,26 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
               </li>
               <li>
                 <strong>Places run dry.</strong> Each trip to the same place
-                finds a little less, down to half of a fresh haul.
+                finds a little less, down to
+                <span data-bal="scavenging.revisitFloor" data-bal-as="pct"
+                  >50%</span
+                >
+                of a fresh haul.
               </li>
               <li>
-                <strong>Trips are tiring.</strong> Every day of travel adds 20
+                <strong>Trips are tiring.</strong> Every day of travel adds
+                <span data-bal="tasks.tripFatigue">20</span>
                 fatigue (less with a Bike Rack).
               </li>
               <li>
                 <strong>Long trips keep people away.</strong> The farm, the
                 waterworks and the military checkpoint are 2 days away. A
                 survivor sent there leaves at dusk and comes back at dusk the
-                next day with 2 extra supplies. While they're away they can't be
-                given a task, don't eat or drink from your stores, and are safe
-                from whatever hits the shelter.
+                next day with
+                <span data-bal="scavenging.extraPerTripDay">2</span> extra
+                supplies. While they're away they can't be given a task, don't
+                eat or drink from your stores, and are safe from whatever hits
+                the shelter.
               </li>
               <li>
                 <strong>The military checkpoint starts locked.</strong> Select
@@ -1020,35 +1250,72 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                 <tr>
                   <td>Walls and watch</td>
                   <td>
-                    10 each for the Scrap Barricades, Palisade and Fortified
-                    Wall, 6 for the Spike Pit (none until built)
+                    Scrap Barricades +<span
+                      data-bal="facilities.upgrades.barricades.gives.defense"
+                      >10</span
+                    >, Palisade +<span
+                      data-bal="facilities.upgrades.palisade.gives.defense"
+                      >10</span
+                    >, Fortified Wall +<span
+                      data-bal="facilities.upgrades.fortified.gives.defense"
+                      >10</span
+                    >, Spike Pit +<span
+                      data-bal="facilities.upgrades.spikePit.gives.defense"
+                      >6</span
+                    >
+                    (none until built)
                   </td>
                 </tr>
                 <tr>
                   <td>Each rested survivor on Guard</td>
                   <td>
-                    5, more or less depending on who they are (3 less while
-                    shaken). +2 more each with a Lookout, +4 with Gun Nests
+                    <span data-bal="tasks.guardPower">5</span>, more or less
+                    depending on who they are (<span
+                      data-bal="survivors.shaken.guard"
+                      >3</span
+                    >
+                    less while shaken). +<span
+                      data-bal="facilities.upgrades.lookout.gives.guardBonus"
+                      >2</span
+                    >
+                    more each with a Lookout, +<span
+                      data-bal="facilities.upgrades.gunNests.gives.guardBonus"
+                      >4</span
+                    >
+                    with Gun Nests
                   </td>
                 </tr>
                 <tr>
                   <td>Ammo in stock</td>
                   <td>
-                    1 per ammo, up to 10 (15 with Gun Nests), only while someone
-                    is on Guard to fire it
+                    1 per ammo, up to
+                    <span data-bal="facilities.base.ammoCap">10</span> (<span
+                      data-bal="facilities.upgrades.gunNests.gives.ammoCap"
+                      data-bal-as="total"
+                      >15</span
+                    >
+                    with Gun Nests), only while someone is on Guard to fire it
                   </td>
                 </tr>
               </tbody>
             </table>
             <p>
               The horde grows each night, and a bigger group draws more of them:
-              +1 for every survivor at the shelter beyond the first three. If
-              your defense is lower than the horde, it breaks through and
-              injures a survivor. A big breach injures two and damages the
-              newest part of your walls, which gives nothing until you repair it
-              on the Base tab (half the cost, 1 day). A Fortified Wall can't be
-              damaged. With a Lookout you see the exact size of tonight's horde
-              instead of an estimate.
+              +<span data-bal="horde.perSurvivor">1</span> for every survivor at
+              the shelter beyond the first
+              <span data-bal="horde.crowdFrom">3</span>. If your defense is
+              lower than the horde, it breaks through and injures a survivor. A
+              big breach injures two and damages the newest part of your walls,
+              which gives nothing until you repair it on the Base tab (<span
+                data-bal="facilities.repairShare"
+                data-bal-as="pct"
+                >50%</span
+              >
+              of the cost,
+              <span data-bal="facilities.repairDays" data-bal-as="days"
+                >1 day</span
+              >). A Fortified Wall can't be damaged. With a Lookout you see the
+              exact size of tonight's horde instead of an estimate.
             </p>
           </section>
           <!-- #endregion [S12] Night Raids -->
@@ -1108,7 +1375,11 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
               </li>
               <li>
                 <strong>Sell what they want.</strong> Items a trader wants are
-                worth 50% more to them, marked "wanted" on your side.
+                worth
+                <span data-bal="trade.wantBonus" data-bal-as="pctOver"
+                  >50%</span
+                >
+                more to them, marked "wanted" on your side.
               </li>
               <li>
                 <strong>One trade a day.</strong> Put everything into one offer.
@@ -1161,27 +1432,72 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                 </tr>
                 <tr>
                   <td>Hunger and thirst damage (with nothing left)</td>
-                  <td>10 a day</td>
-                  <td>15 a day</td>
-                  <td>20 a day</td>
+                  <td>
+                    <span data-bal="difficulty.easy.starveDmg">10</span> a day
+                  </td>
+                  <td>
+                    <span data-bal="difficulty.normal.starveDmg">15</span> a day
+                  </td>
+                  <td>
+                    <span data-bal="difficulty.hard.starveDmg">20</span> a day
+                  </td>
                 </tr>
                 <tr>
                   <td>Trader prices</td>
                   <td>Fair</td>
-                  <td>15% extra</td>
-                  <td>30% extra</td>
+                  <td>
+                    <span
+                      data-bal="difficulty.normal.tradeMarkup"
+                      data-bal-as="pctOver"
+                      >15%</span
+                    >
+                    extra
+                  </td>
+                  <td>
+                    <span
+                      data-bal="difficulty.hard.tradeMarkup"
+                      data-bal-as="pctOver"
+                      >30%</span
+                    >
+                    extra
+                  </td>
                 </tr>
                 <tr>
                   <td>Days between traders</td>
-                  <td>2–3</td>
-                  <td>3–4</td>
-                  <td>4–6</td>
+                  <td>
+                    <span data-bal="difficulty.easy.traderGap.0">2</span>–<span
+                      data-bal="difficulty.easy.traderGap.1"
+                      >3</span
+                    >
+                  </td>
+                  <td>
+                    <span data-bal="difficulty.normal.traderGap.0">3</span
+                    >–<span data-bal="difficulty.normal.traderGap.1">4</span>
+                  </td>
+                  <td>
+                    <span data-bal="difficulty.hard.traderGap.0">4</span>–<span
+                      data-bal="difficulty.hard.traderGap.1"
+                      >6</span
+                    >
+                  </td>
                 </tr>
                 <tr>
                   <td>Auto-resolved mini-games won</td>
-                  <td>70%</td>
-                  <td>55%</td>
-                  <td>40%</td>
+                  <td>
+                    <span data-bal="difficulty.easy.autoWin" data-bal-as="pct"
+                      >70%</span
+                    >
+                  </td>
+                  <td>
+                    <span data-bal="difficulty.normal.autoWin" data-bal-as="pct"
+                      >55%</span
+                    >
+                  </td>
+                  <td>
+                    <span data-bal="difficulty.hard.autoWin" data-bal-as="pct"
+                      >40%</span
+                    >
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -1207,9 +1523,10 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
             <h2 id="mini-games-h">Mini-games</h2>
             <!-- Explanation of the mini-game mechanics -->
             <p style="margin-bottom: 1rem">
-              Some event within Another Tally can only be completed by playing a
-              short mini-game. These mini-games can be turned off in Options to
-              auto-resolve them instead.
+              Some event choices start a short mini-game. Every mini-game tells
+              you what winning and losing mean before you press Start, and has a
+              Skip button that rolls the result instead. In Options you can skip
+              every mini-game, or just the dawn tally.
             </p>
             <div class="grid-4">
               <div class="card">
@@ -1220,12 +1537,10 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                 />
                 <h3>Tally</h3>
                 <p class="small muted">
-                  Every dawn you carve the new day's mark on the shelter wall.
-                  Stop the sweeping blade over the marked spot (Space, Enter or
-                  a click) within three tries. A clean mark lifts everyone's
-                  morale (more for every fifth mark, the slash); a slip leaves a
-                  crooked mark and lowers it a little. Your marks become the
-                  Final Tally at the end of the run.
+                  Every dawn you carve the day's mark on the wall. Stop the
+                  sweeping blade over the marked spot (click, Space or Enter);
+                  you get three tries. It starts slow and speeds up over the
+                  run. Clean marks lift morale, crooked ones lower it.
                 </p>
               </div>
               <div class="card">
@@ -1236,8 +1551,9 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                 />
                 <h3>Lockpick</h3>
                 <p class="small muted">
-                  Some loot is locked and requires a lockpick to open. This
-                  mini-game tests your dexterity and timing to open the lock.
+                  The pins go up in one secret order. Click a pin: the right one
+                  clicks into place, a wrong one drops them all. Set every pin
+                  before time runs out to open the crate.
                 </p>
               </div>
               <div class="card">
@@ -1248,8 +1564,10 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                 />
                 <h3>Defense</h3>
                 <p class="small muted">
-                  Ammo is needed to hold off night raids. Improvements to the
-                  base can help, but you will still need to defend it.
+                  Click the zombies before they reach the wall. A missed click
+                  jams your gun and chips the wall. Built walls make the wall in
+                  the mini-game stronger. Mouse or touch only: keyboard players
+                  can Skip.
                 </p>
               </div>
               <div class="card">
@@ -1260,8 +1578,9 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                 />
                 <h3>Search</h3>
                 <p class="small muted">
-                  An important part of scavenging is finding supplies. This
-                  mini-game tests your ability to search effectively.
+                  Click spots to search a room. Empty spots show how many
+                  supplies are next to them, like Minesweeper. Zombies hide here
+                  too, and a bite costs a search and some health.
                 </p>
               </div>
             </div>
@@ -1301,9 +1620,14 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
                   <td>Enter or Space</td>
                 </tr>
                 <tr>
-                  <td>Pause</td>
-                  <td>Pause button</td>
+                  <td>Open the menu (the run waits)</td>
+                  <td>Menu button</td>
                   <td>Esc</td>
+                </tr>
+                <tr>
+                  <td>Mute or unmute</td>
+                  <td>Speaker button</td>
+                  <td>M</td>
                 </tr>
                 <tr>
                   <td>Show text that's still typing</td>

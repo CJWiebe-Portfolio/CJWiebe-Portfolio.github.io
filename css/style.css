@@ -603,6 +603,16 @@ html[data-contrast="high"] .btn.social {
   padding: 0.35rem 0.8rem;
   font-size: 0.9rem;
 }
+/* A square button holding one symbol (the mute button in the top bar). */
+.btn-icon {
+  min-width: 2.75rem;
+  padding: 0.35rem 0.6rem;
+  font-size: 1.15rem;
+  line-height: 1;
+}
+.btn-icon[aria-pressed="true"] {
+  background: var(--surface-2);
+}
 .btn[disabled],
 .btn[aria-disabled="true"] {
   border-color: var(--line);
@@ -1319,6 +1329,22 @@ fieldset.setup-step > legend.step-title + * {
 }
 
 /* Start bar stays on screen at the bottom while scrolling the form. */
+/* Start game at the top of the form (playtesters looked for it there). */
+.setup-start {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  padding: 0.9rem 1.4rem;
+  border-left: 6px solid var(--accent);
+}
+.setup-start p {
+  margin: 0;
+}
+.setup-start .btn {
+  min-width: 12rem;
+}
 .setup-actions {
   position: sticky;
   bottom: 0;
@@ -1529,6 +1555,36 @@ fieldset.setup-step > legend.step-title + * {
   margin-top: 0.5rem;
   color: var(--muted);
 }
+/* Every ending, found ones by name (end.js). */
+.endings-found {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+.endings-found ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.endings-found li {
+  padding: 0.2rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.85rem;
+}
+.endings-found li.unseen {
+  color: var(--muted);
+  border-style: dashed;
+}
+.endings-found li.this {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--surface);
+  font-weight: 700;
+}
 /* #endregion 8e. End screen (end.html) */
 /* #endregion 08. PAGES */
 
@@ -1609,13 +1665,56 @@ fieldset.setup-step > legend.step-title + * {
   border-radius: 3px;
 }
 .resources strong {
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-variant-numeric: tabular-nums;
+}
+/* Food or water that won't cover tonight's meal, and anything at zero. */
+.resources li.low {
+  border-color: var(--accent-2);
+  background: color-mix(in srgb, var(--accent-2) 22%, var(--bg));
+}
+.resources li.out {
+  border-color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 18%, var(--bg));
+}
+.resources li.out strong {
+  color: var(--danger);
+}
+/* What changed since yesterday morning (shown during the day), as a small
+   badge on the tile's corner so the top bar doesn't get any wider. */
+.resources li {
+  position: relative;
+}
+.res-delta {
+  position: absolute;
+  top: -0.55rem;
+  right: -0.35rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #fff;
+  pointer-events: none;
+}
+.res-delta.good {
+  background: var(--accent);
+}
+.res-delta.bad {
+  background: var(--danger);
+}
+.resources.fresh li {
+  animation: res-pop 0.6s ease-out;
+}
+@keyframes res-pop {
+  40% {
+    transform: scale(1.08);
+  }
 }
 
 /* Medium screens: drop the words, keep icon + number (still read aloud).
-   Raised from 1180px to make room for the day's tally marks. */
-@media (max-width: 1400px) {
+   Back to 1180px now the tally marks live in the Today panel. */
+@media (max-width: 1180px) {
   .resources .res-label {
     position: absolute;
     width: 1px;
@@ -1625,21 +1724,12 @@ fieldset.setup-step > legend.step-title + * {
     white-space: nowrap;
   }
 }
-/* Long tallies (past 20 marks, set by renderHeader in js/game.js) need the room on any screen. */
-.topbar.long-tally .res-label {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-}
 /* Small screens: resources get their own full-width row under the title. */
 @media (max-width: 760px) {
   .topbar .brand span {
     display: none;
   }
-  .topbar .btn {
+  .topbar #mute-btn {
     margin-left: auto;
   }
   .resources {
@@ -1912,6 +2002,62 @@ fieldset.setup-step > legend.step-title + * {
   background: var(--ink);
 }
 
+/* Either/or upgrades: picking one rules out the other for the run. */
+.up-tags .chip.either {
+  border-color: var(--accent-2);
+  background: color-mix(in srgb, var(--accent-2) 18%, var(--surface));
+  color: var(--ink);
+  font-weight: 700;
+}
+/* Upgrades the run can no longer have, folded away under each card. */
+.upgrades-gone {
+  margin: -0.5rem 0 0.9rem;
+  font-size: 0.85rem;
+}
+.upgrades-gone summary {
+  cursor: pointer;
+  color: var(--muted);
+  padding: 0.3rem 0.4rem;
+}
+.upgrades-gone .upgrade-list {
+  margin-bottom: 0;
+}
+/* The facts in the "Build this?" check. */
+.build-facts {
+  margin: 0.5rem 0 1.25rem;
+  padding-left: 1.2rem;
+}
+.build-facts li + li {
+  margin-top: 0.3rem;
+}
+.build-facts li.either {
+  font-weight: 700;
+  color: var(--danger);
+}
+
+/* The key to the upgrade marks, under the room summary. */
+.marks-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+  margin: -0.4rem 0 1rem;
+}
+.marks-key > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: none;
+  opacity: 1;
+}
+.marks-key .up-mark {
+  width: 1.2rem;
+  height: 1.2rem;
+  font-size: 0.65rem;
+}
+.up-btn img {
+  vertical-align: -0.2em;
+}
+
 /* Upgrade list: built ones are ticked, ones you can build stand out,
    locked, full and either/or-lost ones fade, damaged ones turn red. */
 .upgrade-list {
@@ -2026,6 +2172,38 @@ fieldset.setup-step > legend.step-title + * {
 .base-intro {
   margin-bottom: 1rem;
   color: var(--muted);
+}
+
+/* Signal for the convoy (top of the Base tab, once the convoy is announced).
+   Stays until the last day so one bad morning can't cost the ending. */
+.signal-card {
+  margin-bottom: 1rem;
+  border-left: 6px solid var(--accent-2);
+}
+.signal-card.ready {
+  border-left-color: var(--accent);
+}
+.signal-card .row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+.signal-card .fac-level {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.signal-card p {
+  margin: 0.4rem 0 0.75rem;
+}
+.signal-card p.good {
+  color: var(--accent);
+  font-weight: 700;
+}
+.signal-choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.5rem;
 }
 /* #endregion 9e. Facilities */
 
@@ -2166,7 +2344,8 @@ fieldset.setup-step > legend.step-title + * {
   border-style: dashed;
 }
 .loc .seen {
-  color: var(--accent);
+  color: var(--good-text);
+  font-weight: 700;
 }
 /* Location details stay in view while looking around the map. */
 .loc-detail {
@@ -2305,6 +2484,81 @@ fieldset.setup-step > legend.step-title + * {
   bottom: -5px;
   width: 2px;
   background: var(--danger);
+}
+/* The bar's colour says how the trader sees the deal. */
+.balance {
+  height: 14px;
+  border-radius: 7px;
+}
+.balance span {
+  border-radius: 7px;
+}
+.balance.deal-no span {
+  background: #7d1f14;
+}
+.balance.deal-close span {
+  background: #d0573f;
+}
+.balance.deal-yes span {
+  background: #6f9a4e;
+}
+.balance.deal-great span {
+  background: #2f5e1f;
+}
+.deal-tag {
+  display: inline-block;
+  margin-right: 0.3rem;
+  padding: 0.05rem 0.55rem;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.deal-tag.deal-no {
+  background: #7d1f14;
+}
+.deal-tag.deal-close {
+  background: #d0573f;
+}
+.deal-tag.deal-yes {
+  background: #6f9a4e;
+}
+.deal-tag.deal-great {
+  background: #2f5e1f;
+}
+/* A picture on top of each side: your backpack, the trader. */
+.trade-who {
+  display: flex;
+  gap: 0.9rem;
+  align-items: center;
+  margin: -0.2rem 0 0.9rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid var(--line);
+}
+.trade-who h3 {
+  margin: 0;
+}
+.trade-who p {
+  margin: 0.2rem 0 0;
+}
+.trade-who .avatar {
+  flex: none;
+  width: 72px;
+  height: 72px;
+}
+/* The backpack is a prop, not a portrait: show all of it. */
+.trade-who:not(.trader) .avatar {
+  object-fit: contain;
+  padding: 8px;
+}
+/* A trader who just arrived makes the Trade tab glow until it's opened. */
+.tab.arrived {
+  animation: tab-glow 1.6s ease-in-out infinite;
+}
+@keyframes tab-glow {
+  50% {
+    box-shadow: inset 0 -4px 0 var(--accent-2);
+  }
 }
 /* When the main column is narrow, give and get stack. */
 @container panel (max-width: 600px) {
@@ -2816,6 +3070,80 @@ dialog img.art[hidden] {
 /* #endregion 9j-2. Report pop-up (dusk and dawn results) */
 
 /* #region 9k. Skills and traits */
+/* Skill and trait chips show their description on hover, focus or tap. */
+.has-tip {
+  position: relative;
+  cursor: help;
+}
+.chip-kind {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.has-tip::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: 0;
+  top: calc(100% + 6px);
+  width: max-content;
+  max-width: 16rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 6px;
+  background: var(--ink);
+  color: var(--surface);
+  font-size: 0.8rem;
+  font-weight: 400;
+  line-height: 1.35;
+  text-transform: none;
+  letter-spacing: 0;
+  white-space: normal;
+  box-shadow: var(--shadow-lift);
+  z-index: 40;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.12s;
+}
+.has-tip:hover::after,
+.has-tip:focus::after {
+  opacity: 1;
+  visibility: visible;
+}
+/* Someone on a task they're too tired for. */
+.tired-alert {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  margin: 0.6rem 0 0;
+  padding: 0.5rem 0.65rem;
+  border-left: 4px solid var(--danger);
+  border-radius: 0 6px 6px 0;
+  background: color-mix(in srgb, var(--danger) 14%, var(--surface));
+  color: var(--danger);
+  font-size: 0.85rem;
+}
+.tired-alert .btn {
+  color: var(--ink);
+}
+/* "1 free bed" in the Survivors tab heading. */
+.bed-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.05rem 0.55rem 0.05rem 0.2rem;
+  border: 1px dashed var(--accent);
+  border-radius: 999px;
+  color: var(--ink);
+  font-weight: 700;
+}
+.bed-chip img {
+  border-radius: 50%;
+  object-fit: cover;
+}
 /* ---------- 9k. Skills and traits ---------- */
 .perk-list {
   list-style: none;
@@ -2912,23 +3240,93 @@ dialog img.art[hidden] {
   font-style: italic;
 }
 
-/* At dusk: have + made − eaten → left. */
-.side .forecast {
-  margin-top: 0.6rem;
+/* At dusk: a verdict for food and water (✓ enough, ! enough tonight only,
+   ✕ short), with the sum (have + made − eaten) underneath. */
+.forecast {
+  list-style: none;
+  margin: 0.6rem 0 0;
+  padding: 0;
 }
-.forecast dd .calc {
+.fc-row {
+  display: grid;
+  grid-template-columns: 22px auto 1fr;
+  align-items: center;
+  gap: 0.1rem 0.5rem;
+  padding: 0.4rem 0.5rem;
+  border-left: 4px solid var(--good-text);
+  border-radius: 0 6px 6px 0;
+  background: color-mix(in srgb, var(--good-text) 8%, var(--surface));
+}
+.fc-row + .fc-row {
+  margin-top: 0.35rem;
+}
+.fc-row.warn {
+  border-left-color: var(--accent-2);
+  background: color-mix(in srgb, var(--accent-2) 12%, var(--surface));
+}
+.fc-row.bad {
+  border-left-color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 12%, var(--surface));
+}
+.fc-name {
+  font-weight: 700;
+}
+.fc-verdict {
+  justify-self: end;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-align: right;
+}
+.fc-sym {
+  display: inline-grid;
+  place-items: center;
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 50%;
+  background: var(--good-text);
+  color: var(--surface);
+  font-size: 0.7rem;
+}
+.fc-row.warn .fc-sym {
+  background: var(--accent-2);
+}
+.fc-row.bad .fc-sym {
+  background: var(--danger);
+}
+.fc-row.bad .fc-verdict {
+  color: var(--danger);
+}
+.fc-calc {
+  grid-column: 2 / -1;
   color: var(--muted);
-  font-size: 0.85rem;
-  margin-right: 0.15rem;
+  font-size: 0.8rem;
 }
-.forecast dd strong {
-  color: var(--ink);
+.fc-plus {
+  color: var(--good-text);
 }
-.forecast dd.bad strong {
+.fc-minus {
   color: var(--danger);
 }
 .forecast-note {
   margin: 0.4rem 0 0;
+}
+/* Free beds, under the wall tally. */
+.bed-note[hidden] {
+  display: none;
+}
+.bed-note {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: -0.4rem 0 0.9rem;
+  padding: 0.35rem 0.6rem;
+  border: 1px dashed var(--accent);
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+.bed-note img {
+  border-radius: 4px;
+  object-fit: cover;
 }
 
 /* Tonight: defense vs horde, with a verdict underneath. */
@@ -2983,6 +3381,21 @@ dialog img.art[hidden] {
 }
 dialog .warn-list {
   margin: 0.5rem 0 1.25rem;
+}
+/* A heads-up, not something that has to be fixed. */
+.warn-list li.soft {
+  border-left-color: var(--accent-2);
+  background: color-mix(in srgb, var(--accent-2) 10%, var(--surface));
+}
+/* End day stays clickable, but looks unfinished while things need checking. */
+#end-day.needs-fix {
+  background: var(--surface);
+  border-color: var(--line);
+  color: var(--muted);
+}
+#end-day.needs-fix:hover {
+  border-color: var(--ink);
+  color: var(--ink);
 }
 .confirm-actions {
   display: flex;
@@ -3105,18 +3518,26 @@ dialog .warn-list {
   gap: 0.4rem 1.1rem;
   margin: 0.6rem 0 0;
 }
-.map-legend .seen {
-  color: var(--good-text);
-  font-weight: 700;
+/* The key draws small copies of the real pins, so the colours always match. */
+.map-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
 }
-.legend-unseen {
-  padding: 0 0.4rem;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  opacity: 0.7;
+.map-legend .loc {
+  position: static;
+  transform: none;
+  padding: 0.05rem 0.5rem;
+  font-size: 0.75rem;
+  cursor: default;
+}
+.map-legend .loc-flag {
+  font-size: 1rem;
 }
 .map-legend .pin-who {
   margin-left: 0;
+  width: 0.9rem;
+  height: 0.9rem;
 }
 /* District names sit on the roads, like street signs. */
 .district-label {
@@ -3408,31 +3829,51 @@ details.log-day li.good {
   }
 }
 
-/* Top bar: the day as tally marks on a small "wall" tile, with the run
-   length beside it. Shaped like the resource tiles so it reads as one unit. */
-.day-tally {
+/* Top bar: the day as a number ("Day 7 of 15"), shaped like the resource tiles. */
+.day-num {
   display: inline-flex;
-  align-items: center;
-  gap: 0.55rem;
+  align-items: baseline;
+  gap: 0.3rem;
   padding: 0.3rem 0.75rem;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--bg);
   font-size: 1.05rem;
+  white-space: nowrap;
   transition: background-color var(--phase-fade);
 }
-/* Tighter spacing in the top bar so a long run still fits on one line. */
-.day-tally .tally {
+.day-num strong {
+  font-size: 1.2rem;
+}
+/* Today panel: the days so far as tally marks on a strip of "wall", with
+   the number beside them. Moved down here from the top bar so long runs
+   don't crowd the resources. */
+.wall-tally {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  margin: -0.25rem 0 0.9rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  font-size: 1.1rem;
+}
+.wall-tally .tally {
   gap: 0.25em 0.35em;
 }
-.day-tally .tally-group {
+.wall-tally .tally-group {
   gap: 0.17em;
 }
-.tally-of {
+.wall-count {
   font-size: 0.85rem;
-  font-weight: 400;
-  color: var(--muted);
+  font-weight: 700;
   white-space: nowrap;
+}
+.wall-count .muted {
+  font-weight: 400;
 }
 /* #endregion 9m. Tally marks */
 /* #endregion 09. IN-GAME (game.html) */
@@ -3516,6 +3957,55 @@ details.log-day li.good {
   display: flex;
   gap: 0.5rem;
 }
+/* The win/lose line under a mini-game's description. */
+.mg-stakes {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+/* The arena's own hint steps aside while the countdown runs. */
+.mg-canvas.counting .mg-hint,
+.mg-canvas.counting .mg-msg {
+  opacity: 0;
+}
+/* 3, 2, 1, Go! when Start is pressed, so it's clear the game has begun. */
+.mg-countdown {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 6;
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 12vw, 6rem);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+  pointer-events: none;
+}
+.mg-countdown.go {
+  color: var(--accent);
+  background: transparent;
+}
+.mg-countdown.pop {
+  animation: mg-pop 0.5s ease-out;
+}
+@keyframes mg-pop {
+  from {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+/* While a mini-game is running, the timer stands out. */
+#minigame-dialog.playing #mg-timer {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
 /* #endregion 10a. Shared mini-game frame */
 
 /* #region 10b. Defense */
@@ -3595,6 +4085,26 @@ details.log-day li.good {
 }
 .mg-zombie:hover {
   background: var(--surface-2);
+}
+/* With assets/images/png/zombie.png in place, the picture replaces the emoji. */
+.mg-zombie.has-art {
+  width: 56px;
+  height: 64px;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: none;
+}
+.mg-zombie.has-art img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.35));
+}
+.mg-zombie.has-art:hover img {
+  filter: drop-shadow(0 0 4px var(--danger));
 }
 .mg-zombie.down {
   opacity: 0;

@@ -83,9 +83,11 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
       <!-- The ending that fits this run, picked by end.js from the Endings in js/story.js
            (hidden until there's a run to show) -->
       <section class="card ending" id="ending" aria-labelledby="ending-title" hidden>
-        <p class="eyebrow">Ending</p>
+        <p class="eyebrow" id="ending-kicker">Ending</p>
         <h2 id="ending-title">[Ending title]</h2>
         <div class="story-text" id="ending-text"></div>
+        <!-- Every ending, with the ones this browser has reached shown by name (end.js) -->
+        <div class="endings-found" id="endings-found"></div>
       </section>
       <!-- #endregion [S3a] Ending -->
 

@@ -52,14 +52,18 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
       type="image/png"
       href="assets/icons/anothertally_icon.png"
     />
-    <!-- common.js (settings, sound, text speed) runs first; minigames.js and
-         story.js must load before game.js, which uses AT.minigames and AT.STORY.
+    <!-- common.js (settings, sound, text speed) runs first, then balance.js
+         (every balance number, AT.BALANCE). minigames.js and story.js must
+         load before game.js, which uses AT.minigames and AT.STORY. debug.js
+         only does anything with ?debug on (see the top of balance.js).
          mobile.js (phone and touch helpers) has no defer, so its classes
          are on <html> before the page first draws. -->
     <script src="js/common.js"></script>
+    <script src="js/balance.js"></script>
     <script src="js/mobile.js"></script>
     <script src="js/minigames.js" defer></script>
     <script src="js/story.js" defer></script>
+    <script src="js/debug.js" defer></script>
     <script src="js/game.js" defer></script>
   </head>
   <!-- Contains the information for the game page -->
@@ -119,13 +123,26 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
             ><!-- Game icon -->
           </div>
           <p class="day-info">
-            <span id="day-label" class="day-tally">Day 1 of 15</span
-            ><!-- The day as tally marks on the wall, drawn by renderHeader() in js/game.js -->
+            <span id="day-label" class="day-num">Day 1 of 15</span
+            ><!-- The day as a number; the tally marks are in the Today panel (renderHeader() in js/game.js) -->
             <span id="phase-pill" class="phase-pill" data-phase="day"
               >Day phase</span
             >
           </p>
           <ul id="resources" class="resources" aria-label="Resources"></ul>
+          <!-- Turns every sound on or off (the Sound setting on the Options page) -->
+          <button
+            class="btn btn-icon"
+            type="button"
+            id="mute-btn"
+            aria-pressed="false"
+            aria-keyshortcuts="M"
+            title="Mute (M)"
+            data-sound="none"
+          >
+            <span aria-hidden="true" id="mute-icon">🔊</span
+            ><span class="visually-hidden">Mute</span>
+          </button>
           <button
             class="btn"
             type="button"
@@ -133,7 +150,7 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
             aria-keyshortcuts="Escape"
             data-sound="menu"
           >
-            Pause
+            Menu
           </button>
         </header>
         <!-- #endregion [S4] Top Bar -->
@@ -257,6 +274,10 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
       -->
 
         <aside class="card side" aria-label="Today's plan">
+          <!-- The days so far as tally marks on the wall, drawn by renderHeader() in js/game.js -->
+          <div id="wall-tally" class="wall-tally"></div>
+          <!-- Shown while there's a free bed (renderSide() in js/game.js) -->
+          <p id="bed-note" class="bed-note" hidden></p>
           <!-- Who is doing what today, with a warning next to anything that won't work -->
           <h2 class="eyebrow">Today</h2>
           <ul id="today-list" class="plan-list"></ul>
@@ -379,12 +400,12 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
           >
         </div>
         <div class="mg-foot">
-          <p class="small muted">
-            Auto-resolve skips the mini-game and rolls the result.
+          <p class="small muted" id="mg-skip-note">
+            Skip rolls the result instead of playing.
           </p>
           <div class="btns">
-            <button class="btn btn-quiet" type="button" id="mg-auto">
-              Auto-resolve
+            <button class="btn" type="button" id="mg-auto">
+              Skip (auto-resolve)
             </button>
             <button class="btn btn-primary" type="button" id="mg-start">
               Start
@@ -414,6 +435,30 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
       </dialog>
       <!-- #endregion [S11] Build Dialog -->
 
+      <!-- #region [S11b] Build Confirm Dialog -->
+      <!--
+      ---------- Asks before building, with the cost, days, room and either/or ----------
+      Filled in by openBuildConfirm() in js/game.js.
+      -->
+      <dialog id="build-confirm" aria-labelledby="buildc-title">
+        <p class="eyebrow">Before you build</p>
+        <h2 id="buildc-title">Build this?</h2>
+        <p class="small muted" id="buildc-effect"></p>
+        <ul class="build-facts" id="buildc-facts"></ul>
+        <div class="confirm-actions">
+          <button class="btn" type="button" id="buildc-cancel">Cancel</button>
+          <button
+            class="btn btn-primary"
+            type="button"
+            id="buildc-go"
+            data-sound="none"
+          >
+            Build it
+          </button>
+        </div>
+      </dialog>
+      <!-- #endregion [S11b] Build Confirm Dialog -->
+
       <!-- #region [S12] End-Day Check Dialog -->
       <!-- 
       ---------- Overlay that checks the plan before the day ends ----------
@@ -441,7 +486,7 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
       ---------- Overlay for the pause menu ----------
       -->
       <dialog id="pause-dialog" class="pause" aria-labelledby="pause-title">
-        <h2 id="pause-title">Paused</h2>
+        <h2 id="pause-title">Menu</h2>
         <p class="pause-sub" id="pause-sub"></p>
         <!-- Day and shelter name, filled in by js/game.js when the menu opens -->
 

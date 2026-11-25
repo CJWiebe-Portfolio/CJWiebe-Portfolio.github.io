@@ -262,7 +262,7 @@ second row evenly.
     flex-wrap: wrap;
     gap: 0.3rem 0.4rem;
   }
-  .day-tally {
+  .day-num {
     gap: 0.4rem;
     padding: 0.2rem 0.6rem;
     font-size: 0.95rem;

@@ -112,6 +112,11 @@ When it can happen (all optional; leave them out and it can happen any time):
                    water, workshop, infirmary, walls
   minDay           only on this day or later
   once             true: happens at most once a run
+  dueBy            a share of the run, e.g. 0.5: if the event hasn't happened
+                   by then, it's picked the next time it can happen. For
+                   events the story needs, like the flare gun.
+  repeats          true: can come back before every other event has had a
+                   turn (see the "bag" in pickEvent() in game.js)
   needsFrom        a district or location id: only after someone came home
                    from there tonight (night events only)
   blockedBy        an upgrade id: never happens once that upgrade is built
@@ -122,8 +127,7 @@ Each choice has a label, and a kind:
   "skill"     needs a rested survivor with that skill at the shelter.
               Skills: Scavenger, Builder, Medic, Fighter, Cook, Hunter,
               Mechanic, Negotiator, Sharpshooter, Survivalist (the other
-              skills in common.js do nothing, so no choice should need them), Survivalist (the other
-              skills in common.js are no use, so no choice should need them)
+              skills in common.js do nothing, so no choice should need them)
   "minigame"  plays a mini-game (game: "Defense", "Lockpick" or "Search")
   "cost"      anyone can pick it, if the group can pay the cost
 
@@ -931,6 +935,7 @@ medicine and ammo.
       art: ["event_flare", "gas_station"],
       needsScavenging: true,
       once: true,
+      dueBy: 0.5, // turns up by halfway through the run, so there's time to save it for the convoy
       text: "Your scavenger found an orange flare gun in the glovebox of a wrecked car, with one cartridge still loaded.",
       sounds: ["rustyHinges", ["cock", 800]],
       choices: [
@@ -1171,6 +1176,78 @@ medicine and ammo.
           cost: {},
           outcome: "Whoever hid it might come back for it. You left it.",
           sounds: ["footsteps"],
+        },
+      ],
+    },
+    {
+      // Playtest request: a cat to find, and a follow-up if you let it in.
+      // Pictures: add event_cat.png (and event_cat_hiss.png) to assets/images/png/;
+      // until then the fallbacks show.
+      title: "Something at the window",
+      art: ["event_cat", "event_yard"],
+      once: true,
+      minDay: 3,
+      text: "Something is scratching at the boarded window. When you pry a plank loose, a thin grey cat squeezes halfway through, eyes fixed on the food shelf.",
+      sounds: ["catMeow", ["rustyHinges", 300]],
+      choices: [
+        {
+          label: "Let it in",
+          kind: "cost",
+          cost: { food: 1 },
+          morale: 5,
+          flag: "cat", // "A gift on the doorstep" and "The cat won't stop hissing" need this
+          outcome:
+            "It ate, washed its face and fell asleep on the warmest bed like it had always lived here.",
+          sounds: ["canOpen", ["catMeow", 900]],
+        },
+        {
+          label: "It bolted into the basement: find it",
+          kind: "minigame",
+          game: "Search",
+          win: { flag: "cat" },
+        },
+        {
+          label: "Push the plank back",
+          kind: "cost",
+          cost: {},
+          outcome:
+            "It sat on the sill a while, then it was gone. The window stayed quiet after that.",
+          sounds: ["woodCutting"],
+        },
+      ],
+    },
+    {
+      title: "The cat won't stop hissing",
+      tags: ["horde"],
+      art: ["event_cat_hiss", "event_cat", "event_wall"],
+      needsFlag: "cat", // only once the cat lives here ("Something at the window")
+      once: true,
+      minDay: 6,
+      text: "Late at night the cat goes rigid, fur up, hissing at the back wall. A moment later you hear it too: scraping, just on the other side.",
+      sounds: ["catHiss", ["zombieGroan", 900], ["woodSplitting", 1600]],
+      choices: [
+        {
+          label: "Get to the wall first",
+          kind: "minigame",
+          game: "Defense",
+          win: { gain: { ammo: 1 } },
+        },
+        {
+          label: "Brace the back wall",
+          kind: "cost",
+          cost: { materials: 2 },
+          outcome:
+            "You wedged planks against the wall before they found the weak spot. The cat watched the whole time.",
+          sounds: ["buildingHammering", ["zombieGroan", 800]],
+        },
+        {
+          label: "Slip out and deal with it",
+          kind: "skill",
+          skill: "Fighter",
+          fatigue: 15,
+          outcome:
+            "Your fighter went out the side door and came back a few minutes later. The cat stopped hissing.",
+          sounds: ["doorOpen", ["zombieDying", 1400], ["doorClose", 2200]],
         },
       ],
     },
@@ -1571,6 +1648,41 @@ medicine and ammo.
         },
       ],
     },
+    {
+      title: "A gift on the doorstep",
+      art: ["event_cat", "event_house"],
+      needsFlag: "cat", // only once the cat lives here ("Something at the window")
+      once: true,
+      text: "The cat is sitting by the door with a dead rat at its feet, looking very pleased with itself.",
+      sounds: ["catMeow"],
+      choices: [
+        {
+          label: "Scratch its ears",
+          kind: "cost",
+          cost: {},
+          morale: 10,
+          outcome:
+            "It purred loud enough to hear across the room. For a minute, nobody thought about the walls.",
+          sounds: ["catMeow"],
+        },
+        {
+          label: "Follow it downstairs",
+          kind: "cost",
+          cost: {},
+          reward: "rats",
+          outcome:
+            "It led you to a nest of rats behind the boiler. Not a feast, but it's meat.",
+          sounds: ["carefulWalking", ["rats", 700]],
+        },
+        {
+          label: "Toss the rat over the wall",
+          kind: "cost",
+          cost: {},
+          outcome: "The cat looked deeply offended.",
+          sounds: ["footsteps"],
+        },
+      ],
+    },
   ];
   // #endregion [S4] Morning events
 
@@ -1752,6 +1864,11 @@ length: { 15: day, 30: day, 45: day }. Use "last" for the final day.
 
 Checkpoints use the same fields as the events above ([S2]), including
 flag, needsFlag and needsNote on choices.
+
+The convoy signal: every checkpoint choice that sets the "signal" flag is
+also offered on the Base tab (the "Signal for the convoy" card), from the
+first checkpoint's day until the last day, so missing the checkpoint (or
+not having the materials that morning) doesn't lose the run its ending.
 */
   var checkpoints = [
     {
@@ -1825,7 +1942,7 @@ flag, needsFlag and needsNote on choices.
       title: "A light on the roof",
       days: { 15: 11, 30: 22, 45: 33 },
       art: ["event_roof", "watchtower"],
-      text: "The convoy is {daysLeft} days out. To be seen, you'll need a signal on the roof for the final night. But anything bright enough for the convoy will be bright enough for the dead.",
+      text: "The convoy is {daysLeft} days out. To be seen, you'll need a signal on the roof for the final night. But anything bright enough for the convoy will be bright enough for the dead. If you can't manage it today, there's still time before the last night.",
       sounds: ["wind", "footsteps", ["zombieGroan", 1200]],
       choices: [
         {
@@ -1865,7 +1982,7 @@ flag, needsFlag and needsNote on choices.
           cost: {},
           morale: -5,
           outcome:
-            "You decided not to risk a light. If the convoy comes, it will pass you by.",
+            "You decided not to risk a light, for now. If you change your mind, the roof is still there (Base tab) until the last night.",
           sounds: ["doorClose"],
         },
       ],

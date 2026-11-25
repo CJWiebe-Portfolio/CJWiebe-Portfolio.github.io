@@ -33,8 +33,10 @@ How this file is laid out:
   5. End day, reports, events, mini-games and the night raid
   6. Leaving the page, pause menu and start-up
 
-Lines marked [TUNE THESE] or [WORK IN PROGRESS NEEDS TUNING] are balance
-numbers to adjust after playtesting.
+Every balance number (difficulty, upkeep, skills, traits, facility costs,
+map locations, traders, the horde...) is in js/balance.js and read from
+AT.BALANCE, so this file only holds the rules that use them. Open the game
+with ?debug to change them live while you play.
 =========================================================
 TABLE OF CONTENTS
 Ctrl+F a tag such as "[S3]" to jump to that section.
@@ -129,11 +131,15 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
   var randInt = function (min, max) {
     return min + Math.floor(rng() * (max - min + 1));
   };
+  // A whole number from a [min, max] pair in balance.js, e.g. [60, 100].
+  var rollPair = function (pair) {
+    return randInt(pair[0], pair[1]);
+  };
   // #endregion [S1] Game Screen: Start-up
   // #region [S2] Static Game Data
   /*
 =========================================================
----------- Static game data [WORK IN PROGRESS NEEDS TUNING] ----------
+---------- Static game data (the numbers are in js/balance.js) ----------
 ========================================================
 */
   // Define constants for resources.
@@ -144,106 +150,77 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
     { id: "medicine", label: "Medicine" },
     { id: "ammo", label: "Ammo" },
   ];
-  // Defines starting resources for each difficulty level
-  var START_RESOURCES = {
-    // Materials are higher than you might expect because nothing is built at the start.
-    easy: { food: 15, water: 15, materials: 22, medicine: 4, ammo: 8 },
-    normal: { food: 10, water: 10, materials: 16, medicine: 2, ammo: 5 },
-    hard: { food: 8, water: 8, materials: 13, medicine: 1, ammo: 3 },
-  };
-  // Defines how hard each difficulty is beyond the starting resources. [TUNE THESE]
-  // yield:       share of scavenged supplies you actually bring home
-  // threatBase:  size of the horde on night 1
-  // threatPeak:  how much the horde grows by the last night (x HORDE_LENGTH_SCALE)
-  // starveDmg:   health lost per dusk without enough water, or while starving
-  // scavRisk:    chance per danger level that a scavenger gets hurt
-  // autoWin:     chance an auto-resolved mini-game is won
-  // moraleLoss:  morale lost by everyone when a survivor dies
-  var DIFFICULTY = {
-    easy: {
-      yield: 0.95,
-      threatBase: 9,
-      threatPeak: 18,
-      starveDmg: 10,
-      scavRisk: 0.1,
-      autoWin: 0.7,
-      moraleLoss: 10,
-      tradeMarkup: 1.0,
-      traderGap: [2, 3],
-    },
-    normal: {
-      yield: 0.85,
-      threatBase: 8,
-      threatPeak: 22,
-      starveDmg: 15,
-      scavRisk: 0.15,
-      autoWin: 0.55,
-      moraleLoss: 15,
-      tradeMarkup: 1.15,
-      traderGap: [3, 4],
-    },
-    hard: {
-      yield: 0.8,
-      threatBase: 7,
-      threatPeak: 23,
-      starveDmg: 20,
-      scavRisk: 0.2,
-      autoWin: 0.4,
-      moraleLoss: 20,
-      tradeMarkup: 1.3,
-      traderGap: [4, 6],
-    },
-  };
-  // tradeMarkup: how much more value traders ask for than they give (1.15 = 15% extra)
-  // traderGap:   [min, max] days with no trader between visits
+  // Every balance number lives in js/balance.js (AT.BALANCE). The names below
+  // point into it instead of copying it, so a change made there (or live in
+  // the ?debug panel) is always the one the game uses.
+  var B = AT.BALANCE;
+  var SK = B.skills; // what each skill does (balance.js [B5])
+  var TR = B.traits; // what each trait does (balance.js [B6])
+  // Starting supplies and how hard each difficulty is (balance.js [B1], [B2]).
+  var START_RESOURCES = B.start.resources;
+  var DIFFICULTY = B.difficulty;
   var D = DIFFICULTY[setup.difficulty] || DIFFICULTY.normal;
-  // Fatigue at or above this keeps a survivor from scavenging or guarding.
-  var TIRED = 80;
+  // What each resource is worth when trading (balance.js [B9]).
+  var TRADE_VALUE = B.trade.value;
 
-  // Defines trade values for each resource
-  var TRADE_VALUE = { food: 2, water: 2, materials: 1, medicine: 4, ammo: 3 };
+  // Makes some fields of a game object read from a table in balance.js, so
+  // FACILITIES, LOCATIONS and TRADERS below only hold names, pictures and
+  // rules, while their numbers stay in balance.js. `where` names the table
+  // in the console message if balance.js is missing it.
+  function fromBalance(obj, table, fields, where) {
+    if (!table) {
+      console.error("js/balance.js has no numbers for " + where + ".");
+      table = {};
+    }
+    fields.forEach(function (f) {
+      Object.defineProperty(obj, f, {
+        get: function () {
+          return table[f];
+        },
+        enumerable: true,
+      });
+    });
+  }
 
   // Wandering traders. One visits at a time and the next one is never the same person.
-  // stock:  what they arrive with (each amount varies by -1 to +1)
-  // wants:  what they pay extra for (WANT_BONUS x value). They never sell what they want.
-  // stays:  [min, max] days they stay
+  // What they bring and how long they stay are in balance.js [B9] (trade.traders).
+  // wants:  what they pay extra for (trade.wantBonus x value). They never sell what they want.
   var TRADERS = [
     {
       id: "marguerite",
       name: "Old Marguerite",
       title: "General goods",
-      stock: { food: 5, water: 5, materials: 6, medicine: 2, ammo: 0 },
       wants: ["ammo"],
-      stays: [2, 3],
       greet: "helloWoman", // said when you first visit the Trade tab each day
     },
     {
       id: "rook",
       name: "Rook",
       title: "Gun runner",
-      stock: { food: 0, water: 0, materials: 4, medicine: 1, ammo: 8 },
       wants: ["food", "water"],
-      stays: [2, 2],
     },
     {
       id: "ines",
       name: "Doc Ines",
       title: "Field medic",
-      stock: { food: 2, water: 4, materials: 0, medicine: 6, ammo: 0 },
       wants: ["materials"],
-      stays: [2, 3],
       greet: "helloWoman",
     },
     {
       id: "abe",
       name: "Abe Tanner",
       title: "Farmer",
-      stock: { food: 9, water: 7, materials: 2, medicine: 0, ammo: 0 },
       wants: ["ammo", "medicine"],
-      stays: [2, 3],
     },
   ];
-  var WANT_BONUS = 1.5;
+  TRADERS.forEach(function (t) {
+    fromBalance(
+      t,
+      B.trade.traders[t.id],
+      ["stock", "stays"],
+      "the trader " + t.id,
+    );
+  });
   // Defines tasks that survivors can be assigned to each day
   var TASKS = ["Rest", "Scavenge", "Build", "Guard", "Cook", "Heal"];
 
@@ -258,67 +235,38 @@ in the shelter (SPACES), so the roof, yard and basement can't hold everything.
 Each upgrade has:
   id        a short unique name, used by `needs` and `excludes`
   name      shown on the card
-  effect    a short line saying what it gives (keep it in step with `gives`)
-  cost      materials, paid when work starts (Builder and Workshop discounts apply)
-  days      days of work with someone rested on Build
   needs     upgrades that must be built first (all of them)
   needsAny  upgrades where any one built is enough
   excludes  either/or: once one is built or started, the other can't be
   space     "roof", "yard" or "basement": takes one slot there
   rain      true: makes less in a dry spell (see the city events in story.js)
-  gives     what it adds to the shelter, using the names in BASE below
 
-"none" says what the base does without the facility.
+Its numbers are in balance.js [B7] under the same id: cost (materials),
+days (of work), gives (what it adds to the shelter) and effect (the line on
+the card, filled in from gives).
+
+"none" says what the base does without the facility. {base.rest} and the
+like are filled in from the base values in balance.js.
 */
-  // What the shelter has with nothing built. Upgrades add to these.
-  //   sleeps       beds for the group (newcomers need a free one)
-  //   rest         fatigue a resting survivor recovers at dusk
-  //   restMorale   morale a resting survivor gains at dusk
-  //   restHeal     health a resting survivor recovers at dusk
-  //   dailyMorale  morale everyone at the shelter gains each dusk
-  //   food, water, medicine   made every dusk (fractions build up over days)
-  //   foodSave     the group eats this much less food at dusk
-  //   discount     materials off every build; fasterBy: days off every build
-  //   salvage      extra materials a Mechanic on Build salvages
-  //   scavFatigue  fatigue taken off every scavenging trip (per day of travel)
-  //   ammoCraft    materials turned into ammo every dusk (1 for 1)
-  //   keepFood     1 or more: stored food doesn't spoil (see SPOIL)
-  //   healBonus    extra health each treatment on Heal gives; patients: people Heal treats
-  //   defense      night defense; guardBonus: extra defense per guard
-  //   ammoCap      most ammo that counts toward night defense
-  //   exactHorde   1 or more: the Base tab shows tonight's exact horde
-  //   sturdy       1 or more: a breach can't damage the walls
-  var BASE = {
-    sleeps: 3,
-    rest: 25,
-    restMorale: 3,
-    restHeal: 5,
-    dailyMorale: 0,
-    food: 0,
-    water: 0,
-    medicine: 0,
-    foodSave: 0,
-    discount: 0,
-    fasterBy: 0,
-    salvage: 0,
-    scavFatigue: 0,
-    ammoCraft: 0,
-    keepFood: 0,
-    healBonus: 0,
-    patients: 1,
-    defense: 0,
-    guardBonus: 0,
-    ammoCap: 10,
-    exactHorde: 0,
-    sturdy: 0,
-  };
+  // What the shelter has with nothing built. Upgrades add to these. The names
+  // (sleeps, rest, defense...) are explained in balance.js [B7].
+  var BASE = B.facilities.base;
 
-  // Room in the shelter. Upgrades with a `space` take one slot there.
+  // Room in the shelter. Upgrades with a `space` take one slot there. How many
+  // slots each has is in balance.js [B7] (facilities.spaces).
   var SPACES = {
-    roof: { label: "Roof", slots: 2 },
-    yard: { label: "Yard", slots: 3 },
-    basement: { label: "Basement", slots: 2 },
+    roof: { label: "Roof" },
+    yard: { label: "Yard" },
+    basement: { label: "Basement" },
   };
+  Object.keys(SPACES).forEach(function (k) {
+    Object.defineProperty(SPACES[k], "slots", {
+      get: function () {
+        return B.facilities.spaces[k];
+      },
+      enumerable: true,
+    });
+  });
 
   var FACILITIES = [
     {
@@ -327,54 +275,34 @@ Each upgrade has:
       img: "bedroom",
       name: "Beds",
       desc: "Better sleep, room for newcomers, and somewhere to unwind",
-      none: "Bedrolls on the floor. Rest recovers 25 fatigue. Sleeps 3.",
+      none: "Bedrolls on the floor. Rest recovers {base.rest} fatigue. Sleeps {base.sleeps}.",
       upgrades: [
         {
           id: "cots",
           name: "Salvaged Cots",
-          effect: "Sleeps 2 more. Rest recovers 10 more fatigue.",
-          cost: 3,
-          days: 1,
-          gives: { sleeps: 2, rest: 10 },
         },
         {
           id: "bunks",
           name: "Bunk Room",
-          effect: "Sleeps 2 more.",
-          cost: 4,
-          days: 1,
           needs: ["cots"],
-          gives: { sleeps: 2 },
         },
         {
           id: "quiet",
           name: "Quiet Room",
-          effect: "Rest recovers 15 more fatigue and 3 more morale.",
-          cost: 5,
-          days: 1,
           needs: ["cots"],
           excludes: ["common"],
           space: "basement",
-          gives: { rest: 15, restMorale: 3 },
         },
         {
           id: "common",
           name: "Common Room",
-          effect: "Everyone at the shelter gains 2 morale each dusk.",
-          cost: 5,
-          days: 1,
           needs: ["cots"],
           excludes: ["quiet"],
-          gives: { dailyMorale: 2 },
         },
         {
           id: "barracks",
           name: "Barracks",
-          effect: "Sleeps 3 more.",
-          cost: 6,
-          days: 2,
           needs: ["bunks"],
-          gives: { sleeps: 3 },
         },
       ],
     },
@@ -389,62 +317,38 @@ Each upgrade has:
         {
           id: "campKitchen",
           name: "Camp Kitchen",
-          effect: "+2 food a day.",
-          cost: 4,
-          days: 1,
-          gives: { food: 2 },
         },
         {
           id: "vegBeds",
           name: "Vegetable Beds",
-          effect: "+2 food a day.",
-          cost: 4,
-          days: 1,
           needs: ["campKitchen"],
           space: "yard",
-          gives: { food: 2 },
         },
         {
           id: "greenhouse",
           name: "Rooftop Greenhouse",
-          effect: "+3 food a day.",
-          cost: 6,
-          days: 2,
           needs: ["campKitchen"],
           space: "roof",
-          gives: { food: 3 },
         },
         {
           id: "smokehouse",
           name: "Smokehouse",
-          effect: "+2 food a day.",
-          cost: 4,
-          days: 1,
           needs: ["campKitchen"],
           excludes: ["rootCellar"],
           space: "yard",
-          gives: { food: 2 },
         },
         {
           id: "rootCellar",
           name: "Root Cellar",
-          effect: "Food stops spoiling, and the group eats 1 less at dusk.",
-          cost: 4,
-          days: 1,
           needs: ["campKitchen"],
           excludes: ["smokehouse"],
           space: "basement",
-          gives: { foodSave: 1, keepFood: 1 },
         },
         {
           id: "coop",
           name: "Chicken Coop",
-          effect: "+2 food a day and 1 morale for everyone each dusk.",
-          cost: 5,
-          days: 1,
           needsAny: ["vegBeds", "greenhouse"],
           space: "yard",
-          gives: { food: 2, dailyMorale: 1 },
         },
       ],
     },
@@ -459,51 +363,31 @@ Each upgrade has:
         {
           id: "barrels",
           name: "Rain Barrels",
-          effect: "+2 water a day (less in a dry spell).",
-          cost: 3,
-          days: 1,
           rain: true,
-          gives: { water: 2 },
         },
         {
           id: "catchment",
           name: "Rooftop Catchment",
-          effect: "+3 water a day (less in a dry spell).",
-          cost: 6,
-          days: 2,
           needs: ["barrels"],
           rain: true,
           space: "roof",
-          gives: { water: 3 },
         },
         {
           id: "well",
           name: "Hand-dug Well",
-          effect: "+2 water a day, even in a dry spell.",
-          cost: 5,
-          days: 2,
           needs: ["barrels"],
           space: "yard",
-          gives: { water: 2 },
         },
         {
           id: "filter",
           name: "Charcoal Filter",
-          effect: "+1 water a day, and no more bad water.",
-          cost: 3,
-          days: 1,
           needs: ["barrels"],
-          gives: { water: 1 },
         },
         {
           id: "cistern",
           name: "Cistern",
-          effect: "+2 water a day.",
-          cost: 6,
-          days: 2,
           needsAny: ["catchment", "well"],
           space: "basement",
-          gives: { water: 2 },
         },
       ],
     },
@@ -518,51 +402,31 @@ Each upgrade has:
         {
           id: "toolBench",
           name: "Tool Bench",
-          effect: "Builds cost 1 less material.",
-          cost: 3,
-          days: 1,
-          gives: { discount: 1 },
         },
         {
           id: "repairShop",
           name: "Repair Shop",
-          effect: "Builds cost 1 less again, and salvage goes further.",
-          cost: 5,
-          days: 1,
           needs: ["toolBench"],
-          gives: { discount: 1, salvage: 1 },
         },
         {
           id: "bikeRack",
           name: "Bike Rack",
-          effect: "Scavenging trips cost 5 less fatigue a day.",
-          cost: 4,
-          days: 1,
           needs: ["toolBench"],
           space: "yard",
-          gives: { scavFatigue: 5 },
         },
         {
           id: "fabShop",
           name: "Fabrication Shop",
-          effect: "Builds cost 1 less again and take 1 day less.",
-          cost: 8,
-          days: 2,
           needs: ["repairShop"],
           excludes: ["armory"],
           space: "basement",
-          gives: { discount: 1, fasterBy: 1 },
         },
         {
           id: "armory",
           name: "Reloading Bench",
-          effect: "Turns 1 material into 1 ammo every dusk.",
-          cost: 6,
-          days: 2,
           needs: ["repairShop"],
           excludes: ["fabShop"],
           space: "basement",
-          gives: { ammoCraft: 1 },
         },
       ],
     },
@@ -572,54 +436,34 @@ Each upgrade has:
       img: "infirmary",
       name: "Infirmary",
       desc: "Heals survivors who rest, or grows its own medicine",
-      none: "No infirmary. Resting survivors heal 5 health at dusk.",
+      none: "No infirmary. Resting survivors heal {base.restHeal} health at dusk.",
       upgrades: [
         {
           id: "firstAid",
           name: "First Aid Station",
-          effect: "Resting survivors heal 5 more health.",
-          cost: 4,
-          days: 1,
-          gives: { restHeal: 5 },
         },
         {
           id: "sickBay",
           name: "Sick Bay",
-          effect: "Resting survivors heal 5 more. Heal treats 10 more.",
-          cost: 6,
-          days: 2,
           needs: ["firstAid"],
           excludes: ["herbGarden"],
-          gives: { restHeal: 5, healBonus: 10 },
         },
         {
           id: "herbGarden",
           name: "Herb Garden",
-          effect: "Makes 1 medicine every 2 days.",
-          cost: 4,
-          days: 1,
           needs: ["firstAid"],
           excludes: ["sickBay"],
           space: "yard",
-          gives: { medicine: 0.5 },
         },
         {
           id: "fieldHospital",
           name: "Field Hospital",
-          effect: "Heal treats two people. Resting heals 5 more.",
-          cost: 8,
-          days: 2,
           needs: ["sickBay"],
-          gives: { patients: 1, restHeal: 5 },
         },
         {
           id: "apothecary",
           name: "Apothecary",
-          effect: "1 more medicine every 2 days. Heal treats 5 more.",
-          cost: 6,
-          days: 2,
           needs: ["herbGarden"],
-          gives: { medicine: 0.5, healBonus: 5 },
         },
       ],
     },
@@ -634,70 +478,60 @@ Each upgrade has:
         {
           id: "barricades",
           name: "Scrap Barricades",
-          effect: "+10 night defense.",
-          cost: 4,
-          days: 1,
-          gives: { defense: 10 },
         },
         {
           id: "palisade",
           name: "Palisade",
-          effect: "+10 night defense.",
-          cost: 6,
-          days: 2,
           needs: ["barricades"],
-          gives: { defense: 10 },
         },
         {
           id: "lookout",
           name: "Lookout",
-          effect: "Shows the exact horde size. Each guard adds 2 more.",
-          cost: 3,
-          days: 1,
           needs: ["barricades"],
           space: "roof",
-          gives: { exactHorde: 1, guardBonus: 2 },
         },
         {
           id: "spikePit",
           name: "Spike Pit",
-          effect: "+6 night defense.",
-          cost: 4,
-          days: 1,
           needs: ["barricades"],
           space: "yard",
-          gives: { defense: 6 },
         },
         {
           id: "fortified",
           name: "Fortified Wall",
-          effect: "+10 night defense, and breaches can't damage the walls.",
-          cost: 9,
-          days: 2,
           needs: ["palisade"],
           excludes: ["gunNests"],
-          gives: { defense: 10, sturdy: 1 },
         },
         {
           id: "gunNests",
           name: "Gun Nests",
-          effect: "Each guard adds 4 more. Up to 15 ammo counts.",
-          cost: 7,
-          days: 2,
           needs: ["palisade"],
           excludes: ["fortified"],
-          gives: { guardBonus: 4, ammoCap: 5 },
         },
       ],
     },
   ];
   // Every upgrade by id, each tagged with its facility. Either/or pairs are
   // made to work both ways, so `excludes` only has to be written on one side.
+  // Each upgrade's cost, days and gives come from balance.js [B7], and its
+  // effect line is filled in from them there.
   var UPGRADES = {};
   FACILITIES.forEach(function (f) {
     f.upgrades.forEach(function (u) {
       u.facility = f.id;
       UPGRADES[u.id] = u;
+      fromBalance(
+        u,
+        B.facilities.upgrades[u.id],
+        ["cost", "days", "gives"],
+        "the upgrade " + u.id,
+      );
+      Object.defineProperty(u, "effect", {
+        get: function () {
+          return AT.balance.effect(u.id);
+        },
+        enumerable: true,
+      });
     });
   });
   Object.keys(UPGRADES).forEach(function (id) {
@@ -719,13 +553,12 @@ extra supplies there.
 Each location has:
   district  one of the DISTRICTS ids
   x, y      % across and down the square map.png (0,0 is the top-left corner)
-  danger    1 to 3: more supplies, more risk
-  travel    days a trip takes; 2-day trips keep the survivor away overnight
   loot      what a haul is made of. A kind listed twice turns up twice as often.
-  size      added to every haul here (a small shop is -1, a big site +1)
-  people    chance a scavenger meets someone who wants to join
   img       picture name(s) in assets/images/png/; the first one that exists is shown
   locked    starts locked: cut the fence (Map) or find a keycard (event)
+
+Each location's danger, travel days, size and people chance are in
+balance.js [B8] (scavenging.locations) under the same id.
 */
   // x, y place each district's name on the map (on a road, like a street sign).
   var DISTRICTS = {
@@ -740,53 +573,39 @@ Each location has:
     {
       id: "hospital",
       district: "downtown",
-      people: 0.15,
       name: "Hospital",
       x: 42,
       y: 16.4,
-      danger: 2,
-      travel: 1,
       finds: "Medicine, food",
       loot: ["medicine", "food"],
     },
     {
       id: "police",
       district: "downtown",
-      people: 0.1,
       img: "police_station",
       name: "Police station",
       x: 69,
       y: 26,
-      danger: 3,
-      travel: 1,
       finds: "Ammo, medicine",
       loot: ["ammo", "medicine"],
     },
     {
       id: "pharmacy",
       district: "downtown",
-      people: 0.1,
       img: ["pharmacy", "event_pharmacy"],
       name: "Pharmacy",
       x: 62,
       y: 5,
-      danger: 2,
-      travel: 1,
-      size: -1,
       finds: "Medicine, bottled water",
       loot: ["medicine", "water"],
     },
     {
       id: "church",
       district: "downtown",
-      people: 0.3,
       img: ["church", "event_letters"],
       name: "Church",
       x: 35,
       y: 37,
-      danger: 1,
-      travel: 1,
-      size: -1,
       finds: "Food, medicine. People shelter here.",
       loot: ["food", "food", "medicine"],
     },
@@ -794,52 +613,39 @@ Each location has:
     {
       id: "supermarket",
       district: "market",
-      people: 0.12,
       name: "Supermarket",
       x: 69,
       y: 54,
-      danger: 2,
-      travel: 1,
       finds: "Food, water",
       loot: ["food", "water"],
     },
     {
       id: "hardware",
       district: "market",
-      people: 0.08,
       img: ["hardware", "workshop"],
       name: "Hardware store",
       x: 80,
       y: 36,
-      danger: 2,
-      travel: 1,
-      finds: "Materials",
-      loot: ["materials"],
+      finds: "Materials, some ammo",
+      loot: ["materials", "materials", "ammo"], // + ammo so every pair of supplies has a place (playtest)
     },
     {
       id: "sporting",
       district: "market",
-      people: 0.08,
       img: ["sporting_goods", "event_deserter"],
       name: "Sporting goods",
       x: 77,
       y: 62.5,
-      danger: 2,
-      travel: 1,
-      size: -1,
-      finds: "Ammo, food",
-      loot: ["ammo", "food"],
+      finds: "Ammo, food, water",
+      loot: ["ammo", "food", "water"], // + water (camping gear) for the ammo and water pair
     },
     {
       id: "waterworks",
       district: "market",
-      people: 0.1,
       img: ["waterworks", "event_water"],
       name: "Waterworks",
       x: 86,
       y: 4.5,
-      danger: 2,
-      travel: 2,
       finds: "Water, materials",
       loot: ["water", "water", "materials"],
     },
@@ -847,37 +653,28 @@ Each location has:
     {
       id: "gas",
       district: "outskirts",
-      people: 0.08,
       img: "gas_station",
       name: "Gas station",
       x: 13,
       y: 19.6,
-      danger: 1,
-      travel: 1,
       finds: "Materials, bottled water",
       loot: ["materials", "water"],
     },
     {
       id: "farm",
       district: "outskirts",
-      people: 0.25,
       name: "Farm",
       x: 11,
       y: 40.4,
-      danger: 1,
-      travel: 2,
       finds: "Food, water",
       loot: ["food", "water"],
     },
     {
       id: "suburb",
       district: "outskirts",
-      people: 0.2,
       name: "Suburb",
       x: 10,
       y: 67.6,
-      danger: 1,
-      travel: 1,
       finds: "Materials, food",
       loot: ["materials", "food"],
     },
@@ -885,44 +682,42 @@ Each location has:
     {
       id: "school",
       district: "southside",
-      people: 0.2,
       name: "School",
       x: 38,
       y: 64.4,
-      danger: 1,
-      travel: 1,
-      finds: "Materials, food",
-      loot: ["materials", "materials", "food"],
+      finds: "Materials, food, medicine",
+      loot: ["materials", "materials", "food", "medicine"], // + the nurse's office, for materials and medicine
     },
     {
       id: "warehouse",
       district: "southside",
-      people: 0.1,
       img: ["warehouse", "event_crate"],
       name: "Warehouse",
       x: 79,
       y: 96,
-      danger: 2,
-      travel: 1,
-      size: 1,
       finds: "Food, water, materials",
       loot: ["food", "water", "materials"],
     },
     {
       id: "military",
       district: "southside",
-      people: 0.15,
       img: "military_checkpoint",
       name: "Military checkpoint",
       x: 58,
       y: 78.8,
-      danger: 3,
-      travel: 2,
       finds: "Ammo, medicine",
       loot: ["ammo", "medicine"],
       locked: true, // starts locked: cut the fence (Map) or find a keycard (event)
     },
   ];
+  LOCATIONS.forEach(function (l) {
+    fromBalance(
+      l,
+      B.scavenging.locations[l.id],
+      ["danger", "travel", "size", "people"],
+      "the location " + l.id,
+    );
+  });
   var SHELTER_POS = { x: 41, y: 46 };
   // #endregion [S4] Map Locations
 
@@ -938,44 +733,30 @@ pickEvent() / applyChoice() further down.
 
   // #region [S6] Event Rewards
   // Supplies that event choices bring in when they name one with `reward`
-  // (simple amounts can be written straight into story.js with `gain`). Each
-  // one rolls fresh numbers every time, using the run's seeded rng.
-  // Add a name to the list in story.js [S2] when you add one here.
+  // (simple amounts can be written straight into story.js with `gain`). Most
+  // are plain amounts in balance.js [B11] (events.rewards); the two below
+  // work something out as well. Each rolls fresh numbers every time, using
+  // the run's seeded rng. Add a name to the list in story.js [S2] when you
+  // add one to balance.js.
   var REWARDS = {
     // A forced crate holds the same as a picked lock.
     crate: function () {
       return AT.minigames.autoResult("Lockpick", true, rng).reward;
     },
-    pantry: function () {
-      return { food: randInt(2, 4), water: randInt(1, 2) };
-    },
-    soldier: function () {
-      return { ammo: randInt(2, 4), medicine: randInt(0, 1) };
-    },
-    rats: function () {
-      return { food: 2 };
-    },
     // A water supply catches more of the storm.
     rain: function () {
-      return { water: 2 + Math.round(bonus("water")) };
-    },
-    raiders: function () {
-      return { ammo: 2 };
-    },
-    cart: function () {
-      return { materials: randInt(3, 4) };
-    },
-    scrap: function () {
-      return { materials: randInt(1, 2) };
-    },
-    deer: function () {
-      return { food: randInt(3, 5) };
-    },
-    tracks: function () {
-      return { food: randInt(1, 2) };
+      var got = rollGain(B.events.rewards.rain);
+      got.water = (got.water || 0) + Math.round(bonus("water"));
+      return got;
     },
   };
-
+  // Rolls a reward by name: one of the REWARDS above, or the amounts in balance.js.
+  function rollReward(name) {
+    if (REWARDS[name]) return REWARDS[name]();
+    if (!B.events.rewards[name])
+      console.error("No reward called " + name + " in balance.js.");
+    return rollGain(B.events.rewards[name]);
+  }
   // Rolls a `gain` from story.js: a number is that many, and a pair of
   // numbers [min, max] rolls between them, e.g. { food: [2, 4] }.
   function rollGain(gain) {
@@ -989,25 +770,14 @@ pickEvent() / applyChoice() further down.
   // #endregion [S6] Event Rewards
 
   // #region [S7] Morning Chance, Fence, Trips & City Events
-  // Chance (0 to 1) that a morning event happens before a day starts (never on day 1).
-  var MORNING_EVENT_CHANCE = 0.3; // [TUNE THESE]
-
-  // Cutting through the Military checkpoint fence from the Map tab.
-  // Cheaper when a Builder or Mechanic is at the shelter to do the cutting.
-  var CHECKPOINT_CUT = {
-    cost: 8,
-    skilledCost: 4,
-    skills: ["Builder", "Mechanic"],
-  }; // [TUNE THESE]
-
-  // Each extra day of a long trip brings back this many extra supplies.
-  var EXTRA_PER_TRIP_DAY = 2; // [TUNE THESE]
-
-  // City events (written in story.js [S4b]). From day 2, each dawn has `chance`
-  // of starting one, while fewer than `maxActive` are going on. The same one
-  // won't come back for `cooldown` days after it ends. [TUNE THESE]
+  // The chance of a morning event, the fence cut, long trips and how often
+  // city events happen are all in balance.js ([B8] and [B11]).
+  // Cutting the Military checkpoint fence is cheaper with one of these at the shelter.
+  var FENCE_SKILLS = ["Builder", "Mechanic"];
+  // City events (written in story.js [S4b]). How often they start is in
+  // balance.js [B11] (events.city).
   var CITY_EVENTS = AT.STORY.cityEvents;
-  var CITY = { chance: 0.4, maxActive: 2, cooldown: 5 };
+  var CITY = B.events.city;
   // #endregion [S7] Morning Chance, Fence, Trips & City Events
   // #endregion [S5] Events
 
@@ -1015,73 +785,45 @@ pickEvent() / applyChoice() further down.
   /* 
 ---------- Minigame descriptions ----------
 */
+  // What the player reads before pressing Start. MINIGAME_STAKES (below)
+  // adds a line saying what winning and losing mean.
   var MINIGAMES = {
-    Defense: "Click zombies before they reach the wall.",
-    Lockpick: "Turn the pins in the right order before time runs out.",
-    Search: "Find the supplies hidden in the room.",
+    Defense:
+      "Zombies come at the wall along four lanes. Click each one before it reaches the wall. A missed click jams your gun for a moment and chips the wall, so aim before you click. Hold the wall until time runs out, or until every zombie is down.",
+    Lockpick:
+      "The pins have to go up in one secret order. Click a pin: if it's the next one, it clicks into place; if not, every pin drops and you start again. Remember which ones failed. Set them all before time runs out.",
+    Search:
+      "Supplies are hidden in the room. Each click searches one spot. An empty spot shows how many supplies are next to it, like Minesweeper, and 🧟 means a zombie is close. A zombie bite costs a search and some health. You keep everything you find.",
     Tally:
-      "Stop the blade over the marked spot to carve today's mark on the wall.",
+      "A blade sweeps back and forth across the wall. Stop it over the marked spot (click, Space or Enter) to carve today's mark. You get three tries. The blade starts slow and gets faster as the run goes on.",
   };
-  // What carving the dawn tally does to everyone's morale. [TUNE THESE]
-  // A clean mark steadies the group; every fifth mark (the slash) more so.
-  // A crooked mark (a lost or failed Tally) shakes them a little.
-  var TALLY = { clean: 2, fifth: 4, crooked: -3 };
-
-  // Survivors' needs wear down a little every day, so they don't sit at the
-  // top on their own. Applied at dusk to everyone at the shelter. [TUNE THESE]
-  //   morale        morale lost each dusk (the days wear on)
-  //   hungryAt      hunger at or above this costs hungryMorale more
-  //   hurtMorale    morale lost each dusk while injured (under 60 health)
-  //   fed           hunger a full meal takes away (nothing to eat adds 25)
-  var UPKEEP = {
-    morale: 3,
-    hungryAt: 60,
-    hungryMorale: 3,
-    hurtMorale: 2,
-    fed: 10,
-  };
-  // Food spoils: each dusk, this share of the food above `above` goes off
-  // (rounded down). A Root Cellar stops it. [TUNE THESE]
-  var SPOIL = { above: 12, rate: 0.1 };
-  // Numbers behind the skills and traits in common.js. Players only ever see
-  // the descriptions there and have to work out the rest. [TUNE THESE]
-  //   athletic / lazy   fatigue taken off / added to every task (per day of
-  //                     travel when scavenging, and a night on Guard)
-  //   extrovert         extra supplies when someone else scavenges the same place
-  //   motivational      morale the lowest-morale survivor gains each dusk
-  //   argue             chance each dusk of a row, and the morale it costs
-  //   forget            chance each dusk of misplacing supplies, and how many
-  //   smoker            chance a coughing fit draws more of the horde, and how many
-  //   drinker           chance of staying out an extra day after a trip
-  //   addict            chance of a rough night, and the health it costs
-  //   splurger          the trader asks this much more with a Splurger in the group
-  var TRAIT_FX = {
-    athletic: 5,
-    lazy: 5,
-    extrovert: 1,
-    motivational: 5,
-    argue: { chance: 0.25, morale: 10 },
-    forget: { chance: 1 / 6, lose: 2 },
-    smoker: { chance: 1 / 6, horde: 3 },
-    drinker: { chance: 1 / 6 },
-    addict: { chance: 0.25, damage: [5, 10] },
-    splurger: 1.15,
-  };
-  // Below this morale a survivor is shaken: they find `find` less when
-  // scavenging and add `guard` less defense on Guard. [TUNE THESE]
-  var SHAKEN = { below: 30, find: 1, guard: 3 };
-  // Night raids. [TUNE THESE]
-  // GUARD_NIGHT_FATIGUE: fatigue each guard gains from the night watch, on
-  //   top of the 10 every daytime task adds (was 15, which made guarding
-  //   more tiring than scavenging).
-  // HORDE_LENGTH_SCALE: how much bigger the last night's horde is on longer
-  //   runs (threatPeak x this), so the walls alone don't settle 30- and
-  //   45-day runs halfway through.
-  var GUARD_NIGHT_FATIGUE = 5;
-  // A bigger group makes more noise: the horde grows by this much for every
-  // survivor beyond the first three (anyone away on a trip doesn't count).
-  var HORDE_PER_SURVIVOR = 1;
-  var HORDE_LENGTH_SCALE = { 15: 1, 30: 1.15, 45: 1.3 };
+  // The win/lose line under each description. Numbers come from balance.js.
+  function minigameStakes(name) {
+    var hurtBy = B.events.minigameLossDamage;
+    if (name === "Tally")
+      return (
+        "Clean mark: everyone +" +
+        TALLY.clean +
+        " morale (+" +
+        TALLY.fifth +
+        " on every fifth). Crooked mark: " +
+        TALLY.crooked +
+        " morale."
+      );
+    var win = {
+      Defense: "the wall holds and the event's reward is yours",
+      Lockpick: "the crate opens (two kinds of supplies)",
+      Search: "you found enough, and you keep every find either way",
+    }[name];
+    return "Win: " + win + ". Lose: one survivor loses " + hurtBy + " health.";
+  }
+  // What carving the dawn tally does to everyone's morale (balance.js [B11]).
+  var TALLY = B.tally;
+  // Survivors' needs wear down a little every day (balance.js [B3]):
+  // morale lost each dusk, more while hungry or hurt.
+  var UPKEEP = B.survivors.upkeep;
+  // Below this morale a survivor is shaken (balance.js [B3]).
+  var SHAKEN = B.survivors.shaken;
   // #endregion [S8] Mini-game Descriptions
 
   // #region [S9] Sounds
@@ -1199,10 +941,10 @@ stacked on top of each other; [name, ms] starts that one a little later.
         trait: s.trait,
         avatar: s.avatar || 1,
         voice: s.voice, // picked on the New Game page (see voice())
-        health: randInt(60, 100),
-        hunger: randInt(20, 50),
-        fatigue: randInt(10, 50),
-        morale: randInt(50, 90),
+        health: rollPair(B.start.health),
+        hunger: rollPair(B.start.hunger),
+        fatigue: rollPair(B.start.fatigue),
+        morale: rollPair(B.start.morale),
         status: "Healthy",
         alive: true,
         lostOn: null,
@@ -1217,12 +959,13 @@ stacked on top of each other; [name, ms] starts that one a little later.
     flags: {}, // story flags set by event and checkpoint choices (see js/story.js), e.g. { signal: true }
     lastEvent: null, // title of the last event, so the same one doesn't come twice in a row
     seenEvents: [], // titles of every event shown this run (for events marked `once`)
+    eventBag: { night: [], morning: [] }, // events played since the bag was last emptied (see pickEvent)
     eventTime: "night", // "night" or "morning": what happens after the current event
     currentChoice: null, // the choice picked for the current event (for mini-game wins)
     selectedLocation: "hospital",
     trade: { give: {}, get: {} },
     // The first trader is already here on day 1. See makeTrader() and traderDawn().
-    trader: makeTrader(TRADERS[0], 2),
+    trader: makeTrader(TRADERS[0], B.start.firstTraderStays),
     log: [],
     logFilter: "all",
     eventsFaced: 0,
@@ -1230,8 +973,13 @@ stacked on top of each other; [name, ms] starts that one a little later.
     currentEvent: null,
     logSeen: 0, // how many log entries the player has seen on the Log tab (for its badge)
     logOpen: {}, // which days the player has opened or closed in the Log
-    hordeRoll: randInt(-3, 3), // tonight's horde is threatTonight() + this; rolled each dawn
+    hordeRoll: randInt(-B.horde.roll, B.horde.roll), // tonight's horde is threatTonight() + this; rolled each dawn
+    traderBag: [TRADERS[0].id], // traders who've visited since the bag was last emptied
+    traderNew: false, // a trader arrived this dawn and hasn't been announced yet
+    dayStartRes: null, // supplies when the day began (for the +/− on the resource tiles)
+    dayDelta: {}, // what changed since the morning before
   };
+  state.dayStartRes = Object.assign({}, state.resources);
   var leaving = false; // true once the run is over, so leaving the page doesn't ask "are you sure?"
   // What happened since the last report pop-up, gathered for the next one.
   // See [S42a] Report Data. A new one starts at dusk and with each event.
@@ -1316,10 +1064,10 @@ they can't stay. Names, skills, traits and portraits come from common.js.
       trait: traits[Math.floor(rng() * traits.length)],
       avatar: avatar,
       // Newcomers arrive worn down, so they usually rest on their first day.
-      health: randInt(40, 80),
-      hunger: randInt(30, 60),
-      fatigue: randInt(30, 60),
-      morale: randInt(40, 70),
+      health: rollPair(B.survivors.newcomer.health),
+      hunger: rollPair(B.survivors.newcomer.hunger),
+      fatigue: rollPair(B.survivors.newcomer.fatigue),
+      morale: rollPair(B.survivors.newcomer.morale),
       status: "Healthy",
       alive: true,
       lostOn: null,
@@ -1350,7 +1098,7 @@ they can't stay. Names, skills, traits and portraits come from common.js.
       return null;
     }
     var s = newSurvivor();
-    if (s.health < 60) s.status = "Injured";
+    if (s.health < B.survivors.injuredBelow) s.status = "Injured";
     state.survivors.push(s);
     state.recruited += 1;
     note(s, "Joined the group", "good");
@@ -1370,7 +1118,7 @@ they can't stay. Names, skills, traits and portraits come from common.js.
     );
     // A new face lifts everyone a little.
     alive().forEach(function (o) {
-      if (o !== s) changeMorale(o, 5);
+      if (o !== s) changeMorale(o, B.survivors.joinMorale);
     });
     cue("knockSoft", 3400); // a knock at the door with the next report
     return s;
@@ -1438,12 +1186,12 @@ they can't stay. Names, skills, traits and portraits come from common.js.
     return list;
   }
   // What the shelter has for one of the BASE names: the base value plus what
-  // every working upgrade gives. Rain-fed upgrades give half in a dry spell.
+  // every working upgrade gives. Rain-fed upgrades give less in a dry spell.
   function bonus(key) {
     var dry = cityHas("drought");
     return workingUpgrades().reduce(function (sum, u) {
       var g = (u.gives && u.gives[key]) || 0;
-      return sum + (u.rain && dry ? g / 2 : g);
+      return sum + (u.rain && dry ? g * B.facilities.drySpellShare : g);
     }, BASE[key] || 0);
   }
   // Upgrades built, being built, or being repaired in one of the SPACES.
@@ -1463,10 +1211,16 @@ they can't stay. Names, skills, traits and portraits come from common.js.
   function upgradeState(u) {
     var f = facility(u.facility);
     if (isBuilding(u.id))
-      return { status: "building", reason: f.building.repair ? "Being repaired" : "In progress" };
+      return {
+        status: "building",
+        reason: f.building.repair ? "Being repaired" : "In progress",
+      };
     if (isBuilt(u.id))
       return isDamaged(u.id)
-        ? { status: "damaged", reason: "Damaged in a breach. Repair it to use it again." }
+        ? {
+            status: "damaged",
+            reason: "Damaged in a breach. Repair it to use it again.",
+          }
         : { status: "built", reason: "" };
     var rival = (u.excludes || []).filter(function (id) {
       return isBuilt(id) || isBuilding(id);
@@ -1560,12 +1314,16 @@ they can't stay. Names, skills, traits and portraits come from common.js.
   // How much night defense one survivor adds. Skills/traits are defined in common.js.
   // A shaken survivor (low morale) adds less.
   function guardPower(s) {
-    if (s.task !== "Guard" || s.trait === "Coward" || s.fatigue >= TIRED)
+    if (
+      s.task !== "Guard" ||
+      s.trait === "Coward" ||
+      s.fatigue >= B.survivors.tired
+    )
       return 0;
-    var power = s.skill === "Fighter" ? 10 : 5;
-    if (s.trait === "Night owl") power += 5;
+    var power = s.skill === "Fighter" ? SK.Fighter.guard : B.tasks.guardPower;
+    if (s.trait === "Night owl") power += TR["Night owl"].guard;
     if (shaken(s)) power -= SHAKEN.guard;
-    return Math.max(1, power + bonus("guardBonus"));
+    return Math.max(B.tasks.minGuardPower, power + bonus("guardBonus"));
   }
   // Calculates the total night defense value based on walls, guards, and ammo.
   //  Skills and traits are defined in common.js.
@@ -1578,8 +1336,10 @@ they can't stay. Names, skills, traits and portraits come from common.js.
   // where it came from: { walls, guards, ammo, total }.
   function defenseParts(ahead) {
     // Ammo only helps when someone on Guard is there to fire it.
-    var ammo = shooters() ? Math.min(state.resources.ammo, bonus("ammoCap")) : 0;
-    if (onTask("Guard", "Sharpshooter")) ammo *= 2;
+    var ammo = shooters()
+      ? Math.min(state.resources.ammo, bonus("ammoCap"))
+      : 0;
+    if (onTask("Guard", "Sharpshooter")) ammo *= SK.Sharpshooter.ammoMult;
     var guardTotal = home().reduce(function (sum, s) {
       return sum + guardPower(s);
     }, 0);
@@ -1605,7 +1365,7 @@ they can't stay. Names, skills, traits and portraits come from common.js.
   // Survivors on Build who are rested enough to work.
   function builders() {
     return home().filter(function (s) {
-      return s.task === "Build" && s.fatigue < TIRED;
+      return s.task === "Build" && s.fatigue < B.survivors.tired;
     });
   }
 
@@ -1615,18 +1375,25 @@ they can't stay. Names, skills, traits and portraits come from common.js.
       return s.task === task && s.skill === skill;
     });
   }
-  // Cost of an upgrade (or half of it to repair one): 2 less with a Builder on
-  // Build, and less again with a Workshop. Never below 1.
+  // Cost of an upgrade (or part of it to repair one): less with a Builder on
+  // Build, and less again with a Workshop. Never below facilities.minCost.
   function upgradeCost(u, repair) {
-    var base = repair ? Math.ceil(u.cost / 2) : u.cost;
+    var F = B.facilities;
+    var base = repair ? Math.ceil(u.cost * F.repairShare) : u.cost;
     return Math.max(
-      1,
-      base - (onTask("Build", "Builder") ? 2 : 0) - bonus("discount"),
+      F.minCost,
+      base -
+        (onTask("Build", "Builder") ? SK.Builder.discount : 0) -
+        bonus("discount"),
     );
   }
-  // Days of work for an upgrade. A Fabrication Shop saves a day; repairs take 1. Never below 1.
+  // Days of work for an upgrade. A Fabrication Shop saves a day; repairs take
+  // facilities.repairDays. Never below facilities.minDays.
   function buildDays(u, repair) {
-    return repair ? 1 : Math.max(1, u.days - bonus("fasterBy"));
+    var F = B.facilities;
+    return repair
+      ? F.repairDays
+      : Math.max(F.minDays, u.days - bonus("fasterBy"));
   }
   // #endregion [S18] Builders & Build Costs
 
@@ -1634,7 +1401,7 @@ they can't stay. Names, skills, traits and portraits come from common.js.
   // Heals a survivor by a specified amount, ensuring health does not exceed 100 and updating status if health is above 60.
   function heal(s, amount) {
     s.health = Math.min(100, s.health + amount);
-    if (s.health >= 60) s.status = "Healthy";
+    if (s.health >= B.survivors.injuredBelow) s.status = "Healthy";
   }
   // "Male" or "Female", for voice sounds like hurtMale or dyingFemale.
   // AT.NAMES alternates (Liam, Olivia, Noah, Emma...), so odd places are female.
@@ -1645,12 +1412,12 @@ they can't stay. Names, skills, traits and portraits come from common.js.
   // Hurts a survivor. At 0 health they die, and everyone else loses morale.
   function hurt(s, amount, cat, why) {
     if (!s || !s.alive) return;
-    if (s.trait === "Tough") amount = Math.ceil(amount / 2);
+    if (s.trait === "Tough") amount = Math.ceil(amount * TR.Tough.damage);
     s.health = Math.max(0, s.health - amount);
     // "is dehydrated" becomes "dehydrated" on the survivor's row in the report.
     var reason = why.replace(/^(is|was) /, "");
     if (s.health > 0) {
-      if (s.health < 60) s.status = "Injured";
+      if (s.health < B.survivors.injuredBelow) s.status = "Injured";
       note(s, "−" + amount + " health", "bad", reason);
       report.hurt.push(s.name);
       addLog(
@@ -1729,15 +1496,18 @@ they can't stay. Names, skills, traits and portraits come from common.js.
   }
   // How tiring a task is for this survivor (Athletic and Lazy change it).
   function workFatigue(s, amount) {
-    if (s.trait === "Athletic") amount -= TRAIT_FX.athletic;
-    if (s.trait === "Lazy") amount += TRAIT_FX.lazy;
+    if (s.trait === "Athletic") amount += TR.Athletic.fatigue;
+    if (s.trait === "Lazy") amount += TR.Lazy.fatigue;
     return Math.max(0, amount);
   }
-  // Water the group drinks at dusk: 1 each, but a Survivalist only needs it
-  // every other day.
+  // Water the group drinks at dusk: survivors.drinks each, but a Survivalist
+  // only needs it every few days (skills.Survivalist.drinkEvery).
   function waterNeeded() {
     return home().reduce(function (sum, s) {
-      return sum + (s.skill === "Survivalist" && state.day % 2 === 0 ? 0 : 1);
+      var skip =
+        s.skill === "Survivalist" &&
+        state.day % SK.Survivalist.drinkEvery === 0;
+      return sum + (skip ? 0 : B.survivors.drinks);
     }, 0);
   }
 
@@ -1745,7 +1515,7 @@ they can't stay. Names, skills, traits and portraits come from common.js.
   function skilled(skill) {
     return home()
       .filter(function (s) {
-        return s.skill === skill && s.fatigue < TIRED;
+        return s.skill === skill && s.fatigue < B.survivors.tired;
       })
       .sort(function (a, b) {
         return a.fatigue - b.fatigue;
@@ -1913,7 +1683,8 @@ so they always agree with each other.
     var stock = {};
     RESOURCES.forEach(function (r) {
       var base = t.stock[r.id] || 0;
-      stock[r.id] = base ? Math.max(1, base + randInt(-1, 1)) : 0;
+      var spread = B.trade.stockSpread;
+      stock[r.id] = base ? Math.max(1, base + randInt(-spread, spread)) : 0;
     });
     return {
       id: t.id,
@@ -1932,7 +1703,9 @@ so they always agree with each other.
   // What the trader will pay for one of a resource you give: more for what they want.
   function buyValue(id) {
     var wanted = state.trader.wants.indexOf(id) !== -1;
-    return wanted ? Math.round(TRADE_VALUE[id] * WANT_BONUS) : TRADE_VALUE[id];
+    return wanted
+      ? Math.round(TRADE_VALUE[id] * B.trade.wantBonus)
+      : TRADE_VALUE[id];
   }
 
   // Runs every dawn: the trader's stay counts down; when no one is here, the next
@@ -1957,11 +1730,22 @@ so they always agree with each other.
     }
     t.nextIn -= 1;
     if (t.nextIn > 0) return;
+    // The marble bag again: every trader visits once before anyone comes back
+    // (and never the same one twice in a row).
+    var bag = state.traderBag;
     var choices = TRADERS.filter(function (x) {
-      return x.id !== t.id;
+      return x.id !== t.id && bag.indexOf(x.id) === -1;
     });
+    if (!choices.length) {
+      bag.length = 0;
+      choices = TRADERS.filter(function (x) {
+        return x.id !== t.id;
+      });
+    }
     var next = makeTrader(choices[Math.floor(rng() * choices.length)]);
+    bag.push(next.id);
     state.trader = next;
+    state.traderNew = true; // announced when the day starts (see startDay)
     cue("knock", 5500); // someone new at the door, after the rooster
     addLog(
       "trade",
@@ -2014,9 +1798,18 @@ so they always agree with each other.
     );
     report.city.push(c.id);
     alive().forEach(function (s) {
-      if (s.task === "Scavenge" && !s.away && s.target && !canVisit(findLoc(s.target))) {
+      if (
+        s.task === "Scavenge" &&
+        !s.away &&
+        s.target &&
+        !canVisit(findLoc(s.target))
+      ) {
         s.target = null;
-        addLog("city", s.name + " needs somewhere else to scavenge today.", "bad");
+        addLog(
+          "city",
+          s.name + " needs somewhere else to scavenge today.",
+          "bad",
+        );
       }
     });
   }
@@ -2046,9 +1839,12 @@ so they always agree with each other.
   // Survivors away on a trip live off what they find, so only those at home eat.
   function foodNeeded() {
     var need = home().reduce(function (sum, s) {
-      return sum + (s.trait === "Big eater" ? 2 : 1);
+      return (
+        sum +
+        (s.trait === "Big eater" ? TR["Big eater"].eats : B.survivors.eats)
+      );
     }, 0);
-    if (onTask("Cook", "Cook")) need -= 1;
+    if (onTask("Cook", "Cook")) need -= SK.Cook.foodSave;
     return Math.max(0, need - bonus("foodSave"));
   }
   // Whole units of food, water or medicine the shelter will make at dusk
@@ -2071,18 +1867,22 @@ so they always agree with each other.
   // Health one treatment restores. A Medic does more; a Sick Bay adds more.
   // Without medicine only a Medic can do anything.
   function healAmount(healer, meds) {
+    var medic = healer.skill === "Medic";
     var amount = meds
-      ? healer.skill === "Medic"
-        ? 30
-        : 10
-      : healer.skill === "Medic"
-        ? 10
+      ? medic
+        ? SK.Medic.heal
+        : B.tasks.heal
+      : medic
+        ? SK.Medic.healNoMedicine
         : 0;
     return amount ? amount + bonus("healBonus") : 0;
   }
   // Fatigue a scavenging trip costs per day of travel (less with a Bike Rack).
   function tripFatigue() {
-    return Math.max(5, 20 - bonus("scavFatigue"));
+    return Math.max(
+      B.tasks.minTripFatigue,
+      B.tasks.tripFatigue - bonus("scavFatigue"),
+    );
   }
   // A shaken survivor (morale below SHAKEN.below) finds less and guards worse.
   function shaken(s) {
@@ -2090,7 +1890,7 @@ so they always agree with each other.
   }
   // Materials a Mechanic on Build salvages each day.
   function salvageAmount() {
-    return 2 + bonus("salvage");
+    return SK.Mechanic.salvage + bonus("salvage");
   }
   // #endregion [S25] Food, Healing & Salvage
 
@@ -2100,7 +1900,7 @@ so they always agree with each other.
   //   level is "" (fine), "info" (does nothing useful) or "bad" (needs fixing)
   //   fix is an optional link { label, goto (tab), who (survivor id) } to where it can be fixed
   function taskInfo(s) {
-    var tired = s.fatigue >= TIRED;
+    var tired = s.fatigue >= B.survivors.tired;
     // Away on a long trip: nothing to decide until they're back.
     if (s.away) {
       return {
@@ -2116,7 +1916,8 @@ so they always agree with each other.
     if (s.task === "Rest") {
       var restHeal =
         s.health < 100
-          ? (s.trait === "Quick healer" ? 10 : 0) + bonus("restHeal")
+          ? (s.trait === "Quick healer" ? TR["Quick healer"].restHeal : 0) +
+            bonus("restHeal")
           : 0;
       return {
         text:
@@ -2208,13 +2009,34 @@ so they always agree with each other.
           "+" +
           guardPower(s) +
           " defense tonight" +
-          (state.resources.ammo && guardPower(s) ? ", and fires the ammo" : "") +
+          (state.resources.ammo && guardPower(s)
+            ? ", and fires the ammo"
+            : "") +
           ".",
         level: "",
       };
     }
     if (s.task === "Cook") {
-      return { text: "Cooking tonight's dinner.", level: "" };
+      var firstCook = home().filter(function (o) {
+        return o.task === "Cook";
+      })[0];
+      if (firstCook && firstCook !== s)
+        return {
+          text: firstCook.name + " is already cooking. No extra effect.",
+          level: "info",
+        };
+      if (duskForecast().food.after < 0)
+        return {
+          text: "Not enough food for a proper meal. No morale lift.",
+          level: "info",
+        };
+      return {
+        text:
+          "Cooks a hot meal: everyone +" +
+          B.tasks.cookMorale +
+          " morale at dusk.",
+        level: "",
+      };
     }
     if (s.task === "Heal") {
       var list = patients();
@@ -2270,7 +2092,7 @@ so they always agree with each other.
     return { food: food, water: water };
   }
 
-  // Night defense against tonight's horde. The real horde is up to 3 bigger or smaller.
+  // Night defense against tonight's horde. The real horde is up to horde.roll bigger or smaller.
   // With a lookout (walls tier 2+) the exact horde size is known.
   function tonightOdds() {
     var def = nightDefense(true),
@@ -2280,9 +2102,9 @@ so they always agree with each other.
       ? def >= threat
         ? "good"
         : "bad"
-      : def >= threat + 3
+      : def >= threat + B.horde.roll
         ? "good"
-        : def >= threat - 3
+        : def >= threat - B.horde.roll
           ? "info"
           : "bad";
     return {
@@ -2320,17 +2142,37 @@ so they always agree with each other.
     }
     var fc = duskForecast();
     [
-      ["Food", fc.food],
-      ["Water", fc.water],
+      ["Food", "food", fc.food],
+      ["Water", "water", fc.water],
     ].forEach(function (pair) {
-      if (pair[1].after < 0) {
+      if (pair[2].after >= 0) return;
+      // Someone heading home tonight from a place that has it: a heads-up,
+      // not something that has to be fixed.
+      var finders = bringingHome(pair[1]);
+      if (finders.length) {
         list.push({
-          text: pair[0] + " will run short at dusk by " + -pair[1].after + ".",
-          fix: traderHere()
-            ? { label: "Trade", goto: "trade" }
-            : { label: "Scavenge", goto: "map" },
+          soft: true,
+          text:
+            pair[0] +
+            " is short by " +
+            -pair[2].after +
+            " unless " +
+            nameList(
+              finders.map(function (f) {
+                return f.name;
+              }),
+              "or",
+            ) +
+            " brings some home tonight.",
         });
+        return;
       }
+      list.push({
+        text: pair[0] + " will run short at dusk by " + -pair[2].after + ".",
+        fix: traderHere()
+          ? { label: "Trade", goto: "trade" }
+          : { label: "Scavenge", goto: "map" },
+      });
     });
     var odds = tonightOdds();
     if (odds.level === "bad") {
@@ -2339,14 +2181,29 @@ so they always agree with each other.
           "Night defense " +
           odds.def +
           (odds.exact
-            ? " is below the horde ("
-            : " is well below the horde (about ") +
-          odds.threat +
+            ? " is below the horde (" + odds.threat
+            : " is well below the horde (" + hordeRange()) +
           ").",
         fix: { label: "Add guards", goto: "survivors" },
       });
     }
     return list;
+  }
+
+  // Survivors who will be home at dusk tonight from somewhere that has this
+  // resource (a Hunter always brings food).
+  function bringingHome(res) {
+    return alive().filter(function (s) {
+      if (s.task !== "Scavenge" || !s.target) return false;
+      var loc = findLoc(s.target);
+      if (!loc) return false;
+      var hasIt =
+        loc.loot.indexOf(res) !== -1 ||
+        (res === "food" && s.skill === "Hunter");
+      if (!hasIt) return false;
+      if (s.away) return s.away === 1; // on a long trip, back tonight
+      return s.fatigue < B.survivors.tired && canVisit(loc) && loc.travel === 1;
+    });
   }
 
   // A small "fix it" link that jumps to the right tab (see the data-goto handler).
@@ -2361,10 +2218,12 @@ so they always agree with each other.
       " →</button>"
     );
   }
-  // One warning line, with its fix link if it has one.
+  // One warning line, with its fix link if it has one. Soft ones are heads-ups.
   function warnItem(w) {
     return (
-      '<li class="warn"><span>' +
+      '<li class="warn' +
+      (w.soft ? " soft" : "") +
+      '"><span>' +
       esc(w.text) +
       "</span>" +
       (w.fix ? fixLink(w.fix) : "") +
@@ -2386,39 +2245,73 @@ so they always agree with each other.
   // The top bar: day, phase, resources and the tab title.
   function renderHeader() {
     var night = state.phase === "night";
-    // The day is shown as tally marks on the wall, with the run length beside it.
-    // Screen readers (and the tooltip) still get "Day 7 of 15".
+    // The top bar shows the day as a number; the tally marks themselves are on
+    // a strip of "wall" at the top of the Today panel.
     var dayText =
       (night ? "Night " : "Day ") + state.day + " of " + state.length;
     var label = $("day-label");
     label.title = dayText;
-    // Past 20 marks the resource tiles drop their words to make room (see 9a in style.css).
-    document
-      .querySelector(".topbar")
-      .classList.toggle("long-tally", state.tallies.length > 20);
     label.innerHTML =
-      AT.tallyMarks(state.tallies) +
-      '<span class="tally-of" aria-hidden="true">of ' +
+      (night ? "Night " : "Day ") +
+      "<strong>" +
+      state.day +
+      '</strong><span class="muted">of ' +
       state.length +
-      "</span>" +
-      '<span class="visually-hidden">' +
-      dayText +
       "</span>";
+    var left = state.length - state.day;
+    $("wall-tally").innerHTML =
+      AT.tallyMarks(state.tallies) +
+      '<span class="wall-count">' +
+      plural(state.tallies.length, "mark") +
+      ' <span class="muted">· ' +
+      (left ? plural(left, "day") + " to go" : "last day") +
+      "</span></span>";
+    $("wall-tally").title = dayText;
     var pill = $("phase-pill");
     pill.textContent = PHASE_LABELS[state.phase] + " phase";
     pill.dataset.phase = state.phase;
     // Re-colours the whole page for the current phase.
     document.documentElement.dataset.phase = state.phase;
+    // Each resource: icon, name and amount. A tile turns amber when food or
+    // water won't cover tonight's meal, red at zero. During the day a small
+    // +/− shows what changed since yesterday morning.
+    var need = { food: foodNeeded(), water: waterNeeded() };
+    var delta = state.phase === "day" ? state.dayDelta || {} : {};
     $("resources").innerHTML = RESOURCES.map(function (r) {
+      var n = state.resources[r.id];
+      var tone = n <= 0 ? " out" : need[r.id] && n < need[r.id] ? " low" : "";
+      var d = delta[r.id] || 0;
       return (
-        '<li><img src="assets/icons/ingame/' +
+        '<li class="res-' +
         r.id +
-        '.png" alt="" width="20" height="20">' +
+        tone +
+        '" title="' +
+        r.label +
+        ": " +
+        n +
+        (d
+          ? " (" +
+            (d > 0 ? "+" : "−") +
+            Math.abs(d) +
+            " since yesterday morning)"
+          : "") +
+        '"><img src="assets/icons/ingame/' +
+        r.id +
+        '.png" alt="" width="24" height="24">' +
         '<span class="res-label">' +
         r.label +
         "</span><strong>" +
-        pad(state.resources[r.id]) +
-        "</strong></li>"
+        pad(n) +
+        "</strong>" +
+        (d
+          ? '<span class="res-delta ' +
+            (d > 0 ? "good" : "bad") +
+            '" aria-hidden="true">' +
+            (d > 0 ? "+" : "−") +
+            Math.abs(d) +
+            "</span>"
+          : "") +
+        "</li>"
       );
     }).join("");
     document.title = state.shelter + " · Day " + state.day + " — Another Tally";
@@ -2450,31 +2343,43 @@ so they always agree with each other.
       })
       .join("");
 
-    // Food and water at dusk: have + made − eaten → left.
+    // Food and water at dusk: a verdict first (✓ enough, ! enough tonight
+    // only, ✕ short), then the sum: have + made − eaten.
     var fc = duskForecast();
-    // One forecast row: have + made − eaten → what's left (or how short).
-    function row(label, r) {
+    function row(id, label, r) {
+      var tone = r.after < 0 ? "bad" : r.after < r.need ? "warn" : "good";
+      var verdict =
+        tone === "bad"
+          ? "Short by " + -r.after
+          : tone === "warn"
+            ? pad(r.after) + " left · not enough for tomorrow"
+            : pad(r.after) + " left";
       return (
-        "<dt>" +
+        '<li class="fc-row ' +
+        tone +
+        '"><img src="assets/icons/ingame/' +
+        id +
+        '.png" alt="" width="22" height="22"><span class="fc-name">' +
         label +
-        '</dt><dd class="' +
-        (r.after < 0 ? "bad" : "") +
-        '"><span class="calc">' +
+        '</span><span class="fc-verdict"><span class="fc-sym" aria-hidden="true">' +
+        { good: "✓", warn: "!", bad: "✕" }[tone] +
+        "</span> " +
+        verdict +
+        '</span><span class="fc-calc" title="Have + made − eaten">' +
         r.have +
-        (r.made ? " + " + r.made : "") +
-        " − " +
+        ' have<span class="fc-plus">' +
+        (r.made ? " + " + r.made + " made" : "") +
+        '</span> <span class="fc-minus">− ' +
         r.need +
-        "</span> → <strong>" +
-        (r.after < 0 ? "short " + -r.after : pad(r.after)) +
-        "</strong></dd>"
+        " eaten</span></span></li>"
       );
     }
     $("dusk-forecast").innerHTML =
-      '<dl class="forecast">' +
-      row("Food", fc.food) +
-      row("Water", fc.water) +
-      "</dl>" +
-      '<p class="small muted forecast-note">Have + made − eaten. Scavengers may bring more.</p>';
+      '<ul class="forecast">' +
+      row("food", "Food", fc.food) +
+      row("water", "Water", fc.water) +
+      "</ul>" +
+      '<p class="small muted forecast-note">Before anything scavengers bring home.</p>';
 
     // Defense against tonight's horde.
     var odds = tonightOdds();
@@ -2483,8 +2388,7 @@ so they always agree with each other.
       pad(odds.def) +
       "</strong> defense</span>" +
       '<span class="muted">vs</span><span><strong>' +
-      (odds.exact ? "" : "~") +
-      pad(odds.threat) +
+      (odds.exact ? pad(odds.threat) : hordeRange()) +
       "</strong> horde</span></div>" +
       '<p class="odds-label ' +
       odds.level +
@@ -2494,14 +2398,38 @@ so they always agree with each other.
       (odds.exact ? "horde spotted from the lookout · " : "") +
       plural(guards(), "guard") +
       (defenseFinishingToday()
-        ? " · counts the " +
-          defenseFinishingToday().name +
-          " finishing at dusk"
+        ? " · counts the " + defenseFinishingToday().name + " finishing at dusk"
         : "") +
       "</span></p>";
 
-    // Things to fix before ending the day.
-    $("warnings").innerHTML = planWarnings().map(warnItem).join("");
+    // Things to fix before ending the day. Until the must-fix ones are
+    // sorted, End day is greyed out (it still opens the check, so the day
+    // can always be ended anyway).
+    var warnings = planWarnings();
+    $("warnings").innerHTML = warnings.map(warnItem).join("");
+    var mustFix = warnings.filter(function (w) {
+      return !w.soft;
+    }).length;
+    var endBtn = $("end-day");
+    endBtn.classList.toggle("needs-fix", mustFix > 0);
+    endBtn.textContent = mustFix
+      ? "End day · " + plural(mustFix, "thing") + " to check"
+      : "End day";
+
+    // A free bed is easy to miss, so it gets a line of its own.
+    var free = freeBeds();
+    $("bed-note").hidden = free <= 0;
+    $("bed-note").innerHTML =
+      '<img src="assets/images/png/free-bed.png" alt="" width="28" height="28"><span><strong>' +
+      plural(free, "free bed") +
+      "</strong> · scavengers and some events can bring someone home.</span>";
+  }
+
+  // Tonight's horde as the range it can really be (the estimate, give or take
+  // horde.roll), unless a lookout has spotted it exactly.
+  function hordeRange() {
+    var t = threatTonight();
+    return pad(Math.max(0, t - B.horde.roll)) + "–" + pad(t + B.horde.roll);
   }
   // #endregion [S30] Side Panel
 
@@ -2550,10 +2478,17 @@ Small counts on the tabs show where something needs a look.
     );
 
     $("tab-trade").classList.toggle("quiet", !traderHere());
+    if (!traderHere()) $("tab-trade").classList.remove("arrived");
+    if ($("tab-trade").getAttribute("aria-selected") === "true")
+      $("tab-trade").classList.remove("arrived");
+    var fresh = $("tab-trade").classList.contains("arrived");
     setBadge(
       "trade",
-      traderHere() ? state.trader.leaves + "d" : "",
-      "trader leaves in " + plural(state.trader.leaves, "day"),
+      traderHere() ? (fresh ? "New" : state.trader.leaves + "d") : "",
+      fresh
+        ? "trader just arrived"
+        : "trader leaves in " + plural(state.trader.leaves, "day"),
+      fresh ? "alert" : "",
     );
 
     if ($("tab-log").getAttribute("aria-selected") === "true") {
@@ -2574,37 +2509,80 @@ Small counts on the tabs show where something needs a look.
 ---------- Base Tab ----------
 =============================================================== 
 */
+  // The mark beside each upgrade, and what it means (shown as a key on the Base tab).
+  var UPGRADE_MARKS = {
+    built: "✓",
+    building: "⚒",
+    open: "+",
+    busy: "…",
+    damaged: "!",
+    locked: "🔒",
+    full: "▢",
+    excluded: "✕",
+  };
+  var UPGRADE_MARK_LABELS = {
+    built: "Built",
+    building: "Being built",
+    open: "Can build",
+    busy: "Waiting for this facility's current job",
+    damaged: "Damaged",
+    locked: "Needs another upgrade first",
+    full: "No room left",
+    excluded: "Lost to its either/or partner",
+  };
+  function marksKey() {
+    return (
+      '<p class="marks-key small muted">' +
+      Object.keys(UPGRADE_MARKS)
+        .map(function (k) {
+          return (
+            '<span class="up-' +
+            k +
+            '"><span class="up-mark" aria-hidden="true">' +
+            UPGRADE_MARKS[k] +
+            "</span> " +
+            UPGRADE_MARK_LABELS[k] +
+            "</span>"
+          );
+        })
+        .join("") +
+      "</p>"
+    );
+  }
+
   // One row in a facility's upgrade list: its name, tags, what it gives, why
   // it can't be built yet (if it can't), and a Build or Repair button.
   function upgradeRow(u) {
     var st = upgradeState(u);
-    var marks = {
-      built: "✓",
-      damaged: "!",
-      building: "⚒",
-      open: "+",
-      busy: "+",
-      locked: "·",
-      excluded: "✕",
-      full: "·",
-    };
+    // One symbol per state, explained by the key under the room summary
+    // (UPGRADE_MARKS). The Build buttons use the same ⚒ as work in progress.
+    var marks = UPGRADE_MARKS;
     var tags = [];
-    if (u.space) tags.push(SPACES[u.space].label);
-    if (u.excludes && st.status !== "excluded")
-      tags.push(
-        "Either/or with " +
+    if (u.space) tags.push({ text: SPACES[u.space].label, cls: "space-tag" });
+    if (u.excludes && st.status !== "excluded" && st.status !== "built")
+      tags.push({
+        text:
+          "⇄ Either/or: " +
           u.excludes
             .map(function (id) {
               return UPGRADES[id].name;
             })
             .join(", "),
-      );
+        cls: "either",
+      });
     var button = "";
-    if (st.status === "open" || st.status === "busy" || st.status === "damaged") {
+    if (
+      st.status === "open" ||
+      st.status === "busy" ||
+      st.status === "damaged"
+    ) {
       var repair = st.status === "damaged";
       var cost = upgradeCost(u, repair);
       var short = cost - state.resources.materials;
-      var blocked = st.status === "busy" || short > 0 || (repair && facility(u.facility).building);
+      var blocked =
+        st.status === "busy" ||
+        short > 0 ||
+        (repair && facility(u.facility).building);
       button =
         '<button class="btn btn-sm up-btn" type="button" data-sound="none" data-upgrade="' +
         u.id +
@@ -2618,13 +2596,20 @@ Small counts on the tabs show where something needs a look.
         plural(cost, "material") +
         ", " +
         plural(buildDays(u, repair), "day") +
-        '">' +
+        '"><span aria-hidden="true">⚒</span> ' +
         (repair ? "Repair" : "Build") +
-        " · " +
+        ' · <img src="assets/icons/ingame/materials.png" alt="" width="16" height="16"> ' +
         cost +
         "</button>";
       if (short > 0 && st.status !== "busy")
-        st = { status: st.status, reason: (st.reason ? st.reason + " " : "") + "Need " + short + " more materials." };
+        st = {
+          status: st.status,
+          reason:
+            (st.reason ? st.reason + " " : "") +
+            "Need " +
+            short +
+            " more materials.",
+        };
     }
     return (
       '<li class="up up-' +
@@ -2638,7 +2623,9 @@ Small counts on the tabs show where something needs a look.
         ? ' <span class="up-tags">' +
           tags
             .map(function (t) {
-              return '<span class="chip">' + esc(t) + "</span>";
+              return (
+                '<span class="chip ' + t.cls + '">' + esc(t.text) + "</span>"
+              );
             })
             .join("") +
           "</span>"
@@ -2649,9 +2636,7 @@ Small counts on the tabs show where something needs a look.
         ? ' <span class="muted">(' + plural(buildDays(u), "day") + ")</span>"
         : "") +
       "</span>" +
-      (st.reason
-        ? '<span class="up-why">' + esc(st.reason) + "</span>"
-        : "") +
+      (st.reason ? '<span class="up-why">' + esc(st.reason) + "</span>" : "") +
       '<span class="visually-hidden"> (' +
       st.status +
       ")</span></span>" +
@@ -2705,14 +2690,72 @@ Small counts on the tabs show where something needs a look.
       '<p class="fac-current">' +
       (count
         ? esc(f.desc) + "."
-        : '<span class="muted">' + f.none + "</span>") +
+        : '<span class="muted">' +
+          esc(AT.balance.fillText(f.none)) +
+          "</span>") +
       "</p>" +
       progress +
-      '<ul class="upgrade-list">' +
-      f.upgrades.map(upgradeRow).join("") +
-      "</ul>" +
+      upgradeList(f) +
       "</article>"
     );
+  }
+
+  // The upgrade list, sorted so what can be done now is on top: damaged,
+  // in progress, can build, waiting, needs something first, then what's
+  // built. Upgrades the run can no longer have (lost to an either/or pick,
+  // no room left, or needing one of those) fold away at the bottom.
+  var UPGRADE_ORDER = [
+    "damaged",
+    "building",
+    "open",
+    "busy",
+    "locked",
+    "built",
+  ];
+  function upgradeList(f) {
+    var shown = [],
+      gone = [];
+    f.upgrades.forEach(function (u) {
+      if (outOfReach(u)) gone.push(u);
+      else shown.push(u);
+    });
+    shown.sort(function (a, b) {
+      return (
+        UPGRADE_ORDER.indexOf(upgradeState(a).status) -
+        UPGRADE_ORDER.indexOf(upgradeState(b).status)
+      );
+    });
+    return (
+      '<ul class="upgrade-list">' +
+      shown.map(upgradeRow).join("") +
+      "</ul>" +
+      (gone.length
+        ? '<details class="upgrades-gone"><summary>No longer available (' +
+          gone.length +
+          ')</summary><ul class="upgrade-list">' +
+          gone.map(upgradeRow).join("") +
+          "</ul></details>"
+        : "")
+    );
+  }
+  // True for an upgrade this run can't get any more: its either/or partner
+  // was chosen, its space is full, or it needs something that's out of reach.
+  function outOfReach(u, seen) {
+    seen = seen || {};
+    if (seen[u.id]) return false;
+    seen[u.id] = true;
+    var st = upgradeState(u).status;
+    if (st === "excluded" || st === "full") return true;
+    if (st !== "locked") return false;
+    var needGone = (u.needs || []).some(function (id) {
+      return !isBuilt(id) && outOfReach(UPGRADES[id], seen);
+    });
+    var anyGone =
+      u.needsAny &&
+      u.needsAny.every(function (id) {
+        return !isBuilt(id) && outOfReach(UPGRADES[id], seen);
+      });
+    return needGone || Boolean(anyGone);
   }
 
   // How full the roof, yard and basement are, for the top of the Base tab.
@@ -2745,7 +2788,9 @@ Small counts on the tabs show where something needs a look.
             '<span class="space-slots" aria-hidden="true">' +
             Array.apply(null, Array(SPACES[k].slots))
               .map(function (_, i) {
-                return '<span class="' + (i < users.length ? "on" : "") + '"></span>';
+                return (
+                  '<span class="' + (i < users.length ? "on" : "") + '"></span>'
+                );
               })
               .join("") +
             "</span></li>"
@@ -2755,6 +2800,91 @@ Small counts on the tabs show where something needs a look.
       "</ul>"
     );
   }
+
+  // ---------- Signal for the convoy ----------
+  // Every checkpoint choice in story.js that sets the "signal" flag (signal
+  // fire, radio, flare) is offered here too, from the first checkpoint's day
+  // (the broadcast) until the last day. Without this the roof checkpoint was
+  // the only chance, and a run short on materials that morning lost the
+  // convoy ending for good.
+  var SIGNALS = [];
+  AT.STORY.checkpoints.forEach(function (cp) {
+    (cp.choices || []).forEach(function (c) {
+      if (c.flag === "signal") SIGNALS.push({ title: cp.title, choice: c });
+    });
+  });
+  // True once the convoy has been announced (the first checkpoint's day).
+  function convoyKnown() {
+    if (!SIGNALS.length) return false;
+    var first = Math.min.apply(
+      null,
+      AT.STORY.checkpoints.map(function (cp) {
+        return AT.STORY.checkpointDay(cp, state.length);
+      }),
+    );
+    return state.day >= first;
+  }
+  // The card at the top of the Base tab: what's ready, or the ways to signal.
+  function signalCard() {
+    if (!convoyKnown()) return "";
+    var ready = Boolean(state.flags.signal);
+    var lastDay = state.day >= state.length;
+    return (
+      '<article class="card signal-card' +
+      (ready ? " ready" : "") +
+      '"><div class="row"><h3>Signal for the convoy</h3><span class="fac-level">' +
+      (lastDay
+        ? "Tonight"
+        : "Day " +
+          state.length +
+          " · " +
+          plural(state.length - state.day, "day") +
+          " left") +
+      "</span></div>" +
+      (ready
+        ? '<p class="good">✓ Ready. ' +
+          esc(storyText(state.signalNote || "A signal is set on the roof.")) +
+          "</p>"
+        : "<p>The convoy comes on the last night. Without a signal on the roof, it won't stop. " +
+          "You can set one up any day before then.</p>" +
+          '<div class="signal-choices">' +
+          SIGNALS.map(function (sg, i) {
+            var c = sg.choice;
+            var ok = choiceOk(c);
+            return (
+              '<button class="event-choice" type="button" data-sound="none" data-signal="' +
+              i +
+              '"' +
+              (ok ? "" : " disabled") +
+              "><strong>" +
+              esc(storyText(c.label)) +
+              "</strong><span>" +
+              choiceNote(c) +
+              (ok ? "" : " — not available") +
+              "</span></button>"
+            );
+          }).join("") +
+          "</div>") +
+      "</article>"
+    );
+  }
+  // Setting up a signal from the Base tab: pay for it and remember it.
+  $("panel-base").addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-signal]");
+    if (!btn || btn.disabled || state.flags.signal) return;
+    var sg = SIGNALS[Number(btn.dataset.signal)];
+    var c = sg && sg.choice;
+    if (!c || !choiceOk(c)) return;
+    Object.keys(c.cost || {}).forEach(function (k) {
+      changeSupply(k, -c.cost[k]);
+    });
+    state.flags.signal = true;
+    state.signalNote = c.outcome;
+    actionSounds(c.sounds || ["buildingHammering"]);
+    addLog("base", storyText(c.outcome), "good");
+    toast("The convoy signal is ready.");
+    renderAll();
+  });
 
   // The Base tab: shelter summary, room left, and one card per facility.
   function renderBase() {
@@ -2774,9 +2904,11 @@ Small counts on the tabs show where something needs a look.
       pad(nightDefense()) +
       (bonus("exactHorde") > 0
         ? " · Horde tonight " + pad(hordeSize()) + " (spotted from the lookout)"
-        : " · Horde tonight about " + pad(threatTonight())) +
+        : " · Horde tonight " + hordeRange()) +
       "</p></div>" +
+      signalCard() +
       spacesSummary() +
+      marksKey() +
       (anyBuilt
         ? ""
         : '<p class="card base-intro">Nothing is built yet. Each facility has a handful of upgrades. ' +
@@ -2787,18 +2919,94 @@ Small counts on the tabs show where something needs a look.
       "</div>";
   }
 
-  // Build and Repair buttons start work straight away if someone is on Build;
-  // otherwise they open a picker to choose who builds it.
+  // Build and Repair buttons ask first (cost, days, room, and what an
+  // either/or pick rules out). With nobody on Build, the "Who builds this?"
+  // picker asks instead, with the same facts.
   $("panel-base").addEventListener("click", function (e) {
     var btn = e.target.closest("[data-upgrade]");
     if (!btn || btn.disabled) return;
     var u = UPGRADES[btn.dataset.upgrade];
     var repair = Boolean(btn.dataset.repair);
-    if (builders().length) startWork(u, repair);
-    else {
-      actionSounds(["menu"]);
-      openBuildPicker(u, repair);
+    actionSounds(["menu"]);
+    if (builders().length) openBuildConfirm(u, repair);
+    else openBuildPicker(u, repair);
+  });
+
+  // The facts about a build, for the confirm and the builder picker.
+  function buildFacts(u, repair) {
+    var cost = upgradeCost(u, repair);
+    var facts = [
+      "Costs " +
+        plural(cost, "material") +
+        " (you have " +
+        state.resources.materials +
+        ", " +
+        (state.resources.materials - cost) +
+        " left after).",
+      "Takes " +
+        plural(buildDays(u, repair), "day") +
+        " of work with someone rested on Build.",
+    ];
+    if (!repair && u.space) {
+      var used = spaceUsers(u.space).length;
+      facts.push(
+        "Uses a " +
+          SPACES[u.space].label.toLowerCase() +
+          " slot (" +
+          (used + 1) +
+          " of " +
+          SPACES[u.space].slots +
+          " after this).",
+      );
     }
+    if (!repair && u.excludes) {
+      var lost = u.excludes.filter(function (id) {
+        return !isBuilt(id);
+      });
+      if (lost.length)
+        facts.push(
+          "Either/or: the " +
+            nameList(
+              lost.map(function (id) {
+                return UPGRADES[id].name;
+              }),
+              "and",
+            ) +
+            " can't be built for the rest of the run.",
+        );
+    }
+    return facts;
+  }
+  var confirmFor = null;
+  function openBuildConfirm(u, repair) {
+    confirmFor = { u: u, repair: repair };
+    $("buildc-title").textContent =
+      (repair ? "Repair" : "Build") + " the " + u.name + "?";
+    $("buildc-effect").textContent = repair ? "Damaged in a breach." : u.effect;
+    $("buildc-facts").innerHTML = buildFacts(u, repair)
+      .map(function (t) {
+        return (
+          "<li" +
+          (/^Either\/or/.test(t) ? ' class="either"' : "") +
+          ">" +
+          esc(t) +
+          "</li>"
+        );
+      })
+      .join("");
+    $("buildc-go").textContent = repair ? "Repair it" : "Build it";
+    $("build-confirm").showModal();
+    $("buildc-go").focus();
+  }
+  $("buildc-go").addEventListener("click", function () {
+    var c = confirmFor;
+    confirmFor = null;
+    $("build-confirm").close();
+    if (c) startWork(c.u, c.repair);
+  });
+  $("buildc-cancel").addEventListener("click", function () {
+    confirmFor = null;
+    $("build-confirm").close();
   });
 
   // Materials are paid now; the work finishes after buildDays(u) days with someone on Build.
@@ -2823,7 +3031,9 @@ Small counts on the tabs show where something needs a look.
         plural(days, "day") +
         ").",
     );
-    toast("Work started " + (repair ? "repairing" : "on") + " the " + u.name + ".");
+    toast(
+      "Work started " + (repair ? "repairing" : "on") + " the " + u.name + ".",
+    );
     renderAll();
   }
 
@@ -2837,12 +3047,12 @@ Small counts on the tabs show where something needs a look.
       "Who " + (repair ? "repairs" : "builds") + " the " + u.name + "?";
     $("build-text").textContent =
       facility(u.facility).name +
-      ". It takes " +
-      plural(buildDays(u, repair), "day") +
-      " with someone on Build each day. Whoever you pick switches to Build now.";
+      ". " +
+      buildFacts(u, repair).join(" ") +
+      " Whoever you pick switches to Build now.";
     $("build-choices").innerHTML = home()
       .map(function (s) {
-        var tired = s.fatigue >= TIRED;
+        var tired = s.fatigue >= B.survivors.tired;
         var now =
           s.task +
           (s.task === "Scavenge" && s.target
@@ -2919,7 +3129,7 @@ Small counts on the tabs show where something needs a look.
     Scavenge: "Search a location on the map",
     Build: "Work on a facility",
     Guard: "Add night defense",
-    Cook: "Cook dinner for the group",
+    Cook: "Cook a hot meal that lifts everyone's morale",
     Heal: "Treat the most hurt survivor",
   };
 
@@ -2932,14 +3142,17 @@ Small counts on the tabs show where something needs a look.
     p.innerHTML =
       '<div class="panel-head"><h2>Survivors</h2><p class="muted">' +
       plural(list.length, "survivor") +
-      " · " +
-      plural(free, "free bed") +
+      (free > 0
+        ? ' · <span class="bed-chip"><img src="assets/images/png/free-bed.png" alt="" width="20" height="20">' +
+          plural(free, "free bed") +
+          "</span>"
+        : " · no free beds") +
       "</p></div>" +
       '<div class="grid-3">' +
       list
         .map(function (s) {
           var injured = s.status !== "Healthy";
-          var tired = s.fatigue >= TIRED;
+          var tired = s.fatigue >= B.survivors.tired;
           var info = taskInfo(s);
           return (
             '<article class="card survivor">' +
@@ -2948,15 +3161,10 @@ Small counts on the tabs show where something needs a look.
             '.png" alt="">' +
             "<div><h3>" +
             esc(s.name) +
-            '</h3><div class="tags"><span class="chip" title="' +
-            AT.SKILLS[s.skill] +
-            '">' +
-            s.skill +
-            '</span><span class="chip" title="' +
-            AT.TRAITS[s.trait] +
-            '">' +
-            s.trait +
-            "</span></div></div>" +
+            '</h3><div class="tags">' +
+            tipChip("Skill", s.skill, AT.SKILLS[s.skill]) +
+            tipChip("Trait", s.trait, AT.TRAITS[s.trait]) +
+            "</div></div>" +
             '<span class="status' +
             (injured || tired ? " injured" : "") +
             (s.away ? " away" : "") +
@@ -2965,6 +3173,7 @@ Small counts on the tabs show where something needs a look.
             (tired ? "<br>Too tired" : "") +
             (s.away ? "<br>Away" : "") +
             "</span></div>" +
+            tiredAlert(s) +
             conditionChips(s) +
             '<div class="stats">' +
             statRow("Health", s.health, "At 0 they die.") +
@@ -2976,7 +3185,9 @@ Small counts on the tabs show where something needs a look.
             statRow(
               "Rested",
               100 - s.fatigue,
-              "Drops with work. Below 20, they can't scavenge, guard or build.",
+              "Drops with work. Below " +
+                (100 - B.survivors.tired) +
+                ", they can't scavenge, guard or build.",
             ) +
             statRow("Morale", s.morale, "At 0 they leave the group.") +
             "</div>" +
@@ -3025,13 +3236,73 @@ Small counts on the tabs show where something needs a look.
       "</div>";
   }
 
+  // A skill or trait chip that shows its description on hover, focus or tap
+  // (the old title tooltips were easy to miss). Only the description shows,
+  // as before: what it actually does is still for the player to find out.
+  function tipChip(kind, name, desc) {
+    return (
+      '<span class="chip has-tip" tabindex="0" data-tip="' +
+      esc(desc || "") +
+      '"><span class="chip-kind">' +
+      kind +
+      "</span> " +
+      esc(name) +
+      '<span class="visually-hidden">: ' +
+      esc(desc || "") +
+      "</span></span>"
+    );
+  }
+
+  // Tasks that need someone rested (Rest, Cook and Heal don't).
+  var NEEDS_REST = ["Scavenge", "Build", "Guard"];
+  function tooTiredFor(s) {
+    return (
+      !s.away &&
+      s.fatigue >= B.survivors.tired &&
+      NEEDS_REST.indexOf(s.task) !== -1
+    );
+  }
+  // A red banner on the card when someone is on a task they're too tired for.
+  function tiredAlert(s) {
+    if (!tooTiredFor(s)) return "";
+    return (
+      '<p class="tired-alert" role="alert"><span><strong>Too tired to ' +
+      s.task.toLowerCase() +
+      ".</strong> They'll do nothing today.</span>" +
+      '<button type="button" class="btn btn-sm" data-rest="' +
+      s.id +
+      '">Put on Rest</button></p>'
+    );
+  }
+
   // Clicking a task button gives the survivor that task (not while they're away).
   $("panel-survivors").addEventListener("click", function (e) {
+    var rest = e.target.closest("[data-rest]");
+    if (rest) {
+      var r = findSurvivor(rest.dataset.rest);
+      if (r && !r.away) {
+        if (r.target) r.lastTarget = r.target;
+        r.task = "Rest";
+        r.target = null;
+        actionSounds([TASK_SOUNDS.Rest]);
+        renderAll();
+      }
+      return;
+    }
     var btn = e.target.closest("[data-set-task]");
     if (!btn || btn.disabled) return;
     var s = findSurvivor(btn.dataset.who);
     if (s.away) return;
     s.task = btn.dataset.setTask;
+    if (tooTiredFor(s)) {
+      toast(
+        s.name +
+          " is too tired to " +
+          s.task.toLowerCase() +
+          ". They'll do nothing unless they rest.",
+      );
+      actionSounds(["hurt" + voice(s)]); // a tired grunt, so it's heard as well as seen
+    }
     if (s.task !== "Scavenge") {
       if (s.target) s.lastTarget = s.target;
       s.target = null;
@@ -3068,17 +3339,33 @@ Small counts on the tabs show where something needs a look.
   function conditionChips(s) {
     var list = [];
     if (shaken(s))
-      list.push(["Shaken", "Morale under " + SHAKEN.below + ": finds less and guards worse."]);
+      list.push([
+        "Shaken",
+        "Morale under " + SHAKEN.below + ": finds less and guards worse.",
+      ]);
     if (s.hunger >= UPKEEP.hungryAt)
-      list.push(["Hungry", "Hunger " + s.hunger + ": loses extra morale each dusk. At 80 they starve."]);
-    if (s.fatigue >= 60 && s.fatigue < TIRED)
+      list.push([
+        "Hungry",
+        "Hunger " +
+          s.hunger +
+          ": loses extra morale each dusk. At " +
+          B.survivors.starvingAt +
+          " they starve.",
+      ]);
+    if (s.fatigue >= B.survivors.wornOut && s.fatigue < B.survivors.tired)
       list.push(["Worn out", "Close to too tired to work. Rest soon."]);
     if (!list.length) return "";
     return (
       '<div class="conditions">' +
       list
         .map(function (c) {
-          return '<span class="chip warn" title="' + esc(c[1]) + '">' + c[0] + "</span>";
+          return (
+            '<span class="chip warn" title="' +
+            esc(c[1]) +
+            '">' +
+            c[0] +
+            "</span>"
+          );
         })
         .join("") +
       "</div>"
@@ -3136,10 +3423,15 @@ Small counts on the tabs show where something needs a look.
       "</span>" +
       LOCATIONS.map(mapPin).join("") +
       "</div>" +
-      '<p class="map-legend small muted"><span><span class="seen">✓</span> Explored</span>' +
-      '<span><span class="legend-unseen">Faded</span> Not explored yet</span>' +
-      "<span>🔒 Locked</span><span>⛔ Closed</span><span>▲ More dangerous</span><span>★ Extra supplies</span>" +
-      '<span><span class="pin-who">E</span> Survivor heading there</span></p>' +
+      // The key uses the same pins and colours as the map itself.
+      '<p class="map-legend small muted">' +
+      '<span><span class="loc">Place <span class="seen">✓</span></span> Explored</span>' +
+      '<span><span class="loc unseen">Place</span> Not explored yet</span>' +
+      '<span><span class="loc locked"><span aria-hidden="true">🔒</span> Place</span> Locked</span>' +
+      '<span><span class="loc closed"><span aria-hidden="true">⛔</span> Place</span> Closed</span>' +
+      '<span><span class="loc-flag bad">▲</span> More dangerous</span>' +
+      '<span><span class="loc-flag good">★</span> Extra supplies</span>' +
+      '<span><span class="pin-who" aria-hidden="true"></span> Survivor heading there</span></p>' +
       cityNews() +
       "</div>" +
       '<div class="card loc-detail" aria-live="polite">' +
@@ -3168,7 +3460,9 @@ Small counts on the tabs show where something needs a look.
         : "") +
       '<dl><dt>Danger</dt><dd><span class="danger-label">' +
       DANGER_LABELS[danger] +
-      (danger !== loc.danger ? " (usually " + DANGER_LABELS[loc.danger].toLowerCase() + ")" : "") +
+      (danger !== loc.danger
+        ? " (usually " + DANGER_LABELS[loc.danger].toLowerCase() + ")"
+        : "") +
       '</span> <span class="danger" aria-hidden="true">' +
       [1, 2, 3]
         .map(function (n) {
@@ -3186,7 +3480,7 @@ Small counts on the tabs show where something needs a look.
       " fatigue" +
       (loc.travel > 1
         ? ", away overnight, +" +
-          EXTRA_PER_TRIP_DAY * (loc.travel - 1) +
+          B.scavenging.extraPerTripDay * (loc.travel - 1) +
           " supplies"
         : "") +
       ")</span></dd>" +
@@ -3195,9 +3489,19 @@ Small counts on the tabs show where something needs a look.
       (loc.size > 0 ? ' <span class="muted">(a big site)</span>' : "") +
       (loc.size < 0 ? ' <span class="muted">(a small place)</span>' : "") +
       "</dd>" +
-      "<dt>Visits</dt><dd>" +
-      visits +
-      (visits ? ' <span class="muted">(less left each time)</span>' : "") +
+      "<dt>Meet survivors</dt><dd>" +
+      Math.round(peopleAt(loc) * 100) +
+      "% a trip" +
+      (freeBeds() > 0 ? "" : ' <span class="muted">(no free bed)</span>') +
+      "</dd>" +
+      "<dt>Supplies left</dt><dd>" +
+      (visits
+        ? "About " +
+          Math.round(leftAt(loc) * 100) +
+          '% <span class="muted">(' +
+          plural(visits, "visit") +
+          ")</span>"
+        : "Untouched") +
       "</dd></dl>" +
       (isLocked(loc)
         ? fenceControls()
@@ -3206,6 +3510,28 @@ Small counts on the tabs show where something needs a look.
           : sendControls(loc)) +
       "</div></div>";
     AT.showArt(p.querySelector(".loc-art"), loc.img || loc.id, "map");
+  }
+
+  // The chance a scavenger meets someone who wants to join, a trip (city
+  // events like a relief camp add to it).
+  function peopleAt(loc) {
+    return Math.min(
+      1,
+      cityAt(loc).reduce(function (p, c) {
+        return p + (c.people || 0);
+      }, loc.people || 0),
+    );
+  }
+  // The share of a fresh haul still there after earlier visits
+  // (scavenging.revisitLoss a visit, never below revisitFloor).
+  function leftAt(loc) {
+    var visits = state.explored.filter(function (id) {
+      return id === loc.id;
+    }).length;
+    return Math.max(
+      B.scavenging.revisitFloor,
+      1 - visits * B.scavenging.revisitLoss,
+    );
   }
 
   // One location button on the map, with markers for what's going on there.
@@ -3255,8 +3581,12 @@ Small counts on the tabs show where something needs a look.
       (isLocked(l) ? '<span aria-hidden="true">🔒</span> ' : "") +
       (closed ? '<span aria-hidden="true">⛔</span> ' : "") +
       l.name +
-      (riskier ? ' <span class="loc-flag bad" aria-hidden="true">▲</span>' : "") +
-      (extra ? ' <span class="loc-flag good" aria-hidden="true">★</span>' : "") +
+      (riskier
+        ? ' <span class="loc-flag bad" aria-hidden="true">▲</span>'
+        : "") +
+      (extra
+        ? ' <span class="loc-flag good" aria-hidden="true">★</span>'
+        : "") +
       (seen ? ' <span class="seen" aria-hidden="true">✓</span>' : "") +
       who
         .map(function (s) {
@@ -3310,7 +3640,7 @@ Small counts on the tabs show where something needs a look.
       alive()
         .map(function (s) {
           var going = s.task === "Scavenge" && s.target === loc.id;
-          var tired = s.fatigue >= TIRED;
+          var tired = s.fatigue >= B.survivors.tired;
           var why = s.away
             ? "Away at the " + findLoc(s.target).name
             : tired
@@ -3396,7 +3726,11 @@ Small counts on the tabs show where something needs a look.
               return l.district === d;
             })
               .map(function (l) {
-                var why = isLocked(l) ? " (locked)" : isClosed(l) ? " (closed)" : "";
+                var why = isLocked(l)
+                  ? " (locked)"
+                  : isClosed(l)
+                    ? " (closed)"
+                    : "";
                 return (
                   '<option value="' +
                   l.id +
@@ -3426,12 +3760,13 @@ Small counts on the tabs show where something needs a look.
 
   // #region [S36] Fence Controls
   // Materials it takes to cut through a locked location's fence: less with a
-  // Builder or Mechanic at the shelter (see CHECKPOINT_CUT).
+  // Builder or Mechanic at the shelter (balance.js [B8], scavenging.fenceCut).
   function fenceCost() {
     var handy = home().some(function (s) {
-      return CHECKPOINT_CUT.skills.indexOf(s.skill) !== -1;
+      return FENCE_SKILLS.indexOf(s.skill) !== -1;
     });
-    return handy ? CHECKPOINT_CUT.skilledCost : CHECKPOINT_CUT.cost;
+    var cut = B.scavenging.fenceCut;
+    return handy ? cut.skilledCost : cut.cost;
   }
   // What the location panel shows for a locked place: how to get in, and a
   // button to cut the fence (greyed out without enough materials).
@@ -3450,7 +3785,7 @@ Small counts on the tabs show where something needs a look.
       '" style="margin-top:.5rem">' +
       (short > 0
         ? "Need " + short + " more materials."
-        : cost === CHECKPOINT_CUT.skilledCost
+        : cost === B.scavenging.fenceCut.skilledCost
           ? "Someone here knows their way around tools."
           : "Someone handy with tools could do it for less.") +
       "</p>"
@@ -3487,7 +3822,10 @@ Small counts on the tabs show where something needs a look.
     }
     var chip = e.target.closest("[data-send]");
     if (chip && !chip.disabled) {
-      toggleSend(findSurvivor(chip.dataset.send), findLoc(state.selectedLocation));
+      toggleSend(
+        findSurvivor(chip.dataset.send),
+        findLoc(state.selectedLocation),
+      );
       renderAll();
       var again = $("panel-map").querySelector(
         '[data-send="' + chip.dataset.send + '"]',
@@ -3514,12 +3852,12 @@ Small counts on the tabs show where something needs a look.
   }
 
   // Share of the trader's value you must offer: the difficulty's markup,
-  // lowered by 25% if someone in the group is a Negotiator.
+  // lowered if someone in the group is a Negotiator, raised by a Splurger.
   function tradeNeed() {
     return (
       D.tradeMarkup *
-      (hasSkill("Negotiator") ? 0.75 : 1) *
-      (hasTrait("Splurger") ? TRAIT_FX.splurger : 1)
+      (hasSkill("Negotiator") ? 1 - SK.Negotiator.tradeDiscount : 1) *
+      (hasTrait("Splurger") ? TR.Splurger.tradeMarkup : 1)
     );
   }
 
@@ -3551,6 +3889,25 @@ Small counts on the tabs show where something needs a look.
     var need = Math.ceil(get * tradeNeed());
     var share = give + get === 0 ? 0 : Math.round((give / (give + get)) * 100);
 
+    // How good the deal is for the trader, for the bar's colour:
+    // deep red (won't take it), red (almost), green (accepts), deep green
+    // (a really good deal for them).
+    var deal = !get
+      ? ""
+      : give < need * B.trade.closeShare
+        ? "deal-no"
+        : give < need
+          ? "deal-close"
+          : give < need * B.trade.greatShare
+            ? "deal-yes"
+            : "deal-great";
+    var DEAL_LABELS = {
+      "deal-no": "Won't accept",
+      "deal-close": "Almost",
+      "deal-yes": "Accepts",
+      "deal-great": "A great deal for them",
+    };
+
     // Plain-language status of the offer.
     var msg,
       ok = false;
@@ -3578,9 +3935,11 @@ Small counts on the tabs show where something needs a look.
     }
 
     // One side of the trade: a row per resource with − and + steppers.
-    function column(side, title, haveLabel) {
+    function column(side, title, haveLabel, head) {
       return (
-        '<div class="card"><h3 class="eyebrow">' +
+        '<div class="card trade-side">' +
+        (head || "") +
+        '<h3 class="eyebrow">' +
         title +
         "</h3>" +
         '<div class="trade-row trade-head small muted"><span>Item</span><span>' +
@@ -3639,9 +3998,15 @@ Small counts on the tabs show where something needs a look.
         "</div>"
       );
     }
-    $("panel-trade").innerHTML =
-      '<div class="panel-head"><h2>Trade</h2></div>' +
-      '<div class="card trader"><img class="avatar portrait" src="assets/images/png/trader.png" alt=""><div><h3>' +
+    // Each side has a picture on top: your backpack over your stores, the
+    // trader over theirs.
+    var yourHead =
+      '<div class="trade-who"><img class="avatar portrait" src="assets/props/PNG/tool_backpack.png" alt=""><div><h3>Your stores</h3>' +
+      '<p class="small muted">What ' +
+      esc(state.shelter) +
+      " can spare.</p></div></div>";
+    var theirHead =
+      '<div class="trade-who trader"><img class="avatar portrait" src="assets/images/png/trader.png" alt=""><div><h3>' +
       esc(t.name) +
       "</h3>" +
       '<p class="small muted">' +
@@ -3653,10 +4018,12 @@ Small counts on the tabs show where something needs a look.
       (markupPct
         ? " · asks " + markupPct + "% more than things are worth"
         : "") +
-      "</p></div></div>" +
+      "</p></div></div>";
+    $("panel-trade").innerHTML =
+      '<div class="panel-head"><h2>Trade</h2></div>' +
       '<div class="trade-cols">' +
-      column("give", "You give · from your stores", "You have") +
-      column("get", "You get · from " + esc(t.name), "Has") +
+      column("give", "You give", "You have", yourHead) +
+      column("get", "You get", "Has", theirHead) +
       "</div>" +
       '<div class="card trade-bar"><div>' +
       '<div class="labels"><span>Your offer · value ' +
@@ -3666,7 +4033,9 @@ Small counts on the tabs show where something needs a look.
       "'s offer · value " +
       pad(get) +
       "</span></div>" +
-      '<div class="balance" style="--accept:' +
+      '<div class="balance ' +
+      deal +
+      '" style="--accept:' +
       Math.round((tradeNeed() / (1 + tradeNeed())) * 100) +
       '%" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' +
       share +
@@ -3676,6 +4045,13 @@ Small counts on the tabs show where something needs a look.
       '<p class="trade-msg ' +
       (ok ? "good" : get ? "bad" : "") +
       '" aria-live="polite">' +
+      (deal
+        ? '<span class="deal-tag ' +
+          deal +
+          '">' +
+          DEAL_LABELS[deal] +
+          "</span> "
+        : "") +
       msg +
       "</p></div>" +
       '<div class="choices"><button class="btn btn-quiet" type="button" id="trade-clear">Clear</button>' +
@@ -3683,7 +4059,11 @@ Small counts on the tabs show where something needs a look.
       (ok ? "" : " disabled") +
       ">Propose trade</button></div></div>";
     // Each trader has their own portrait (trader_<id>.png); trader.png if it's missing.
-    AT.showArt($("panel-trade").querySelector(".card.trader .avatar"), "trader_" + t.id, "trader");
+    AT.showArt(
+      $("panel-trade").querySelector(".trade-who.trader .avatar"),
+      "trader_" + t.id,
+      "trader",
+    );
   }
   // Trade clicks: the steppers, Clear, and Propose trade.
   $("panel-trade").addEventListener("click", function (e) {
@@ -3932,7 +4312,10 @@ Small counts on the tabs show where something needs a look.
   // End day checks the plan first. If anything won't work, it lists the
   // problems and lets the player go back or end the day anyway.
   $("end-day").addEventListener("click", function () {
-    var problems = planWarnings();
+    // Heads-ups (soft warnings) don't stop the day.
+    var problems = planWarnings().filter(function (w) {
+      return !w.soft;
+    });
     if (!problems.length) {
       endDay();
       return;
@@ -3964,8 +4347,7 @@ Small counts on the tabs show where something needs a look.
     var duskMark = state.log.length;
     beginReport();
     // This is dusk where the results come in.
-    // Skill and trait effects are in the comments in common.js; the numbers
-    // for the newer ones are in TRAIT_FX.
+    // What each skill and trait does, with its numbers, is in balance.js [B5] and [B6].
     var scavenged = false; // true if anyone came home tonight (some events need it)
     state.cameBack = []; // where tonight's scavengers came home from (for needsFrom)
     var scavengers = alive().filter(function (s) {
@@ -3989,7 +4371,7 @@ Small counts on the tabs show where something needs a look.
           return;
         }
       } else {
-        if (s.fatigue >= TIRED) {
+        if (s.fatigue >= B.survivors.tired) {
           note(s, "Too tired to scavenge", "bad", "stayed home");
           addLog(
             "exploring",
@@ -4001,10 +4383,18 @@ Small counts on the tabs show where something needs a look.
         }
         // A city event closed the place since it was picked.
         if (!canVisit(loc)) {
-          note(s, "Couldn't get through", "bad", "the " + loc.name + " is closed");
+          note(
+            s,
+            "Couldn't get through",
+            "bad",
+            "the " + loc.name + " is closed",
+          );
           addLog(
             "exploring",
-            s.name + " couldn't get through to the " + loc.name + " and came back.",
+            s.name +
+              " couldn't get through to the " +
+              loc.name +
+              " and came back.",
             "",
             true,
           );
@@ -4013,8 +4403,7 @@ Small counts on the tabs show where something needs a look.
         // Setting out on a long trip: away from tonight until dusk on the last day.
         if (loc.travel > 1) {
           s.away = loc.travel - 1;
-          var back =
-            s.away === 1 ? "tomorrow" : "in " + plural(s.away, "day");
+          var back = s.away === 1 ? "tomorrow" : "in " + plural(s.away, "day");
           note(s, "Set out", "", "for the " + loc.name + ", back " + back);
           addLog(
             "exploring",
@@ -4032,7 +4421,11 @@ Small counts on the tabs show where something needs a look.
       }
       // Some days a scavenger finds a bottle and doesn't make it back until
       // tomorrow. They bring the haul home then.
-      if (s.trait === "Alcoholic" && !s.lingered && rng() < TRAIT_FX.drinker.chance) {
+      if (
+        s.trait === "Alcoholic" &&
+        !s.lingered &&
+        rng() < TR.Alcoholic.chance
+      ) {
         s.lingered = true;
         s.away = 1;
         note(s, "Didn't come back", "bad", "still at the " + loc.name);
@@ -4050,41 +4443,49 @@ Small counts on the tabs show where something needs a look.
       var events = cityAt(loc);
       // Riskier places hold more, bigger places more again, and longer trips
       // bring back more, but every trip wears survivors out.
-      var found =
-        randInt(1, 4) +
-        (loc.danger - 1) +
-        (loc.size || 0) +
-        EXTRA_PER_TRIP_DAY * (loc.travel - 1);
+      var SC = B.scavenging;
+      var haulRoll = function () {
+        return (
+          rollPair(SC.roll) + SC.perDanger * (loc.danger - 1) + (loc.size || 0)
+        );
+      };
+      var found = haulRoll() + SC.extraPerTripDay * (loc.travel - 1);
+      // Lucky rolls again (traits.Lucky.rolls in all) and keeps the best.
       if (s.trait === "Lucky")
-        found = Math.max(found, randInt(1, 4) + (loc.danger - 1) + (loc.size || 0));
-      if (s.skill === "Scavenger") found += 2;
-      if (s.trait === "Loner" && scavengers.length === 1) found += 1;
+        for (var r = 1; r < TR.Lucky.rolls; r++)
+          found = Math.max(found, haulRoll());
+      if (s.skill === "Scavenger") found += SK.Scavenger.find;
+      if (s.trait === "Loner" && scavengers.length === 1)
+        found += TR.Loner.find;
       if (
         s.trait === "Extrovert" &&
         scavengers.some(function (o) {
           return o !== s && o.target === s.target;
         })
       )
-        found += TRAIT_FX.extrovert;
-      if (s.trait === "Clumsy") found -= 1;
+        found += TR.Extrovert.find;
+      if (s.trait === "Clumsy") found += TR.Clumsy.find;
       if (shaken(s)) found -= SHAKEN.find;
       // City events: looters, rival crews and so on leave less behind.
       events.forEach(function (c) {
         if (c.yield) found *= c.yield;
       });
       found = Math.max(0, Math.round(found * D.yield));
-      // Each visit to the same place leaves less behind (down to half).
+      // Each visit to the same place leaves less behind (down to revisitFloor).
       var visits = state.explored.filter(function (id) {
         return id === loc.id;
       }).length;
-      found = Math.round(found * Math.max(0.5, 1 - visits * 0.1));
+      found = Math.round(
+        found * Math.max(SC.revisitFloor, 1 - visits * SC.revisitLoss),
+      );
       var haul = {};
       for (var i = 0; i < found; i++) {
         var kind = loc.loot[Math.floor(rng() * loc.loot.length)];
         haul[kind] = (haul[kind] || 0) + 1;
       }
-      if (s.skill === "Hunter") haul.food = (haul.food || 0) + 2;
-      if (s.trait === "Hoarder") haul.materials = (haul.materials || 0) + 1;
+      if (s.skill === "Hunter") haul.food = (haul.food || 0) + SK.Hunter.food;
+      if (s.trait === "Hoarder")
+        haul.materials = (haul.materials || 0) + TR.Hoarder.materials;
       // City events can leave extra supplies (an airdrop, a relief truck...).
       events.forEach(function (c) {
         Object.keys(c.extra || {}).forEach(function (k) {
@@ -4122,7 +4523,7 @@ Small counts on the tabs show where something needs a look.
       if (rng() < D.scavRisk * danger) {
         hurt(
           s,
-          10 * danger,
+          SC.injuryPerDanger * danger,
           "exploring",
           "was attacked at the " + loc.name,
         );
@@ -4206,9 +4607,19 @@ Small counts on the tabs show where something needs a look.
 
     // Each survivor at the shelter does their task.
     home().forEach(function (s) {
-      if (s.task === "Build" && s.skill === "Mechanic" && s.fatigue < TIRED) {
+      if (
+        s.task === "Build" &&
+        s.skill === "Mechanic" &&
+        s.fatigue < B.survivors.tired
+      ) {
         changeSupply("materials", salvageAmount());
-        note(s, "+" + salvageAmount() + " materials", "good", "salvaged", "materials");
+        note(
+          s,
+          "+" + salvageAmount() + " materials",
+          "good",
+          "salvaged",
+          "materials",
+        );
         addLog(
           "base",
           s.name + " salvaged " + salvageAmount() + " materials.",
@@ -4220,10 +4631,13 @@ Small counts on the tabs show where something needs a look.
         // Everyone mends a little with rest; an infirmary helps a lot more,
         // and Quick healers mend faster still.
         var mend =
-          (s.trait === "Quick healer" ? 10 : 0) + bonus("restHeal");
+          (s.trait === "Quick healer" ? TR["Quick healer"].restHeal : 0) +
+          bonus("restHeal");
         if (mend) {
           heal(s, mend);
-          var where = builtCount(facility("infirmary")) ? " in the infirmary" : "";
+          var where = builtCount(facility("infirmary"))
+            ? " in the infirmary"
+            : "";
           note(s, "+" + mend + " health", "good", "rested" + where);
           addLog(
             "base",
@@ -4251,7 +4665,7 @@ Small counts on the tabs show where something needs a look.
             );
             return;
           }
-          if (meds) changeSupply("medicine", -1);
+          if (meds) changeSupply("medicine", -B.tasks.medicinePerTreatment);
           heal(p, amount);
           if (!cued("healing")) cue("healing", 2000);
           note(p, "+" + amount + " health", "good", "treated by " + s.name);
@@ -4270,7 +4684,7 @@ Small counts on the tabs show where something needs a look.
         tire(s, -bonus("rest"));
         changeMorale(s, bonus("restMorale"));
       } else if (s.task !== "Scavenge") {
-        tire(s, workFatigue(s, 10));
+        tire(s, workFatigue(s, B.tasks.workFatigue));
       }
     });
 
@@ -4297,10 +4711,17 @@ Small counts on the tabs show where something needs a look.
     // Big stockpiles of food go off unless there's somewhere cool to keep them.
     var spoiled = bonus("keepFood")
       ? 0
-      : Math.floor(Math.max(0, state.resources.food - SPOIL.above) * SPOIL.rate);
+      : Math.floor(
+          Math.max(0, state.resources.food - B.tasks.spoil.above) *
+            B.tasks.spoil.rate,
+        );
     if (spoiled) {
       changeSupply("food", -spoiled);
-      addLog("base", plural(spoiled, "food") + " spoiled in the stores.", "bad");
+      addLog(
+        "base",
+        plural(spoiled, "food") + " spoiled in the stores.",
+        "bad",
+      );
     }
 
     // Going short on food builds hunger; going short on water hurts right away.
@@ -4310,7 +4731,8 @@ Small counts on the tabs show where something needs a look.
     var shortFood = needFood - eaten;
     var shortWater = needWater - drunk;
     var foodShare = needFood ? shortFood / needFood : 0; // 0 = everyone ate, 1 = nobody did
-    var thirst = shortWater > 0 ? Math.ceil((D.starveDmg * shortWater) / needWater) : 0;
+    var thirst =
+      shortWater > 0 ? Math.ceil((D.starveDmg * shortWater) / needWater) : 0;
     if (shortFood > 0) {
       report.short.food = shortFood;
       addLog("base", "There was not enough food for everyone.", "bad", true);
@@ -4319,18 +4741,39 @@ Small counts on the tabs show where something needs a look.
       report.short.water = shortWater;
       addLog("base", "There was not enough water for everyone.", "bad", true);
     }
+    // A hot meal: anyone on Cook lifts everyone's morale, as long as there
+    // was food for everyone (tasks.cookMorale). One cook is enough.
+    var cooks = home().filter(function (s) {
+      return s.task === "Cook";
+    });
+    if (cooks.length && eaten > 0 && shortFood <= 0) {
+      home().forEach(function (s) {
+        changeMorale(s, B.tasks.cookMorale);
+      });
+      cue("stove", 2000);
+      addLog(
+        "base",
+        cooks[0].name +
+          " cooked a hot meal. Everyone +" +
+          B.tasks.cookMorale +
+          " morale.",
+        "good",
+      );
+    }
     home().forEach(function (s) {
-      // Fed: hunger drops by UPKEEP.fed. Nothing to eat: +25. Short rations land in between.
+      // Fed: hunger drops by survivors.fed. Nothing to eat: + survivors.unfed.
+      // Short rations land in between.
+      var SV = B.survivors;
       s.hunger = Math.max(
         0,
         Math.min(
           100,
-          s.hunger + Math.round(-UPKEEP.fed + (25 + UPKEEP.fed) * foodShare),
+          s.hunger + Math.round(-SV.fed + (SV.unfed + SV.fed) * foodShare),
         ),
       );
-      if (shortFood > 0) changeMorale(s, -5);
+      if (shortFood > 0) changeMorale(s, -SV.shortMorale);
       if (thirst) hurt(s, thirst, "base", "is dehydrated");
-      if (s.alive && s.hunger >= 80)
+      if (s.alive && s.hunger >= SV.starvingAt)
         hurt(s, D.starveDmg, "base", "is starving");
     });
 
@@ -4341,14 +4784,15 @@ Small counts on the tabs show where something needs a look.
         bonus("dailyMorale") -
         UPKEEP.morale -
         (s.hunger >= UPKEEP.hungryAt ? UPKEEP.hungryMorale : 0) -
-        (s.health < 60 ? UPKEEP.hurtMorale : 0);
+        (s.health < B.survivors.injuredBelow ? UPKEEP.hurtMorale : 0);
       var before = s.morale;
       changeMorale(s, lift);
       if (s.alive && before >= SHAKEN.below && shaken(s)) {
         note(s, "Shaken", "bad", "morale under " + SHAKEN.below);
         addLog(
           "base",
-          s.name + " is shaken. They'll find less and guard worse until morale recovers.",
+          s.name +
+            " is shaken. They'll find less and guard worse until morale recovers.",
           "bad",
           true,
         );
@@ -4366,8 +4810,13 @@ Small counts on the tabs show where something needs a look.
           return b.morale < a.morale ? b : a;
         });
         if (low.morale < 100) {
-          changeMorale(low, TRAIT_FX.motivational);
-          note(low, "+" + TRAIT_FX.motivational + " morale", "good", "a talk with " + s.name);
+          changeMorale(low, TR.Motivational.morale);
+          note(
+            low,
+            "+" + TR.Motivational.morale + " morale",
+            "good",
+            "a talk with " + s.name,
+          );
           addLog(
             "base",
             s.name + " sat up late talking with " + low.name + ".",
@@ -4375,10 +4824,19 @@ Small counts on the tabs show where something needs a look.
           );
         }
       }
-      if (s.trait === "Argumentative" && others.length && rng() < TRAIT_FX.argue.chance) {
+      if (
+        s.trait === "Argumentative" &&
+        others.length &&
+        rng() < TR.Argumentative.chance
+      ) {
         var target = others[Math.floor(rng() * others.length)];
-        changeMorale(target, -TRAIT_FX.argue.morale);
-        note(target, "−" + TRAIT_FX.argue.morale + " morale", "bad", "a row with " + s.name);
+        changeMorale(target, -TR.Argumentative.morale);
+        note(
+          target,
+          "−" + TR.Argumentative.morale + " morale",
+          "bad",
+          "a row with " + s.name,
+        );
         addLog(
           "base",
           s.name + " and " + target.name + " got into a shouting match.",
@@ -4386,9 +4844,9 @@ Small counts on the tabs show where something needs a look.
           true,
         );
       }
-      if (s.trait === "Forgetful" && rng() < TRAIT_FX.forget.chance) {
+      if (s.trait === "Forgetful" && rng() < TR.Forgetful.chance) {
         var lost = {};
-        for (var n = 0; n < TRAIT_FX.forget.lose; n++) {
+        for (var n = 0; n < TR.Forgetful.lose; n++) {
           var pool = Object.keys(state.resources).filter(function (k) {
             return state.resources[k] - (lost[k] || 0) > 0;
           });
@@ -4479,9 +4937,7 @@ Small counts on the tabs show where something needs a look.
     // Only the story types out (at the Text speed setting; click it to skip).
     // Numbers and everything else show straight away.
     var story = $("report-body").querySelector(".rp-story-text");
-    skipTyping = story
-      ? AT.typeText(story, report.story.text)
-      : function () {};
+    skipTyping = story ? AT.typeText(story, report.story.text) : function () {};
     // Paper for the report, with everything cued since the last one stacked on top.
     sceneSounds(["turnPage"].concat(cues));
     cues = [];
@@ -4749,7 +5205,9 @@ when it has something to say:
   function reportRaid() {
     var r = report.raid;
     if (!r) return "";
-    var share = r.threat ? Math.min(100, Math.round((r.def / r.threat) * 100)) : 100;
+    var share = r.threat
+      ? Math.min(100, Math.round((r.def / r.threat) * 100))
+      : 100;
     var p = r.parts;
     var ammoWhy = !p.ammo
       ? r.ammoIdle
@@ -4758,7 +5216,11 @@ when it has something to say:
       : "Guards fired " + plural(r.shots, "round");
     var why = [
       ["Walls", p.walls, r.walls || "Not built yet"],
-      ["Guards", p.guards, r.guards.length ? r.guards.join(", ") : "No one on guard"],
+      [
+        "Guards",
+        p.guards,
+        r.guards.length ? r.guards.join(", ") : "No one on guard",
+      ],
       ["Ammo", p.ammo, ammoWhy],
     ]
       .map(function (w) {
@@ -4775,13 +5237,16 @@ when it has something to say:
         );
       })
       .join("");
-    var result = (r.cougher ? r.cougher + "'s coughing drew more of them. " : "") +
+    var result =
+      (r.cougher ? r.cougher + "'s coughing drew more of them. " : "") +
       (r.held
-      ? "Held by " + (r.def - r.threat) + ". The horde dispersed."
-      : "Short by " +
-        (r.threat - r.def) +
-        "." +
-        (r.hurt.length ? " " + nameList(r.hurt) + " got caught in the breach." : ""));
+        ? "Held by " + (r.def - r.threat) + ". The horde dispersed."
+        : "Short by " +
+          (r.threat - r.def) +
+          "." +
+          (r.hurt.length
+            ? " " + nameList(r.hurt) + " got caught in the breach."
+            : ""));
     if (r.wallsDown)
       result += " The " + r.wallsDown + " was damaged and needs repairing.";
     return rpSection(
@@ -4872,7 +5337,8 @@ when it has something to say:
       })
       .map(function (s) {
         var pills = (r.notes[s.id] || []).slice();
-        if (dusk && s.alive && !s.away && s.task === "Guard") pills.push(guardPill(s));
+        if (dusk && s.alive && !s.away && s.task === "Guard")
+          pills.push(guardPill(s));
         return (
           '<li class="rp-person' +
           (s.alive ? "" : " gone") +
@@ -4920,7 +5386,8 @@ when it has something to say:
   }
   // At dusk, a guard's row says what they'll add tonight.
   function guardPill(s) {
-    if (s.fatigue >= TIRED) return { text: "Too tired to guard", tone: "bad" };
+    if (s.fatigue >= B.survivors.tired)
+      return { text: "Too tired to guard", tone: "bad" };
     if (s.trait === "Coward") return { text: "Adds no defense", why: "hid" };
     return { text: "+" + guardPower(s) + " defense", why: "tonight" };
   }
@@ -4992,8 +5459,7 @@ when it has something to say:
           "Defense " +
           odds.def +
           " vs a horde of " +
-          (odds.exact ? "" : "about ") +
-          odds.threat +
+          (odds.exact ? odds.threat : hordeRange()) +
           ". " +
           odds.label +
           ".",
@@ -5020,7 +5486,11 @@ when it has something to say:
       planWarnings()
         .slice(0, 3)
         .forEach(function (w) {
-          lines.push({ label: "Today", tone: "bad", text: w.text });
+          lines.push({
+            label: "Today",
+            tone: w.soft ? "info" : "bad",
+            text: w.text,
+          });
         });
     }
     if (!lines.length) return "";
@@ -5059,7 +5529,8 @@ when it has something to say:
       f.upgrades.some(function (u) {
         return u.gives[k] && upgradeState(u).status === "open";
       });
-    if (more) ways.push((builtCount(f) ? "add to the " : "build the ") + f.name);
+    if (more)
+      ways.push((builtCount(f) ? "add to the " : "build the ") + f.name);
     if (traderHere()) ways.push("trade with " + state.trader.name);
     if (!ways.length) return "";
     // "Scavenge the Farm or Supermarket, or build the Water supply."
@@ -5125,25 +5596,51 @@ when it has something to say:
         (!ev.needsLocked || isLocked(findLoc(ev.needsLocked))) &&
         (!ev.needsFlag || Boolean(state.flags[ev.needsFlag])) &&
         (!ev.needsHurt || someoneHurt()) &&
-        (!ev.needsBuilt || builtCount(facility(ev.needsBuilt) || { built: [] }) > 0) &&
+        (!ev.needsBuilt ||
+          builtCount(facility(ev.needsBuilt) || { built: [] }) > 0) &&
         (!ev.blockedBy || !isBuilt(ev.blockedBy)) &&
         (!ev.needsFrom || cameFrom(ev.needsFrom)) &&
         (!ev.minDay || state.day >= ev.minDay) &&
         (!ev.once || state.seenEvents.indexOf(ev.title) === -1)
       );
     });
+    if (!pool.length) return null;
+    // Events the story needs (`dueBy` in story.js) come first once they're overdue.
+    var due = pool.filter(function (ev) {
+      return (
+        ev.dueBy &&
+        state.seenEvents.indexOf(ev.title) === -1 &&
+        state.day >= Math.ceil(ev.dueBy * state.length)
+      );
+    });
+    if (due.length) return due[0];
     var fresh = pool.filter(function (ev) {
       return ev.title !== state.lastEvent;
     });
     if (fresh.length) pool = fresh;
-    if (!pool.length) return null;
+    // The marble bag: an event doesn't come back until every other event that
+    // fits has had its turn. Then the bag is emptied and they all go back in.
+    // Events marked `repeats` in story.js skip the bag.
+    var bag = state.eventBag[time] || (state.eventBag[time] = []);
+    var unplayed = pool.filter(function (ev) {
+      return ev.repeats || bag.indexOf(ev.title) === -1;
+    });
+    if (!unplayed.length) {
+      bag.length = 0;
+      unplayed = pool;
+    }
+    pool = unplayed;
     // City events can make tagged events more likely (`boost` in story.js):
     // city-wide ones always, others after a trip to where they're happening.
     var weights = pool.map(function (ev) {
       return (ev.tags || []).reduce(function (w, tag) {
         state.city.forEach(function (c) {
           var ce = cityEvent(c.id);
-          if (ce.boost && ce.boost[tag] && (ce.where === "city" || cameFrom(ce.where)))
+          if (
+            ce.boost &&
+            ce.boost[tag] &&
+            (ce.where === "city" || cameFrom(ce.where))
+          )
             w *= ce.boost[tag];
         });
         return w;
@@ -5221,6 +5718,13 @@ when it has something to say:
     state.lastEvent = ev.title;
     if (state.seenEvents.indexOf(ev.title) === -1)
       state.seenEvents.push(ev.title);
+    // Into the bag, so it waits until the others have had a turn (see pickEvent).
+    if (!ev.checkpoint) {
+      var bag =
+        state.eventBag[state.eventTime] ||
+        (state.eventBag[state.eventTime] = []);
+      if (bag.indexOf(ev.title) === -1) bag.push(ev.title);
+    }
     state.eventsFaced += 1;
     $("event-kicker").textContent = ev.checkpoint
       ? "Day " + pad(state.day) + " · Story"
@@ -5295,6 +5799,7 @@ when it has something to say:
     report.story = { title: storyText(ev.title), text: storyText(c.outcome) };
     addLog("event", storyText(ev.title + ": " + c.outcome), "", true);
     if (c.flag) state.flags[c.flag] = true; // remembered for later checkpoints and the ending
+    if (c.flag === "signal") state.signalNote = c.outcome; // shown on the Base tab's convoy card
     if (who && c.fatigue) tire(who, c.fatigue);
     if (who && c.injure) hurt(who, c.injure, "event", "was hurt");
     // Losses take as much as there is.
@@ -5305,14 +5810,9 @@ when it has something to say:
         changeSupply(k, -lost[k]);
       });
       report.effects = report.effects.concat(supplyPills(lost, "bad"));
-      addLog(
-        "event",
-        "Lost " + AT.minigames.describe(lost) + ".",
-        "bad",
-        true,
-      );
+      addLog("event", "Lost " + AT.minigames.describe(lost) + ".", "bad", true);
     }
-    if (c.reward) gainSupplies("event", REWARDS[c.reward]());
+    if (c.reward) gainSupplies("event", rollReward(c.reward));
     if (c.gain) gainSupplies("event", rollGain(c.gain));
     if (c.healOne) treatWorstHurt(c.healOne, "event");
     if (c.fatigueAll) tireEveryone(c.fatigueAll, "event");
@@ -5342,10 +5842,10 @@ when it has something to say:
     }
   }
 
-  // True while anyone at the shelter is injured (under 60 health).
+  // True while anyone at the shelter is injured (under survivors.injuredBelow health).
   function someoneHurt() {
     return home().some(function (s) {
-      return s.health < 60;
+      return s.health < B.survivors.injuredBelow;
     });
   }
 
@@ -5361,7 +5861,12 @@ when it has something to say:
     if (!patient) return;
     var before = patient.health;
     heal(patient, amount);
-    note(patient, "+" + (patient.health - before) + " health", "good", "treated");
+    note(
+      patient,
+      "+" + (patient.health - before) + " health",
+      "good",
+      "treated",
+    );
     addLog(
       cat,
       patient.name +
@@ -5423,17 +5928,33 @@ when it has something to say:
   // Opens the mini-game overlay and creates the game controller.
   function openMinigame(name) {
     $("mg-title").textContent = name === "Tally" ? "Carve the tally" : name;
-    $("mg-instructions").textContent = MINIGAMES[name];
+    $("mg-instructions").innerHTML =
+      esc(MINIGAMES[name]) +
+      '<span class="mg-stakes">' +
+      esc(minigameStakes(name)) +
+      "</span>";
     $("minigame-dialog").dataset.game = name;
+    $("minigame-dialog").classList.remove("playing");
     $("mg-start").textContent = "Start";
     $("mg-start").disabled = false;
     $("mg-auto").disabled = false;
+    // Skip is offered up front, with the odds, so nobody feels made to play.
+    $("mg-auto").textContent =
+      "Skip (" + Math.round(D.autoWin * 100) + "% to win)";
+    $("mg-skip-note").textContent =
+      "Not in the mood? Skip rolls the result instead. " +
+      (name === "Tally"
+        ? "Options can skip the dawn tally every day."
+        : "Options can skip every mini-game.");
     mg = { name: name, phase: "ready", result: null };
     mg.game = AT.minigames.create(name, {
       arena: $("mg-canvas"),
       rng: rng,
       difficulty: state.difficulty,
-      wallLevel: Math.min(3, Math.round(bonus("defense") / 10)),
+      wallLevel: Math.min(
+        B.minigames.defense.maxLevel,
+        Math.round(bonus("defense") / B.minigames.defense.defensePerLevel),
+      ),
       marks: state.tallies, // Tally: the marks already on the wall
       length: state.length,
       ui: mgUi,
@@ -5456,8 +5977,13 @@ when it has something to say:
     if (mg.phase === "ready") {
       mg.phase = "playing";
       $("mg-start").disabled = true;
+      $("mg-start").textContent = "Playing…";
       $("mg-auto").disabled = true;
-      mg.game.start();
+      countdown(function () {
+        if (!mg || mg.phase !== "playing") return;
+        $("minigame-dialog").classList.add("playing");
+        mg.game.start();
+      });
     } else if (mg.phase === "done") {
       var r = mg.result;
       mg = null;
@@ -5470,6 +5996,37 @@ when it has something to say:
       );
     }
   });
+  // 3, 2, 1, Go! over the arena, so it's clear when the game has started.
+  // Reduce motion shortens it to a single "Go!".
+  function countdown(done) {
+    var arena = $("mg-canvas");
+    arena.classList.add("counting");
+    var box = document.createElement("div");
+    box.className = "mg-countdown";
+    box.setAttribute("aria-live", "assertive");
+    arena.appendChild(box);
+    var steps = AT.load().reduceMotion ? ["Go!"] : ["3", "2", "1", "Go!"];
+    var i = 0;
+    (function next() {
+      if (i >= steps.length) {
+        box.remove();
+        return;
+      }
+      box.textContent = steps[i];
+      box.classList.toggle("go", steps[i] === "Go!");
+      box.classList.remove("pop");
+      void box.offsetWidth; // restart the pop animation
+      box.classList.add("pop");
+      if (steps[i] === "Go!") {
+        AT.playSound("click");
+        arena.classList.remove("counting");
+        done();
+      } else AT.playSound("tally", { volume: 0.4 });
+      i += 1;
+      setTimeout(next, steps[i - 1] === "Go!" ? 500 : 550);
+    })();
+  }
+
   // Auto-resolve skips the mini-game and rolls the result instead.
   $("mg-auto").addEventListener("click", function () {
     if (!mg || mg.phase !== "ready") return;
@@ -5535,7 +6092,7 @@ when it has something to say:
     state.currentChoice = null;
     if (won && choice && choice.win) {
       var ev = state.currentEvent || {};
-      if (choice.win.reward) gainSupplies(cat, REWARDS[choice.win.reward]());
+      if (choice.win.reward) gainSupplies(cat, rollReward(choice.win.reward));
       if (choice.win.gain) gainSupplies(cat, rollGain(choice.win.gain));
       if (choice.win.recruit) {
         recruit(
@@ -5561,7 +6118,7 @@ when it has something to say:
     if (!won) {
       // A loss injures one survivor at the shelter (Cowards are spared if
       // anyone else is around). Tough survivors take half damage inside hurt().
-      hurt(pickVictim(), 30, cat, "was injured");
+      hurt(pickVictim(), B.events.minigameLossDamage, cat, "was injured");
     }
     afterEvent();
   }
@@ -5569,12 +6126,12 @@ when it has something to say:
 
   // #region [S46] Night Raid
   // The horde grows over the run. It starts at threatBase and reaches
-  // threatBase + threatPeak x HORDE_LENGTH_SCALE on the last night, so longer
-  // runs end against a bigger horde.
+  // threatBase + threatPeak x horde.lengthScale on the last night, so longer
+  // runs end against a bigger horde. A bigger group makes more noise too.
   function threatTonight() {
-    var scale =
-      HORDE_LENGTH_SCALE[state.length] || 1 + (state.length - 15) / 100;
-    var crowd = Math.max(0, home().length - 3) * HORDE_PER_SURVIVOR;
+    var H = B.horde;
+    var scale = H.lengthScale[state.length] || 1 + (state.length - 15) / 100;
+    var crowd = Math.max(0, home().length - H.crowdFrom) * H.perSurvivor;
     return Math.round(
       D.threatBase + D.threatPeak * scale * (state.day / state.length) + crowd,
     );
@@ -5591,37 +6148,44 @@ when it has something to say:
     var threat = hordeSize();
     // A coughing fit in the dark carries a long way.
     var cougher = home().filter(function (s) {
-      return s.trait === "Smoker" && rng() < TRAIT_FX.smoker.chance;
+      return s.trait === "Smoker" && rng() < TR.Smoker.chance;
     })[0];
     // Some nights are harder than others for anyone fighting their demons.
     home().forEach(function (s) {
-      if (s.trait === "Drug addict" && s.alive && rng() < TRAIT_FX.addict.chance)
+      if (
+        s.trait === "Drug addict" &&
+        s.alive &&
+        rng() < TR["Drug addict"].chance
+      )
         hurt(
           s,
-          randInt(TRAIT_FX.addict.damage[0], TRAIT_FX.addict.damage[1]),
+          rollPair(TR["Drug addict"].damage),
           "night",
           "had a rough night, shaking and sweating",
         );
     });
     if (cougher) {
-      threat += TRAIT_FX.smoker.horde;
+      threat += TR.Smoker.horde;
       addLog(
         "night",
-        cougher.name + " couldn't stop coughing, and more of the dead came to see.",
+        cougher.name +
+          " couldn't stop coughing, and more of the dead came to see.",
         "bad",
         true,
       );
     }
     var parts = defenseParts();
     var def = parts.total;
-    var shots = parts.ammo ? Math.min(state.resources.ammo, shooters()) : 0;
+    var shots = parts.ammo
+      ? Math.min(state.resources.ammo, shooters() * B.horde.ammoPerGuard)
+      : 0;
     // Who was on guard and what each added, for the raid section of the report.
     var guardNotes = home()
       .filter(function (s) {
         return s.task === "Guard";
       })
       .map(function (s) {
-        if (s.fatigue >= TIRED) return s.name + " was too tired";
+        if (s.fatigue >= B.survivors.tired) return s.name + " was too tired";
         if (s.trait === "Coward") return s.name + " hid";
         return s.name + " +" + guardPower(s);
       });
@@ -5652,7 +6216,8 @@ when it has something to say:
       cue("gunshot", 1500 + shot * 350);
     }
     home().forEach(function (s) {
-      if (s.task === "Guard") tire(s, workFatigue(s, GUARD_NIGHT_FATIGUE));
+      if (s.task === "Guard")
+        tire(s, workFatigue(s, B.tasks.guardNightFatigue));
     });
     if (def >= threat) {
       cue("horde", 1300);
@@ -5680,14 +6245,16 @@ when it has something to say:
       true,
     );
     // Bigger breaches catch more people. Anyone away on a trip is safe.
-    var hits = breach >= 15 ? 2 : 1;
+    var BR = B.horde.breach;
+    var hits = breach >= BR.twoHurtAt ? 2 : 1;
     for (var i = 0; i < hits && home().length; i++) {
       var list = home();
       var v = list[Math.floor(rng() * list.length)];
-      if (report.raid.hurt.indexOf(v.name) === -1) report.raid.hurt.push(v.name);
+      if (report.raid.hurt.indexOf(v.name) === -1)
+        report.raid.hurt.push(v.name);
       hurt(
         v,
-        Math.min(50, 5 + breach * 2),
+        Math.min(BR.max, BR.base + breach * BR.perPoint),
         "night",
         "was caught in the breach",
       );
@@ -5698,7 +6265,7 @@ when it has something to say:
     var standing = walls.built.filter(function (id) {
       return !isDamaged(id) && UPGRADES[id].gives.defense;
     });
-    if (breach >= 15 && standing.length > 1 && !bonus("sturdy")) {
+    if (breach >= BR.wallDamageAt && standing.length > 1 && !bonus("sturdy")) {
       var hit = UPGRADES[standing[standing.length - 1]];
       walls.damaged.push(hit.id);
       cue("woodSplitting", 2800);
@@ -5711,6 +6278,40 @@ when it has something to say:
       );
     }
   }
+  // What the night looked like, for the ?debug playtest log (js/debug.js).
+  function nightSnapshot() {
+    var r = report.raid || {};
+    var parts = r.parts || {};
+    var group = alive();
+    var avg = function (key) {
+      if (!group.length) return 0;
+      var sum = group.reduce(function (t, s) {
+        return t + s[key];
+      }, 0);
+      return Math.round(sum / group.length);
+    };
+    return {
+      day: state.day,
+      horde: r.threat || 0,
+      defense: r.def || 0,
+      walls: parts.walls || 0,
+      guards: parts.guards || 0,
+      ammoDefense: parts.ammo || 0,
+      held: Boolean(r.held),
+      breach: Math.max(0, (r.threat || 0) - (r.def || 0)),
+      food: state.resources.food,
+      water: state.resources.water,
+      materials: state.resources.materials,
+      medicine: state.resources.medicine,
+      ammo: state.resources.ammo,
+      alive: group.length,
+      health: avg("health"),
+      morale: avg("morale"),
+      hunger: avg("hunger"),
+      fatigue: avg("fatigue"),
+      built: workingUpgrades().length,
+    };
+  }
   // #endregion [S46] Night Raid
 
   // #region [S47] Finish Night, Morning & Start Day
@@ -5719,6 +6320,8 @@ when it has something to say:
   function finishNight() {
     state.currentEvent = null;
     nightRaid();
+    // In ?debug mode, every night goes into the playtest log (js/debug.js).
+    if (AT.debugLog) AT.debugLog.night(nightSnapshot());
     var kicker = "Night " + pad(state.day) + " · Results";
 
     if (!alive().length) {
@@ -5760,16 +6363,17 @@ when it has something to say:
     state.day += 1;
     state.phase = "dawn";
     cue("rooster", 4000);
-    state.hordeRoll = randInt(-3, 3);
+    state.hordeRoll = randInt(-B.horde.roll, B.horde.roll);
     traderDawn();
     cityDawn();
     alive().forEach(function (s) {
       if (s.trait === "Optimist" && s.health < 100) {
-        heal(s, 5);
-        note(s, "+5 health", "good", "woke up hopeful");
+        var lift = TR.Optimist.morningHeal;
+        heal(s, lift);
+        note(s, "+" + lift + " health", "good", "woke up hopeful");
         addLog(
           "base",
-          s.name + " woke up hopeful (+5 health).",
+          s.name + " woke up hopeful (+" + lift + " health).",
           "good",
           true,
         );
@@ -5789,7 +6393,7 @@ when it has something to say:
     // Other mornings sometimes bring an event before the day starts.
     var morning =
       AT.STORY.checkpointFor(state.day, state.length) ||
-      (rng() < MORNING_EVENT_CHANCE ? pickEvent("morning") : null);
+      (rng() < B.events.morningChance ? pickEvent("morning") : null);
     showReport({
       kind: "dawn",
       kicker: "Dawn · Day " + pad(state.day),
@@ -5812,7 +6416,9 @@ when it has something to say:
     tallyNext = next;
     state.currentEvent = null;
     state.currentChoice = null;
-    if (AT.load().minigames === "auto") autoResolve("Tally");
+    // Options: "auto" skips every mini-game, "tally" only the dawn tally.
+    var setting = AT.load().minigames;
+    if (setting === "auto" || setting === "tally") autoResolve("Tally");
     else openMinigame("Tally");
   }
 
@@ -5880,10 +6486,50 @@ when it has something to say:
     });
   }
 
-  // The day begins: the player can plan again.
+  // The day begins: the player can plan again. What changed since yesterday
+  // morning shows on the resource tiles (renderHeader) and in a toast.
   function startDay() {
     state.phase = "day";
+    var before = state.dayStartRes || {};
+    state.dayDelta = {};
+    var parts = [];
+    RESOURCES.forEach(function (r) {
+      var d = state.resources[r.id] - (before[r.id] || 0);
+      if (d) {
+        state.dayDelta[r.id] = d;
+        parts.push((d > 0 ? "+" : "−") + Math.abs(d) + " " + r.id);
+      }
+    });
+    state.dayStartRes = Object.assign({}, state.resources);
+    // A new trader lights up the Trade tab (set before drawing, so the
+    // tab's "New" badge shows straight away).
+    var arrived = state.traderNew && traderHere();
+    state.traderNew = false;
+    if (arrived) $("tab-trade").classList.add("arrived");
     renderAll();
+    if (arrived) {
+      // ...with the shop bell and a toast.
+      var tr = state.trader;
+      AT.playSounds(["shopBell"].concat(tr.greet ? [[tr.greet, 700]] : []), {
+        channel: "action",
+      });
+      tr.greeted = true;
+      toast(
+        "A trader is here: " +
+          tr.name +
+          " (" +
+          tr.title.toLowerCase() +
+          "), staying " +
+          plural(tr.leaves, "day") +
+          ". See the Trade tab.",
+      );
+    } else if (parts.length)
+      toast("Since yesterday morning: " + parts.join(", ") + ".");
+    // The tiles pop once so the change is noticed.
+    var bar = $("resources");
+    bar.classList.remove("fresh");
+    void bar.offsetWidth;
+    bar.classList.add("fresh");
   }
   // #endregion [S47] Finish Night, Morning & Start Day
   // #endregion [S40] End Day to Dawn
@@ -5899,7 +6545,7 @@ when it has something to say:
         fate: s.alive ? "Alive" : "Lost on day " + pad(s.lostOn),
       };
     });
-    AT.handoff.setResult({
+    var result = {
       won: won,
       shelter: state.shelter,
       length: state.length,
@@ -5917,7 +6563,10 @@ when it has something to say:
       found: state.recruited,
       flags: state.flags, // picks the ending on end.html (js/story.js)
       group: group,
-    });
+    };
+    AT.handoff.setResult(result);
+    // In ?debug mode, the run goes into the playtest log (js/debug.js).
+    if (AT.debugLog) AT.debugLog.end(result, state);
     leaving = true;
     location.href = "end.html";
   }
@@ -5938,7 +6587,49 @@ when it has something to say:
     return document.querySelector("dialog[open]") !== null;
   }
 
-  // Opens the pause menu, with the day and shelter name under "Paused".
+  // ---------- Mute ----------
+  // The speaker button in the top bar (or the M key) flips the Sound setting
+  // from the Options page, so music, ambience and effects all stop together.
+  function renderMute() {
+    var on = AT.load().sound;
+    $("mute-btn").setAttribute("aria-pressed", String(!on));
+    $("mute-btn").title = on ? "Mute (M)" : "Unmute (M)";
+    $("mute-btn").querySelector(".visually-hidden").textContent = on
+      ? "Mute"
+      : "Unmute";
+    $("mute-icon").textContent = on ? "🔊" : "🔇";
+  }
+  function toggleMute() {
+    var s = AT.load();
+    s.sound = !s.sound;
+    AT.save(s);
+    if (!s.sound) {
+      ["scene", "action", "minigame", "searching", "ambienceExtras"].forEach(
+        function (ch) {
+          AT.stopChannel(ch);
+        },
+      );
+    }
+    renderMute();
+    toast(s.sound ? "Sound on." : "Sound off.");
+  }
+  $("mute-btn").addEventListener("click", toggleMute);
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "m" && e.key !== "M") return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var t = e.target;
+    if (
+      t &&
+      (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))
+    )
+      return;
+    toggleMute();
+  });
+  // Sound turned on or off on the Options page (opened from the menu in another tab).
+  window.addEventListener("storage", renderMute);
+  renderMute();
+
+  // Opens the menu, with the day and shelter name under the title.
   function openPause() {
     $("pause-sub").textContent =
       (state.phase === "night" ? "Night " : "Day ") +
@@ -5949,7 +6640,7 @@ when it has something to say:
       state.shelter;
     pauseDialog.showModal();
   }
-  // The Pause button and the Esc key open the pause menu.
+  // The Menu button and the Esc key open the menu (the run waits while it's open).
   $("pause-btn").addEventListener("click", openPause);
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape" && !anyDialogOpen()) {
@@ -6057,6 +6748,28 @@ when it has something to say:
         gameHeader.offsetHeight + "px",
       );
     }).observe(gameHeader);
+  }
+
+  // ?debug mode (js/debug.js): the debug panel can look at the run, change
+  // it, and redraw the screen after a balance change.
+  if (AT.debug) {
+    AT.debugHooks = {
+      state: state,
+      setup: setup,
+      renderAll: renderAll,
+      toast: toast,
+      heal: heal,
+      changeMorale: changeMorale,
+      threatTonight: threatTonight,
+      nightDefense: nightDefense,
+      data: {
+        FACILITIES: FACILITIES,
+        LOCATIONS: LOCATIONS,
+        TRADERS: TRADERS,
+        DISTRICTS: DISTRICTS,
+        REWARDS: Object.keys(REWARDS),
+      },
+    };
   }
 
   addLog("base", "The group settled into " + state.shelter + ".");

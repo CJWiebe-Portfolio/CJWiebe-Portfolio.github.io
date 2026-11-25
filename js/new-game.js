@@ -129,10 +129,11 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
       avatar: pick(AVATARS, used("avatar")), // each starting survivor looks different
     };
   }
-  // Rolls the whole starting group of 3.
+  // Rolls the whole starting group (its size is start.survivors in balance.js).
   function roll() {
     survivors = [];
-    for (var i = 0; i < 3; i++) survivors.push(randomSurvivor(survivors));
+    for (var i = 0; i < AT.BALANCE.start.survivors; i++)
+      survivors.push(randomSurvivor(survivors));
     render();
   }
   // Rolls one survivor again, keeping the other two.

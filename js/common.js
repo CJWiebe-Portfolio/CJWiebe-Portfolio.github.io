@@ -239,6 +239,8 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
   // Survivor skills and traits in a dictionary where names are attached to their effects
   // in the game. The new-game.js will randomly pick from these,
   // game.js applies them, and how-to-play.html also lists them.
+  // The comment after each one says what it does; the numbers it uses are in
+  // js/balance.js ([B5] skills, [B6] traits), so change them there.
   var SKILLS = {
     // Special
     // 10 - Positive Skills, these will have a positive effect on gameplay.
@@ -579,11 +581,35 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
     });
   }
 
+  // Weather sounds don't play over the music (playtest feedback): while any
+  // of these is playing, the music fades out, and it comes back when they
+  // stop. Add or remove names to change which sounds do this.
+  var MUSIC_YIELDS_TO = ["wind", "rain", "ambDayExtra"];
+  var musicYield = 0; // how many of those are playing right now
+  function yieldMusic(a) {
+    musicYield += 1;
+    if (music && !music.paused) {
+      fadeTo(music, 0, 600, function () {
+        if (musicYield > 0) music.pause();
+      });
+    }
+    var done = false;
+    function back() {
+      if (done) return;
+      done = true;
+      musicYield = Math.max(0, musicYield - 1);
+      if (!musicYield) syncMusic(load());
+    }
+    a.addEventListener("ended", back);
+    a.addEventListener("pause", back);
+  }
+
   // Applies the Sound and Volume settings, and starts the music if it's allowed.
   function syncMusic(s) {
     if (!music) return;
+    clearInterval(music.fadeTimer);
     music.volume = clamp((Number(s.volume) / 100) * groupLevel("music", s));
-    if (!s.sound) {
+    if (!s.sound || musicYield > 0) {
       music.pause();
       return;
     }
@@ -1037,6 +1063,8 @@ whole text straight away from a hidden copy, so nobody has to wait for it.
     freezing: A + "freezing.mp3", // Frost
     snowSteps: A + "walking_on_snow.mp3", // Frost
     // squelch: A + "squelch.mp3", // A bloated one (no squelch file in assets/audio yet)
+    // catMeow: A + "cat_meow.mp3", // the cat events (no file in assets/audio yet)
+    // catHiss: A + "cat_hiss.mp3", // "The cat won't stop hissing" (no file yet)
 
     // ---- Survivors (game.js picks Male or Female from the survivor's name) ----
     cough: [A + "male(cough).mp3", A + "female(cough).mp3"], // fever and infected wounds
@@ -1227,6 +1255,7 @@ whole text straight away from a hidden copy, so nobody has to wait for it.
       });
     }
     a.play().catch(function () {});
+    if (music && MUSIC_YIELDS_TO.indexOf(name) !== -1) yieldMusic(a);
     return a;
   }
 
