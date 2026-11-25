@@ -1,0 +1,907 @@
+/*
+=========================================================
+FILE: mobile.css  (DRAFT)
+PROJECT: Another Tally - A zombie survival game
+AUTHOR: Cygnus J. Wiebe
+DATE: December 2026
+COURSE: INFS 634 - McGill University
+=========================================================
+DESCRIPTION:
+Phone and touch-screen changes. Load it right after style.css:
+  <link rel="stylesheet" href="css/mobile.css" />
+
+Every rule sits inside a media query that a desktop browser (a mouse,
+and a window wider than 960px) never matches, so the desktop game looks
+and plays exactly as before. The one exception is at the very bottom:
+it hides the new m-* elements that js/mobile.js adds, which don't exist
+without that script.
+
+The queries used:
+  (max-width: 760px)  phone-sized windows (the same breakpoint style.css uses)
+  (max-width: 960px)  where style.css stacks the Today panel under the tabs
+  (hover: none) and (pointer: coarse)  any touch screen: phones and tablets
+  (orientation: landscape) and (max-height: 500px) and (pointer: coarse)
+                      a phone turned on its side
+
+Drafts marked "needs js/mobile.js" only switch on when that script puts
+its class on <html> (m-bottom-tabs, m-sheet, m-map-pan). Each one can be
+turned off in the DRAFTS list at the top of js/mobile.js.
+=========================================================
+TABLE OF CONTENTS
+Ctrl+F a tag such as "M5." to jump to that section.
+=========================================================
+  M1. Fixes ................ things that zoom the page out on phones
+  M2. Touch basics ......... sticky hover, tap sizes, input zoom, pull-to-refresh
+  M3. Compact top bar ...... one row of info, one row of resources
+  M4. Tabs ................. all five fit; or a bottom tab bar (needs js)
+  M5. Today sheet .......... the turn panel as a pull-up sheet (needs js)
+  M6. Base and Log ......... shorter facility pictures, narrower log tags
+  M7. Map .................. a bigger map you swipe around (needs js)
+  M8. Pop-ups .............. reports fit the real screen height
+  M9. Mini-games ........... lock pins fit, touch hints
+  M10. Phone on its side ... game screen and mini-games in landscape
+  M11. Other pages ......... New game, How to play, Credits
+  M12. Hidden by default ... the m-* elements outside their media queries
+*/
+
+/* #region M1. Fixes */
+/*
+===============================================================
+M1. FIXES
+===============================================================
+Anything wider than the screen makes a phone lay out the whole page
+wider than the screen. Fixed things (End day, every pop-up) are then
+placed against that wider page, so they sit off-centre and get cut off
+on the right.
+*/
+@media (max-width: 760px) {
+  /* The tab badges carry hidden text for screen readers, and
+     .visually-hidden is position: absolute. With no positioned parent it
+     escaped the scrolling tab strip, so once the Log tab had a badge
+     (after day 1) the page became about 440px wide. Anchoring it to its
+     own tab keeps it inside. */
+  .tab {
+    position: relative;
+  }
+
+  /* How to play: the grid column grew to fit its widest table and pushed
+     the page off the right edge. minmax(0, 1fr) keeps it to the screen. */
+  .htp {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Credits: a long web address with no spaces ran off the screen. */
+  .page {
+    overflow-wrap: break-word;
+  }
+}
+/* The smallest phones (320px): a table that still can't fit scrolls
+   sideways on its own instead of widening the page. */
+@media (max-width: 360px) {
+  .htp table {
+    display: block;
+    overflow-x: auto;
+  }
+}
+/* #endregion M1. Fixes */
+
+/* #region M2. Touch basics */
+/*
+===============================================================
+M2. TOUCH BASICS
+===============================================================
+For any touch screen, whatever its size.
+*/
+@media (hover: none) and (pointer: coarse) {
+  /* Phones on their side otherwise enlarge some text on their own. */
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  /* Pulling down at the top of the game reloads the page on phones, and a
+     reload ends the run. Only the game page is protected. */
+  html:has(#game),
+  html:has(#game) body {
+    overscroll-behavior-y: none;
+  }
+
+  /* No double-tap zoom and no grey flash on the things you tap a lot. */
+  .btn,
+  .tab,
+  .task-btn,
+  .stepper,
+  .filter,
+  .loc,
+  .who-chip,
+  .event-choice,
+  .choice,
+  .choice-card,
+  .link-btn,
+  .mg-canvas {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Mini-games: a long press shouldn't select text or open the
+     copy / look-up bubble in the middle of a game. */
+  .mg-canvas {
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  /* ---------- Sticky hover ----------
+     A touch screen keeps :hover on the last thing tapped until you tap
+     somewhere else, so End day stayed dark, cards stayed lifted, and a
+     zombie walking under your last tap lit up. Hover goes back to the
+     resting look; :active gives the feedback instead. */
+  .btn:where(:not([disabled], [aria-disabled="true"], .social)):hover {
+    background: var(--surface);
+  }
+  .btn-primary:where(:not([disabled], [aria-disabled="true"])):hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+  }
+  .title-nav .btn-primary:hover {
+    border-color: var(--ink);
+  }
+  .btn-danger:hover {
+    background: var(--surface);
+    color: var(--danger);
+  }
+  .btn.social:hover {
+    filter: none;
+  }
+  .facility:hover,
+  .survivor:hover {
+    transform: none;
+    box-shadow: var(--shadow);
+  }
+  .choice-card:hover {
+    transform: none;
+  }
+  .choice-card:not(:has(input:checked)):hover {
+    box-shadow: none;
+  }
+  .tab:not([aria-selected="true"]):hover {
+    color: var(--muted);
+  }
+  .event-choice:hover,
+  .mg-zombie:hover {
+    background: var(--surface);
+  }
+  .task-btn:not([aria-pressed="true"]):hover,
+  .who-chip:not(.going):hover:not(:disabled) {
+    border-color: var(--line);
+  }
+  .mg-tile:not(.open):hover:not(:disabled) {
+    background: var(--surface-2);
+  }
+  .htp-nav a:not([aria-current="true"]):hover {
+    background: none;
+    font-weight: inherit;
+  }
+
+  /* Pressed: a quick dip so every tap is felt. */
+  .btn:active:not([disabled], .social),
+  .tab:active,
+  .task-btn:active:not(:disabled),
+  .stepper:active:not(:disabled),
+  .filter:active,
+  .mg-pin:active:not(:disabled) {
+    background: var(--surface-2);
+  }
+  .btn-primary:active:not([disabled]) {
+    background: color-mix(in srgb, var(--accent) 80%, var(--ink));
+  }
+  .task-btn[aria-pressed="true"]:active,
+  .filter[aria-pressed="true"]:active {
+    background: var(--ink);
+  }
+  .event-choice:active:not(:disabled),
+  .who-chip:active:not(:disabled) {
+    background: var(--surface-2);
+  }
+  .loc:active {
+    transform: translate(-50%, -50%) scale(0.94);
+  }
+
+  /* ---------- Tap sizes ----------
+     About 44px for anything you tap, the size phone makers recommend. */
+  .task-btn,
+  .filter,
+  .dest-select {
+    min-height: 2.75rem;
+  }
+  .stepper {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+  .link-btn {
+    padding-block: 0.3rem;
+  }
+  .pic-option img {
+    width: 2.6rem;
+    height: 2.6rem;
+  }
+
+  /* iPhones zoom the page in when you tap a box with text under 16px
+     (the scavenging destination list is 13.6px), and leave it zoomed. */
+  input[type="text"],
+  select,
+  .dest-select {
+    font-size: max(16px, 1rem);
+  }
+}
+/* #endregion M2. Touch basics */
+
+/* #region M3. Compact top bar */
+/*
+===============================================================
+M3. COMPACT TOP BAR
+===============================================================
+The sticky header took about a quarter of a phone screen: the resources
+wrapped onto a third row and Pause sometimes dropped to its own line.
+Now: logo, day and phase, Pause on one row; the five resources share the
+second row evenly.
+*/
+@media (max-width: 760px) {
+  .topbar {
+    gap: 0.45rem 0.6rem;
+    padding-block: 0.5rem;
+  }
+  .topbar .brand img {
+    width: 28px;
+    height: 28px;
+  }
+  /* The day and phase can wrap under each other; Pause stays put. */
+  .day-info {
+    flex: 1 1 0;
+    min-width: 0;
+    flex-wrap: wrap;
+    gap: 0.3rem 0.4rem;
+  }
+  .day-tally {
+    gap: 0.4rem;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.95rem;
+  }
+  .phase-pill {
+    font-size: 0.75rem;
+  }
+  .topbar .btn {
+    flex: none;
+    min-height: 2.5rem;
+    padding: 0.3rem 0.9rem;
+  }
+  .resources {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.3rem;
+  }
+  .resources li {
+    justify-content: center;
+    gap: 0.3rem;
+    min-width: 0;
+    padding: 0.2rem 0.25rem;
+  }
+  .resources img {
+    width: 18px;
+    height: 18px;
+  }
+  .resources strong {
+    font-size: 0.95rem;
+  }
+}
+/* #endregion M3. Compact top bar */
+
+/* #region M4. Tabs */
+/*
+===============================================================
+M4. TABS
+===============================================================
+On a phone the Log tab hung off the right edge with nothing to say it
+was there. Now all five share the width.
+
+With m-bottom-tabs (needs js/mobile.js) they move to a bar along the
+bottom of the screen, where a thumb can reach them, and End day sits
+just above it. Not on phones turned sideways: there isn't the height.
+*/
+@media (max-width: 760px) {
+  :root {
+    --m-tabs-h: 0px; /* height of the bottom tab bar, if it's on */
+    --m-bar-bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); /* where End day sits */
+  }
+  .tabs {
+    gap: 0;
+    padding-inline: 0.25rem;
+  }
+  .tab {
+    flex: 1 0 auto;
+    padding: 0.75rem 0.4rem;
+    font-size: 0.9rem;
+    text-align: center;
+  }
+  .tab-badge {
+    margin-left: 0.25rem;
+  }
+}
+
+/* ---------- Bottom tab bar (needs js/mobile.js) ---------- */
+@media (max-width: 760px) and (min-height: 501px) {
+  html.m-bottom-tabs {
+    --m-tabs-h: calc(3.4rem + env(safe-area-inset-bottom, 0px));
+    --m-bar-bottom: calc(var(--m-tabs-h) + 0.6rem);
+  }
+  html.m-bottom-tabs .tabs {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 25;
+    padding: 0 0 env(safe-area-inset-bottom, 0px);
+    border-top: 2px solid var(--ink);
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
+  }
+  /* Label on top, badge underneath, so a badge never squeezes the name. */
+  html.m-bottom-tabs .tab {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 3.25rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.1rem;
+    padding: 0.35rem 0.1rem;
+    border-bottom: 0;
+    border-top: 3px solid transparent;
+    font-size: 0.85rem;
+    line-height: 1.2;
+  }
+  html.m-bottom-tabs .tab[aria-selected="true"] {
+    border-top-color: var(--phase);
+    background: color-mix(in srgb, var(--phase) 16%, var(--surface));
+  }
+  html.m-bottom-tabs .tab-badge {
+    margin: 0;
+    font-size: 0.68rem;
+  }
+}
+/* #endregion M4. Tabs */
+
+/* #region M5. Today sheet */
+/*
+===============================================================
+M5. TODAY SHEET (needs js/mobile.js)
+===============================================================
+Below 960px the Today panel (who's doing what, food at dusk, tonight's
+odds, warnings) sat under everything else, so you had to scroll to the
+very bottom to see if tonight was safe. Now a Today button sits beside
+End day with tonight's odds and the number of warnings on it. Tapping it
+pulls the whole panel up over the game; tapping again, the dimmed game,
+or Esc puts it away.
+
+The panel slides with "bottom", not "transform": a transform would trap
+the fixed End day button inside it.
+*/
+@media (max-width: 960px) {
+  /* --m-bar-bottom is raised above the tab bar in M4 when that's on. */
+  :root {
+    --m-bar-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+    --m-bar-h: 3.25rem; /* height of the Today and End day buttons */
+  }
+
+  /* End day and the toast make room for the tab bar when it's at the bottom. */
+  #end-day {
+    bottom: var(--m-bar-bottom);
+  }
+  .game-layout {
+    padding-bottom: calc(var(--m-bar-bottom) + var(--m-bar-h) + 1.5rem);
+  }
+  .toast {
+    bottom: calc(var(--m-bar-bottom) + var(--m-bar-h) + 0.75rem);
+  }
+
+  /* ---------- The Today button, left of End day ---------- */
+  html.m-sheet .m-today-btn {
+    position: fixed;
+    left: 1rem;
+    bottom: var(--m-bar-bottom);
+    z-index: 31;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    width: min(calc(40% - 1.25rem), 15rem);
+    min-height: var(--m-bar-h);
+    padding: 0.3rem 0.8rem;
+    border: 2px solid var(--ink);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--ink);
+    font: inherit;
+    text-align: left;
+    box-shadow: var(--shadow-lift);
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  html.m-sheet .m-today-btn:active {
+    background: var(--surface-2);
+  }
+  html.m-sheet #end-day {
+    left: auto;
+    right: 1rem;
+    width: calc(100% - 2.5rem - min(calc(40% - 1.25rem), 15rem));
+    max-width: 24rem;
+  }
+  .m-today-top {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .m-chev {
+    display: inline-block;
+    margin-left: 0.2rem;
+    transition: transform 0.2s;
+  }
+  html.m-sheet-open .m-chev {
+    transform: rotate(180deg);
+  }
+  .m-today-sum {
+    font-size: 0.95rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .m-today-sum strong {
+    font-size: 1.1rem;
+  }
+  .m-today-btn[data-level="good"] .m-today-sum {
+    color: var(--good-text);
+  }
+  .m-today-btn[data-level="info"] .m-today-sum {
+    color: var(--accent-2);
+  }
+  .m-today-btn[data-level="bad"] .m-today-sum {
+    color: var(--danger);
+  }
+  /* How many things need fixing before the day ends. */
+  .m-today-warn {
+    position: absolute;
+    top: -0.55rem;
+    right: -0.55rem;
+    display: grid;
+    place-items: center;
+    min-width: 1.4rem;
+    height: 1.4rem;
+    padding: 0 0.3rem;
+    border-radius: 999px;
+    background: var(--danger);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+  .m-today-warn[hidden] {
+    display: none;
+  }
+
+  /* ---------- The panel as a sheet ---------- */
+  html.m-sheet .side {
+    position: fixed;
+    left: 0.5rem;
+    right: 0.5rem;
+    bottom: -100vh; /* parked below the screen */
+    bottom: -100dvh;
+    z-index: 29;
+    max-width: 36rem;
+    margin-inline: auto;
+    max-height: calc(100vh - var(--header-h) - var(--m-bar-bottom) - var(--m-bar-h) - 1.5rem);
+    max-height: calc(100dvh - var(--header-h) - var(--m-bar-bottom) - var(--m-bar-h) - 1.5rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-radius: 14px;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.3);
+    visibility: hidden;
+    transition:
+      bottom 0.3s ease,
+      visibility 0s linear 0.3s,
+      background-color var(--phase-fade);
+  }
+  html.m-sheet.m-sheet-open .side {
+    bottom: calc(var(--m-bar-bottom) + var(--m-bar-h) + 0.5rem);
+    visibility: visible;
+    transition:
+      bottom 0.3s ease,
+      visibility 0s,
+      background-color var(--phase-fade);
+  }
+  /* End day lives inside the panel but has to stay on screen when it's away. */
+  html.m-sheet .side #end-day {
+    visibility: visible;
+  }
+  html.m-sheet .side .end-hint {
+    margin-top: 1rem;
+  }
+
+  /* The game dims behind the open sheet; tapping it closes the sheet. */
+  html.m-sheet.m-sheet-open .m-sheet-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 28;
+    background: color-mix(in srgb, var(--bg-night) 45%, transparent);
+    animation: backdrop-in 0.3s ease-out;
+  }
+}
+/* #endregion M5. Today sheet */
+
+/* #region M6. Base and Log */
+/*
+===============================================================
+M6. BASE AND LOG
+===============================================================
+Each facility picture was as tall as half the card on a phone, and the
+Base tab ran to about 6000px. A wide strip from the middle of each
+picture keeps the look and saves a screen's worth of scrolling.
+*/
+@media (max-width: 760px) {
+  .facility .fac-art {
+    aspect-ratio: 3 / 1;
+    object-position: center 62%;
+  }
+}
+/* The Log's category chips were 7.5rem wide, a third of a phone. */
+@media (max-width: 760px) {
+  .log-day li {
+    grid-template-columns: 5.5rem 1fr;
+    gap: 0.6rem;
+  }
+}
+/* #endregion M6. Base and Log */
+
+/* #region M7. Map */
+/*
+===============================================================
+M7. MAP (needs js/mobile.js)
+===============================================================
+Squeezed to a phone's width, the place names overlapped (Pharmacy and
+Waterworks, Supermarket and Sporting goods) and were hard to hit. The
+map now draws at a readable size and you swipe it sideways. The script
+starts it centred on the shelter and keeps it where you left it when the
+map redraws. The legend and city news stay put while the map moves.
+*/
+@media (max-width: 760px) {
+  html.m-map-pan .map-col {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line) transparent;
+    padding-bottom: 0.25rem;
+  }
+  html.m-map-pan .map-area {
+    width: max(540px, 100%);
+    max-width: none;
+    margin-inline: 0;
+  }
+  html.m-map-pan .map-col > :not(.map-area) {
+    position: sticky;
+    left: 0;
+  }
+  html.m-map-pan .map-col::before {
+    content: "Swipe sideways to see the whole map.";
+    position: sticky;
+    left: 0;
+    display: block;
+    margin-bottom: 0.4rem;
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+  /* Bigger pins now there's room for them. */
+  html.m-map-pan .loc {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8rem;
+  }
+  /* Tapping a place scrolls its details up to just under the header. */
+  html.m-map-pan .loc-detail {
+    scroll-margin-top: calc(var(--header-h) + 0.75rem);
+  }
+}
+/* #endregion M7. Map */
+
+/* #region M8. Pop-ups */
+/*
+===============================================================
+M8. POP-UPS
+===============================================================
+On phones 100vh is the height with the browser's toolbars hidden, so a
+long report could push Continue under the toolbar. dvh is the height you
+can actually see (older browsers skip the line and keep style.css's).
+*/
+@media (max-width: 760px) {
+  dialog {
+    padding: 1.25rem 1.1rem;
+  }
+  .report-body {
+    max-height: max(16rem, calc(100dvh - 15rem));
+  }
+}
+/* #endregion M8. Pop-ups */
+
+/* #region M9. Mini-games */
+/*
+===============================================================
+M9. MINI-GAMES
+===============================================================
+*/
+@media (max-width: 520px) {
+  /* Lockpick: five or six 52px pins didn't fit, so the last one was cut
+     off on Normal and Hard. The pins now shrink to share the lock. */
+  .mg-lockpick {
+    grid-template-columns: minmax(0, max-content);
+    padding-inline: 0.5rem;
+  }
+  .mg-lock {
+    padding: 1rem 0.6rem 0.75rem;
+  }
+  .mg-pins {
+    gap: 0.35rem;
+  }
+  .mg-pin {
+    flex: 0 1 52px;
+    min-width: 0;
+  }
+
+  /* Stats row: label and number stay together, and the wall meter drops
+     to its own line rather than running off a very narrow phone. */
+  .mg-stats {
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.4rem 0.75rem;
+  }
+  .mg-stats > span:first-child {
+    white-space: nowrap;
+  }
+  .mg-stats .meter {
+    width: 5.5rem;
+  }
+}
+
+/* The 1-4 lane keys in Defense are keyboard hints; a touch screen has no keys. */
+@media (hover: none) and (pointer: coarse) {
+  .mg-lane-key {
+    display: none;
+  }
+}
+/* #endregion M9. Mini-games */
+
+/* #region M10. Phone on its side */
+/*
+===============================================================
+M10. PHONE ON ITS SIDE
+===============================================================
+In landscape a phone is only about 390px tall. The header wrapped onto
+three rows and End day took the bottom, which left room for about one
+line of the game. Mini-games didn't fit, so Start was off the bottom.
+*/
+@media (orientation: landscape) and (max-height: 500px) and (pointer: coarse) {
+  /* ---------- Game screen ---------- */
+  .topbar {
+    gap: 0.4rem 0.75rem;
+    padding-block: 0.35rem;
+  }
+  .topbar .brand span {
+    display: none;
+  }
+  .topbar .brand img {
+    width: 28px;
+    height: 28px;
+  }
+  .resources {
+    gap: 0.3rem;
+  }
+  .resources li {
+    padding: 0.15rem 0.55rem 0.15rem 0.35rem;
+  }
+  .topbar .btn {
+    min-height: 2.4rem;
+    padding: 0.25rem 0.9rem;
+  }
+  .tab {
+    padding: 0.5rem 0.9rem;
+  }
+  .game-layout {
+    padding-top: 1rem;
+  }
+  .panel-head h2 {
+    font-size: 1.4rem;
+  }
+  :root {
+    --m-bar-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
+    --m-bar-h: 2.75rem;
+  }
+  /* End day is a button on the right, not a bar across the screen. */
+  #end-day {
+    left: auto;
+    right: 1rem;
+    width: min(20rem, calc(100% - 2rem));
+    min-height: var(--m-bar-h);
+  }
+  html.m-sheet .m-today-btn {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  /* The map was capped at 75% of the screen height (about 290px here), so
+     the place names piled on top of each other. It fills its column now
+     and you scroll down it; the details beside it stay in view. */
+  .map-area {
+    width: 100%;
+  }
+  html.m-map-pan .map-col::before {
+    display: none; /* wide enough here that there's nothing to swipe */
+  }
+
+  /* ---------- Mini-games ---------- */
+  #minigame-dialog {
+    width: min(880px, calc(100vw - 1rem));
+    padding: 0.75rem 1.1rem;
+  }
+  #minigame-dialog h2 {
+    margin-bottom: 0.25rem;
+    font-size: 1.15rem;
+  }
+  #mg-instructions {
+    font-size: 0.85rem;
+  }
+  .mg-canvas {
+    height: clamp(140px, calc(100vh - 13.5rem), 300px);
+    height: clamp(140px, calc(100dvh - 13.5rem), 300px);
+    margin: 0.5rem 0;
+    padding: 0.5rem;
+  }
+  .mg-stats {
+    padding-bottom: 0.5rem;
+  }
+  .mg-foot {
+    padding-top: 0.5rem;
+  }
+  .mg-foot > p {
+    display: none; /* the Auto-resolve note; the button says what it does */
+  }
+  /* Defense: lanes are about 43px tall here, so smaller zombies. */
+  .mg-zombie {
+    width: 40px;
+    height: 40px;
+    font-size: 1.3rem;
+  }
+  /* Lockpick: shorter pins. */
+  .mg-lock {
+    padding: 0.5rem 1rem 0.4rem;
+  }
+  .mg-pin {
+    height: 92px;
+  }
+  .mg-pin-body {
+    height: 34px;
+  }
+  .mg-pin.set .mg-pin-body {
+    transform: translateY(-22px);
+  }
+  .mg-lockpick .mg-msg {
+    margin-top: 0.4rem;
+    font-size: 0.85rem;
+  }
+  /* Search: the clue sits beside the grid instead of under it. */
+  .mg-search {
+    flex-direction: row;
+    justify-content: center;
+    gap: 1.25rem;
+  }
+  .mg-search .mg-grid {
+    flex: none;
+  }
+  .mg-search .mg-tile {
+    aspect-ratio: 2.1;
+  }
+  .mg-search .mg-msg {
+    max-width: 30ch;
+    margin: 0;
+    text-align: left;
+  }
+  /* Tally: a smaller wall. */
+  .mg-tally {
+    gap: 0.6rem;
+  }
+  .mg-tally-wall {
+    padding: 0.3rem 0.9rem;
+    font-size: 1.6rem;
+  }
+
+  /* ---------- New Game ----------
+     The sticky bar of three stacked buttons took half the screen.
+     Here they sit in one row. ("html" lets these win over M11, which
+     also matches small phones on their side.) */
+  html .setup-actions {
+    display: flex;
+    padding-block: 0.5rem;
+  }
+  html .setup-actions .btn {
+    width: auto;
+    flex: 1;
+    min-height: 2.5rem;
+  }
+  html .setup-actions .btn-primary {
+    order: 0; /* Start stays on the right, as on desktop */
+  }
+}
+/* #endregion M10. Phone on its side */
+
+/* #region M11. Other pages */
+/*
+===============================================================
+M11. OTHER PAGES
+===============================================================
+*/
+@media (max-width: 760px) {
+  /* ---------- New Game ----------
+     The sticky bar stacked three full-width buttons (about 190px). Start
+     game now runs across the top, with Quit and How to play side by side
+     underneath. */
+  .setup-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    padding: 0.6rem 0 calc(0.6rem + env(safe-area-inset-bottom, 0px));
+  }
+  .setup-actions .btn-primary {
+    grid-column: 1 / -1;
+    order: -1;
+  }
+  .setup-actions .btn:not(.btn-primary) {
+    min-height: 2.5rem;
+    font-size: 0.9rem;
+  }
+
+  /* ---------- How to Play ----------
+     The section links wrapped into three rows. They're now one row you
+     swipe, and it sticks to the top so you can jump around the page. */
+  .htp-nav {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    flex-wrap: nowrap;
+    gap: 0.2rem;
+    margin-inline: -1rem;
+    padding: 0.35rem 0.75rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    border-radius: 0;
+    border-inline: 0;
+  }
+  .htp-nav a {
+    flex: none;
+    white-space: nowrap;
+  }
+  .htp section {
+    scroll-margin-top: 4rem;
+  }
+}
+/* #endregion M11. Other pages */
+
+/* #region M12. Hidden by default */
+/*
+===============================================================
+M12. HIDDEN BY DEFAULT
+===============================================================
+js/mobile.js adds these elements to the game page. They only show inside
+the M5 media query above.
+*/
+.m-today-btn,
+.m-sheet-backdrop {
+  display: none;
+}
+/* #endregion M12. Hidden by default */

@@ -46,14 +46,18 @@ Ctrl+K Ctrl+8 folds every region; Ctrl+K Ctrl+9 unfolds them.
       href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap"
     />
     <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/mobile.css" />
     <link
       rel="icon"
       type="image/png"
       href="assets/icons/anothertally_icon.png"
     />
     <!-- common.js (settings, sound, text speed) runs first; minigames.js and
-         story.js must load before game.js, which uses AT.minigames and AT.STORY. -->
+         story.js must load before game.js, which uses AT.minigames and AT.STORY.
+         mobile.js (phone and touch helpers) has no defer, so its classes
+         are on <html> before the page first draws. -->
     <script src="js/common.js"></script>
+    <script src="js/mobile.js"></script>
     <script src="js/minigames.js" defer></script>
     <script src="js/story.js" defer></script>
     <script src="js/game.js" defer></script>
